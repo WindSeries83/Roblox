@@ -3,7 +3,8 @@
   "tree": {
     "$className": "DataModel",
     "ServerScriptService": {
-      "$path": "src/server"
+      "$path": "src/server",
+      "ServerPackages": { "$path": "ServerPackages" }
     },
     "ReplicatedStorage": {
       "Shared": { "$path": "src/shared" },
@@ -35,6 +36,23 @@
             512,
             20,
             512
+          ]
+        }
+      },
+      "SpawnLocation": {
+        "$className": "SpawnLocation",
+        "$properties": {
+          "Anchored": true,
+          "Neutral": true,
+          "Position": [
+            0,
+            0.5,
+            0
+          ],
+          "Size": [
+            16,
+            1,
+            16
           ]
         }
       }

@@ -1,0 +1,43 @@
+return {
+	ESSENCE_BASE_RATE = 0.5,
+	SANCTUARY_LEVEL_BONUS = 0.2,
+
+	EGG_PRICES = {
+		CommonEgg = 50,
+		UncommonEgg = 200,
+		RareEgg = 800,
+	},
+
+	EGG_RARITY_WEIGHTS = {
+		CommonEgg = { Common = 75, Uncommon = 20, Rare = 5 },
+		UncommonEgg = { Uncommon = 80, Rare = 20 },
+		RareEgg = { Rare = 100 },
+	},
+
+	MUTATION_WEIGHTS = {
+		None = 88,
+		Shadow = 10,
+		Frost = 2,
+	},
+
+	ANNOUNCE_MIN_RARITY = "Rare",
+
+	OFFLINE_RATE = 0.5,
+	OFFLINE_CAP_SECONDS = 12 * 3600,
+
+	RIFT_INTERVAL = 600,
+	RIFT_ACTIVE_SECONDS = 180,
+	RIFT_ESSENCE_MULT = 8,
+	RIFT_REWARD_SECONDS = 60,
+	RIFT_MIN_REWARD = 50,
+	RIFT_EGG_WEIGHTS = { CommonEgg = 60, UncommonEgg = 35, RareEgg = 5 },
+	RIFT_PORTAL_POSITION = Vector3.new(40, 3, 40),
+
+	RIFT_PLAYER_MAX_HP = 100,
+	RIFT_GUARDIAN_BASE_HP = 60,
+	RIFT_GUARDIAN_HP_PER_POWER = 4,
+	RIFT_ATTACK_COOLDOWN = 1,
+	RIFT_PLAYER_DAMAGE_MULT = 0.8,
+	RIFT_GUARDIAN_ATTACK_INTERVAL = 2.5,
+	RIFT_GUARDIAN_DAMAGE = 12,
+}

@@ -11,3 +11,7 @@ build/
 .DS_Store
 
 sourcemap.json
+
+# Wally-generated packages (reproducible via `wally install`)
+/ServerPackages/
+/Packages/

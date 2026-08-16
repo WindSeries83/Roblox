@@ -5,6 +5,18 @@
 
 ---
 
+## 0. Décisions actées
+
+| Sujet | Décision |
+|---|---|
+| Framework | **Vanilla Luau maison** — modules de services + Bootstrap minimal, pas de framework tiers |
+| Sauvegarde | **ProfileStore** (`lm-loleris/profilestore@1.0.3`) via Wally, realm `server` → `ServerPackages/` |
+| MCP | **MCP intégré de Studio** seul (pas de MCP communautaire pour l'instant) |
+| Scope | **P0 enchaîné sur P1** (vertical slice) |
+| Outillage | Rojo 7.7 + rokit (StyLua, selene avec `std = "roblox"`, wally) |
+
+---
+
 ## 1. Stack de production IA
 
 ### 1.1 Options disponibles
@@ -42,20 +54,20 @@
 ## 2. Phases de développement
 
 ### P0 — Socle technique · 1–2 semaines
-- [ ] Studio à jour, MCP intégré activé, agent connecté
-- [ ] Rojo + repo Git en place, place de dev séparé du place de prod
-- [ ] Architecture serveur/client posée : ProfileStore (ou équivalent) pour la sauvegarde, modules de services
-- [ ] Log serveur pour tout ce qui touche à l'économie
+- [x] Studio à jour, MCP intégré activé, agent connecté
+- [x] Rojo + repo Git en place, place de dev séparé du place de prod
+- [x] Architecture serveur/client posée : ProfileStore pour la sauvegarde, modules de services (Bootstrap, SaveService, Log)
+- [x] Log serveur pour tout ce qui touche à l'économie (`[ECON]` ring buffer + print)
 
 **Sortie :** un place vide mais propre, où l'IA peut travailler sans casser la sauvegarde.
 
 ### P1 — Vertical slice · 3–4 semaines
 Le minimum qui prouve que la boucle est amusante.
-- [ ] 1 sanctuaire, génération d'Essence AFK
-- [ ] 10 créatures, 3 raretés, 2 mutations
-- [ ] 1 type de Faille avec combat simple
-- [ ] Éclosion d'œufs + effet de drop rare (ralenti, flash, son, annonce)
-- [ ] Sauvegarde fiable
+- [x] 1 sanctuaire, génération d'Essence AFK (tick 1 s, gains hors ligne à 50 %, cap 12 h)
+- [x] 10 créatures, 3 raretés, 2 mutations (données complètes 8 raretés / 6 mutations prêtes pour P2)
+- [x] 1 type de Faille avec combat simple (portail cyclique, gardien, cristal, récompenses ×8)
+- [x] Éclosion d'œufs + effet de drop rare (flash + bannière + annonce serveur — son à ajouter)
+- [ ] Sauvegarde fiable (implémentée, **playtest non exécuté** — à valider en session Studio)
 
 **Test de vérité :** est-ce que *toi* tu as envie de relancer le lendemain ? Si non, ne pas continuer — corriger la boucle.
 
@@ -145,6 +157,6 @@ Plus lent que le trafic Roblox natif, mais bien plus fidèle.
 
 ## 6. En suspens
 
-- Choix final du MCP : intégré seul, ou intégré + communautaire pour la génération d'assets
-- Outil de sauvegarde retenu (ProfileStore vs alternative)
 - Budget temps réel disponible par semaine → conditionne la durée réelle des phases
+- Direction artistique P1 : placeholder parts simples — génération de meshes/visuels à planifier
+- Sons (éclosion, drop rare, faille) : aucun asset audio en place
