@@ -549,3 +549,5 @@ Net.RiftWorld.OnClientEvent:Connect(function(state)
 end)
 
 RenderShop(Config.EGG_PRICES)
+
+return nil

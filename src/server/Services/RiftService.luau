@@ -156,7 +156,7 @@ local function WinRift(player: Player)
 	end
 
 	local profile = saveService:GetProfile(player)
-	local rate = essenceService:GetRate(player)
+	local rate = essenceService.GetRate(player)
 	local essence =
 		math.max(Config.RIFT_MIN_REWARD, math.floor(rate * Config.RIFT_REWARD_SECONDS * Config.RIFT_ESSENCE_MULT))
 	essenceService:Add(player, essence, "RiftCrystal")
@@ -324,6 +324,14 @@ function RiftService:Start()
 							LoseRift(player)
 						else
 							SyncPlayer(player)
+						end
+					elseif combat.Phase == "Crystal" and combat.CrystalPart then
+						local character = player.Character
+						if character then
+							local root = character:FindFirstChild("HumanoidRootPart")
+							if root and (root.Position - combat.CrystalPart.Position).Magnitude < 6 then
+								WinRift(player)
+							end
 						end
 					end
 				end

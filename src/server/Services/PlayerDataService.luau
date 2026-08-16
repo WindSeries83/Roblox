@@ -21,7 +21,7 @@ local function SendSync(player: Player)
 		Essence = math.floor(profile.Data.Essence),
 		Creatures = profile.Data.Creatures,
 		Eggs = profile.Data.Eggs,
-		Rate = essenceService:GetRate(player),
+		Rate = essenceService.GetRate(player),
 		SanctuaryLevel = profile.Data.SanctuaryLevel,
 	})
 end

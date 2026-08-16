@@ -67,7 +67,7 @@ Le minimum qui prouve que la boucle est amusante.
 - [x] 10 créatures, 3 raretés, 2 mutations (données complètes 8 raretés / 6 mutations prêtes pour P2)
 - [x] 1 type de Faille avec combat simple (portail cyclique, gardien, cristal, récompenses ×8)
 - [x] Éclosion d'œufs + effet de drop rare (flash + bannière + annonce serveur — son à ajouter)
-- [ ] Sauvegarde fiable (implémentée, **playtest non exécuté** — à valider en session Studio)
+- [x] Sauvegarde fiable (playtest MCP complet exécuté : join, starter, achats, éclosions, faille victoire/défaite, récompenses — en mode mock Studio ; à revalider sur place publié avec accès DataStore)
 
 **Test de vérité :** est-ce que *toi* tu as envie de relancer le lendemain ? Si non, ne pas continuer — corriger la boucle.
 
