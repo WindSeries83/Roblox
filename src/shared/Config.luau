@@ -2,6 +2,8 @@ return {
 	ESSENCE_BASE_RATE = 0.5,
 	SANCTUARY_LEVEL_BONUS = 0.2,
 
+	STARTER_ESSENCE = 100,
+
 	EGG_PRICES = {
 		CommonEgg = 50,
 		UncommonEgg = 200,

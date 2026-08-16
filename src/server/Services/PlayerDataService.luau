@@ -1,3 +1,4 @@
+local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -56,6 +57,18 @@ local function OnPlayerAdded(player: Player)
 					Amount = offline,
 				})
 			end
+		end
+
+		local isNewPlayer = profile.Data.LastPlayed == 0
+		if isNewPlayer then
+			profile.Data.Essence += Config.STARTER_ESSENCE
+			profile.Data.Stats.TotalEssenceEarned += Config.STARTER_ESSENCE
+			table.insert(profile.Data.Eggs, {
+				Id = HttpService:GenerateGUID(false),
+				Tier = "CommonEgg",
+				Timestamp = os.time(),
+			})
+			log:Economy("Players", "Starter", { Player = player.Name })
 		end
 		profile.Data.LastPlayed = os.time()
 
