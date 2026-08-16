@@ -14,6 +14,7 @@ local ORDER = {
 	"RiftService",
 	"BreedingService",
 	"RebirthService",
+	"SanctuaryService",
 	"PlayerDataService",
 }
 

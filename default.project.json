@@ -31,9 +31,66 @@
                                            "Shared":  {
                                                           "$path":  "src/shared"
                                                       },
-                                           "Remotes":  {
-                                                           "$className":  "Folder"
-                                                       }
+"Remotes":  {
+                                                            "$className":  "Folder",
+                                                            "BuyEgg":  {
+                                                                           "$className":  "RemoteEvent"
+                                                                       },
+                                                            "HatchEgg":  {
+                                                                             "$className":  "RemoteEvent"
+                                                                         },
+                                                            "RiftAttack":  {
+                                                                               "$className":  "RemoteEvent"
+                                                                           },
+                                                            "Sync":  {
+                                                                         "$className":  "RemoteEvent"
+                                                                     },
+                                                            "HatchResult":  {
+                                                                               "$className":  "RemoteEvent"
+                                                                           },
+                                                            "RareDrop":  {
+                                                                             "$className":  "RemoteEvent"
+                                                                         },
+                                                            "RiftSync":  {
+                                                                           "$className":  "RemoteEvent"
+                                                                       },
+                                                            "RiftEnded":  {
+                                                                            "$className":  "RemoteEvent"
+                                                                        },
+                                                            "RiftWorld":  {
+                                                                            "$className":  "RemoteEvent"
+                                                                        },
+                                                            "EvolveCreature":  {
+                                                                                   "$className":  "RemoteEvent"
+                                                                               },
+                                                            "BuyItem":  {
+                                                                           "$className":  "RemoteEvent"
+                                                                       },
+                                                            "EquipItem":  {
+                                                                            "$className":  "RemoteEvent"
+                                                                        },
+                                                            "UnequipItem":  {
+                                                                               "$className":  "RemoteEvent"
+                                                                           },
+                                                            "BreedCreatures":  {
+                                                                                  "$className":  "RemoteEvent"
+                                                                              },
+                                                            "BreedResult":  {
+                                                                              "$className":  "RemoteEvent"
+                                                                          },
+                                                            "RebirthRequest":  {
+                                                                                  "$className":  "RemoteEvent"
+                                                                              },
+                                                            "RebirthPreview":  {
+                                                                                  "$className":  "RemoteEvent"
+                                                                              },
+                                                            "RebirthConfirm":  {
+                                                                                  "$className":  "RemoteEvent"
+                                                                              },
+                                                            "UpgradeSanctuary":  {
+                                                                                     "$className":  "RemoteEvent"
+                                                                                 }
+                                                        }
                                        },
                  "StarterPlayer":  {
                                        "StarterPlayerScripts":  {

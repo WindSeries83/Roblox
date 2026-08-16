@@ -42,11 +42,11 @@ return function(t)
 		expect.equal(kept[1].Id, "r3")
 	end)
 
-	-- Reset wipes creatures and essence but keeps the index.
-	t.test("reset wipes creatures and essence but keeps the index", function()
+	-- Reset keeps the strongest creature, wipes eggs and essence but keeps the index.
+	t.test("reset keeps strongest creature and wipes eggs and essence", function()
 		local data = {
 			Essence = 99999,
-			Creatures = { { Id = "c1" }, { Id = "c2" } },
+			Creatures = { { Id = "c1", Power = 10 }, { Id = "c2", Power = 50 } },
 			Eggs = { { Id = "e1" } },
 			SanctuaryLevel = 4,
 			Index = { ["Riftling|Common|false"] = true },
@@ -55,7 +55,8 @@ return function(t)
 			Rebirths = 0,
 		}
 		Rebirth.ApplyReset(data)
-		expect.equal(#data.Creatures, 0)
+		expect.equal(#data.Creatures, 1)
+		expect.equal(data.Creatures[1].Id, "c2")
 		expect.equal(#data.Eggs, 0)
 		expect.equal(data.SanctuaryLevel, 1)
 		expect.equal(data.Essence, Config.STARTER_ESSENCE)
@@ -64,5 +65,21 @@ return function(t)
 		expect.truthy(data.Index["Riftling|Common|false"])
 		expect.equal(#data.Items, 1)
 		expect.equal(data.Items[1].Id, "r3")
+	end)
+
+	-- Reset with no creatures leaves an empty sanctuary.
+	t.test("reset with no creatures leaves an empty sanctuary", function()
+		local data = {
+			Essence = 100,
+			Creatures = {},
+			Eggs = {},
+			SanctuaryLevel = 1,
+			Index = {},
+			Items = {},
+			Stars = 0,
+			Rebirths = 0,
+		}
+		Rebirth.ApplyReset(data)
+		expect.equal(#data.Creatures, 0)
 	end)
 end

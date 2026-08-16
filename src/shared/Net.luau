@@ -33,5 +33,6 @@ Net.BreedResult = Event("BreedResult")
 Net.RebirthRequest = Event("RebirthRequest")
 Net.RebirthPreview = Event("RebirthPreview")
 Net.RebirthConfirm = Event("RebirthConfirm")
+Net.UpgradeSanctuary = Event("UpgradeSanctuary")
 
 return Net

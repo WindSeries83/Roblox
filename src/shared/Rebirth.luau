@@ -35,8 +35,21 @@ function Rebirth.KeepItems(items: { any }): { any }
 	return kept
 end
 
+function Rebirth.KeepBestCreature(creatures: { any }): { any }
+	if #creatures == 0 then
+		return {}
+	end
+	local best = creatures[1]
+	for _, creature in creatures do
+		if creature.Power > best.Power then
+			best = creature
+		end
+	end
+	return { best }
+end
+
 function Rebirth.ApplyReset(data: any)
-	data.Creatures = {}
+	data.Creatures = Rebirth.KeepBestCreature(data.Creatures)
 	data.Eggs = {}
 	data.SanctuaryLevel = 1
 	data.Items = Rebirth.KeepItems(data.Items)

@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Breeding = require(ReplicatedStorage.Shared.Breeding)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 local Net = require(ReplicatedStorage.Shared.Net)
 
 local BreedingService = {}
@@ -49,6 +50,16 @@ function BreedingService:Start()
 		local ok, reason = Breeding.CanBreed(father, mother)
 		if not ok then
 			log:Economy("Breeding", "Reject", { Player = player.Name, Reason = reason })
+			return
+		end
+
+		local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel)
+		if #profile.Data.Creatures >= maxCreatures then
+			log:Economy("Breeding", "CapReached", {
+				Player = player.Name,
+				Creatures = #profile.Data.Creatures,
+				MaxCreatures = maxCreatures,
+			})
 			return
 		end
 

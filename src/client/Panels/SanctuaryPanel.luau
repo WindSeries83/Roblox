@@ -6,11 +6,14 @@ local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Stages = require(ReplicatedStorage.Shared.Data.Stages)
 local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
 local Evolution = require(ReplicatedStorage.Shared.Evolution)
+local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 
 local SanctuaryPanel = {}
 
 local creatureList
 local detail
+local upgradeLabel
+local upgradeButton
 
 local function ItemName(item)
 	local def = Equipment[item.Type]
@@ -106,12 +109,32 @@ function SanctuaryPanel.Create(parent)
 
 	UiKit.Title(frame, "Créatures")
 
-	creatureList = UiKit.Scroller(frame, UDim2.fromScale(0, 0.08), UDim2.fromScale(0.5, 0.92))
+	local header = UiKit.Create("Frame", {
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 44),
+		Parent = frame,
+	})
+	upgradeLabel = UiKit.Create("TextLabel", {
+		BackgroundTransparency = 1,
+		TextColor3 = UiKit.TINTS.WHITE,
+		TextSize = 14,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Size = UDim2.new(0.6, 0, 0, 44),
+		Text = "",
+		TextWrapped = true,
+		Parent = header,
+	})
+	upgradeButton = UiKit.Button(header, "Améliorer", UDim2.new(0.35, 0, 0, 32), UDim2.new(0.65, 0, 0.5, -16))
+	upgradeButton.Activated:Connect(function()
+		Net.UpgradeSanctuary:FireServer()
+	end)
+
+	creatureList = UiKit.Scroller(frame, UDim2.fromScale(0, 0.14), UDim2.fromScale(0.5, 0.86))
 
 	detail = UiKit.Create("Frame", {
 		BackgroundColor3 = UiKit.TINTS.PANEL,
-		Position = UDim2.fromScale(0.52, 0.08),
-		Size = UDim2.fromScale(0.48, 0.92),
+		Position = UDim2.fromScale(0.52, 0.14),
+		Size = UDim2.fromScale(0.48, 0.86),
 		Parent = frame,
 	})
 	UiKit.Corner(detail)
@@ -126,6 +149,16 @@ function SanctuaryPanel.Create(parent)
 end
 
 function SanctuaryPanel.Refresh(state)
+	local maxCreatures = Sanctuary.MaxCreatures(state.SanctuaryLevel)
+	local cost = Sanctuary.UpgradeCost(state.SanctuaryLevel)
+	upgradeLabel.Text =
+		`Sanctuaire niveau {state.SanctuaryLevel} — {#state.Creatures}/{maxCreatures} créatures\nAméliorer : +{Sanctuary.SLOTS_PER_LEVEL} places (coût {cost} Essence)`
+	if state.Essence < cost then
+		upgradeButton.BackgroundColor3 = UiKit.TINTS.DARK
+	else
+		upgradeButton.BackgroundColor3 = UiKit.TINTS.ACCENT
+	end
+
 	UiKit.Clear(creatureList)
 	local selected = detail and detail:GetAttribute("SelectedId") or nil
 	for _, creature in state.Creatures do

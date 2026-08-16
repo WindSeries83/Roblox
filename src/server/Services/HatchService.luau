@@ -7,6 +7,7 @@ local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 local Net = require(ReplicatedStorage.Shared.Net)
 
 local HatchService = {}
@@ -98,6 +99,16 @@ function HatchService:Start()
 			end
 		end
 		if not eggIndex then
+			return
+		end
+
+		local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel)
+		if #profile.Data.Creatures >= maxCreatures then
+			log:Economy("Hatch", "CapReached", {
+				Player = player.Name,
+				Creatures = #profile.Data.Creatures,
+				MaxCreatures = maxCreatures,
+			})
 			return
 		end
 

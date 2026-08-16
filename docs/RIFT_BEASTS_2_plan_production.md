@@ -72,21 +72,26 @@ Le minimum qui prouve que la boucle est amusante.
 **Test de vérité :** est-ce que *toi* tu as envie de relancer le lendemain ? Si non, ne pas continuer — corriger la boucle.
 
 ### P2 — Systèmes de profondeur · 4–6 semaines
-- [ ] Index complet avec bonus permanents
-- [ ] Équipement (Cœurs / Colliers / Reliques) + slots
-- [ ] Évolution des créatures (4 stades)
-- [ ] Élevage génétique + arbres généalogiques
-- [ ] Renaissance et Étoiles
+- [x] Index complet avec bonus permanents
+- [x] Équipement (Cœurs / Colliers / Reliques) + slots
+- [x] Évolution des créatures (4 stades)
+- [x] Élevage génétique + arbres généalogiques
+- [x] Renaissance et Étoiles
 
-**Sortie :** un joueur peut faire 20 h sans plafonner.
+**Sortie :** un joueur peut faire 20 h sans plafonner. ✓ (tests 59/59 → 64/64)
 
 ### P3 — Économie & équilibrage · 2–3 semaines
-- [ ] Courbe chiffrée complète : coût des œufs, rendement d'Essence, temps avant Renaissance 1, 2, 3
-- [ ] Tables de drop finalisées et **publiées**
-- [ ] Sinks de monnaie
-- [ ] Simulation sur tableur **avant** implémentation — pas l'inverse
+- [x] Courbe chiffrée complète : coût des œufs, rendement d'Essence, temps avant Renaissance 1, 2, 3
+- [x] Tables de drop finalisées et **publiées** (voire §7)
+- [x] Sinks de monnaie (upgrade du sanctuaire : +2 places, coût base 1000 ×4 par niveau)
+- [x] Simulation **avant** implémentation (EconomySim, 7 jours simulés ×3 runs, joueur connecté)
+- [x] Cap de créatures : 10 au niveau 1, +2 par niveau de sanctuaire
+- [x] Renaissance garde la créature la plus forte
 
-**Sortie :** aucune progression bloquée, aucune inflation prévisible.
+**Résultats de simulation (courbe retenue `{50 000, 250 000, 1 250 000, 6 250 000}`) :**
+Renaissance 1 ~13–18 min · Renaissance 2 ~30–40 min · Renaissance 3 ~1h10–1h20 · Renaissance 4 ~2h48–3h31. **4 rebirths en 7 jours** — plus de mur (l'ancienne courbe 10k/100k/1M ne permettait jamais rebirth 4). Taux de fin de semaine ~1700–2300/s (inflation contenue par le cap 10).
+
+**Sortie :** aucune progression bloquée, aucune inflation prévisible. ✓ (64/64 tests verts, playtest remotes : cap, upgrade, rebirth)
 
 ### P4 — Social & monétisation · 3–4 semaines
 - [ ] Trading + place de marché + anti-arnaque
@@ -160,3 +165,16 @@ Plus lent que le trafic Roblox natif, mais bien plus fidèle.
 - Budget temps réel disponible par semaine → conditionne la durée réelle des phases
 - Direction artistique P1 : placeholder parts simples — génération de meshes/visuels à planifier
 - Sons (éclosion, drop rare, faille) : aucun asset audio en place
+- Sauvegarde DataStore : à revalider sur place **publié** (Studio : « Roblox API services unavailable » attendu)
+- Place Studio : sauvegarder le fichier (`Ctrl+S`) après toute synchro MCP — les remotes sont désormais déclarées dans `default.project.json`
+
+## 7. Décisions P3 actées
+
+| Sujet | Décision |
+|---|---|
+| Courbe de renaissance | `{ 50000, 250000, 1250000, 6250000 }` — rebirth 1 ≈ 15 min, rebirth 4 ≈ 3 h (sim 7 j) |
+| Cap créatures | 10 au niveau 1 (`MAX_CREATURES_BASE`), +2 par niveau de sanctuaire (`SANCTUARY_SLOTS_PER_LEVEL`) |
+| Coût upgrade sanctuaire | base 1000 Essence, ×4 par niveau — reset à 1 au rebirth |
+| Renaissance | garde la créature la plus forte + Index + Reliques légendaires ; perd œufs, Essence, niveau de sanctuaire |
+| Compteur de renaissance | `TotalEssenceEarned` **cumulatif** (jamais remis à 0) |
+| Rejets au cap | éclosion : l'œuf n'est pas consommé ; élevage : vérifié **avant** le paiement (aucune perte) |

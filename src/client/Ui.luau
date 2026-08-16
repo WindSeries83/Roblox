@@ -66,6 +66,7 @@ local content = UiKit.Create("Frame", {
 	Position = UDim2.fromScale(0.5, 0.5),
 	AnchorPoint = Vector2.new(0.5, 0.5),
 	Size = UDim2.fromScale(0.72, 0.72),
+	Visible = false,
 	Parent = ui,
 })
 UiKit.Corner(content)
@@ -126,6 +127,29 @@ AddTab("Renaissance", RebirthPanel)
 if panels[1] then
 	panels[1].frame.Visible = true
 end
+
+local menuButton = UiKit.Create("TextButton", {
+	BackgroundColor3 = TINTS.ACCENT,
+	TextColor3 = TINTS.WHITE,
+	Font = Enum.Font.GothamBold,
+	TextSize = 16,
+	Size = UDim2.fromOffset(140, 40),
+	Position = UDim2.fromOffset(324, 12),
+	Text = "Menu",
+	Parent = ui,
+})
+UiKit.Corner(menuButton)
+
+local function SetMenuOpen(open: boolean)
+	content.Visible = open
+	menuButton.Text = if open then "Fermer" else "Menu"
+end
+
+menuButton.Activated:Connect(function()
+	SetMenuOpen(not content.Visible)
+end)
+
+SetMenuOpen(false)
 
 local riftHud = UiKit.Create("Frame", {
 	BackgroundColor3 = TINTS.PANEL,
