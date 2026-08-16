@@ -113,7 +113,11 @@ function HatchService:Start()
 		end
 
 		local egg = table.remove(profile.Data.Eggs, eggIndex)
-		local roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile))
+		local rarityWeights = nil
+		if profile.Data.Stats.TotalHatched == 0 and egg.Tier == "CommonEgg" then
+			rarityWeights = Config.FIRST_HATCH_WEIGHTS
+		end
+		local roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile), rarityWeights)
 		local creature = Gameplay.CreateCreature(roll.Rarity, roll.SpeciesId, roll.Mutation)
 
 		table.insert(profile.Data.Creatures, creature)

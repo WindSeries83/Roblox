@@ -102,10 +102,10 @@ Renaissance 1 ~13–18 min · Renaissance 2 ~30–40 min · Renaissance 3 ~1h10�
 
 ### P5 — Pré-lancement · 2 semaines
 - [ ] Icône et miniatures : **le poste le plus rentable du projet**. Tester plusieurs variantes.
-- [ ] Rétention des 3 premières minutes : premier drop rare dans les 60 s
+- [x] Rétention des 3 premières minutes : premier drop rare dans les 60 s — **pity au premier œuf** (`FIRST_HATCH_WEIGHTS` 40/40/20 au lieu de 75/20/5), appliqué au premier œuf commun éclos
 - [ ] Discord ouvert **avant** la sortie
 - [ ] Playtest fermé avec 20–30 joueurs adultes recrutés sur Discord / Reddit
-- [ ] Anti-triche : vérifier que rien de monétaire ne passe par le client
+- [x] Anti-triche : vérifier que rien de monétaire ne passe par le client — **audité : 0 mutation d'Essence côté client** (affichage uniquement, toute la monnaie est serveur)
 
 ### P6 — Lancement & live ops · permanent
 - [ ] **Update hebdomadaire non négociable.** Sans ça, le jeu meurt en trois semaines.
@@ -164,7 +164,7 @@ Plus lent que le trafic Roblox natif, mais bien plus fidèle.
 
 - Budget temps réel disponible par semaine → conditionne la durée réelle des phases
 - Direction artistique P1 : placeholder parts simples — génération de meshes/visuels à planifier
-- Sons (éclosion, drop rare, faille) : aucun asset audio en place
+- [x] Sons (éclosion, drop rare, faille, upgrade, évolution, rebirth, clic) : 8 assets Creator Store insérés dans le place + module `Audio.luau` (IDs en dur dans le repo)
 - Sauvegarde DataStore : à revalider sur place **publié** (Studio : « Roblox API services unavailable » attendu)
 - Place Studio : sauvegarder le fichier (`Ctrl+S`) après toute synchro MCP — les remotes sont désormais déclarées dans `default.project.json`
 

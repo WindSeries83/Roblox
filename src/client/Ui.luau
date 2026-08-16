@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local UiKit = require(script.Parent.UiKit)
+local Audio = require(script.Parent.Audio)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
 
@@ -339,6 +340,7 @@ end
 local function ShowRiftEnded(result)
 	riftHud.Visible = false
 	if result.Win then
+		Audio.Play("CoinReward")
 		local relicText = result.RelicTier and `\nRelique T{result.RelicTier} obtenue !` or ""
 		ShowAnnouncement(
 			`Faille terminée : +{result.Essence} Essence et {TIER_NAMES[result.EggTier] or result.EggTier}{relicText}`
@@ -350,6 +352,7 @@ local function ShowRiftEnded(result)
 end
 
 attackButton.Activated:Connect(function()
+	Audio.Play("RiftWhoosh", 0.3)
 	Net.RiftAttack:FireServer()
 end)
 
@@ -376,6 +379,10 @@ end
 Net.Sync.OnClientEvent:Connect(RefreshAll)
 
 Net.HatchResult.OnClientEvent:Connect(function(result)
+	Audio.Play("HatchCrack")
+	if result.Announced then
+		Audio.Play("RareFanfare")
+	end
 	local mutationText = result.MutationName and ` {result.MutationName}` or ""
 	revealLabel.Text = `Tu as obtenu {result.SpeciesName} !\n{result.RarityName}{mutationText}`
 	revealLabel.TextColor3 = result.RarityColor
@@ -404,6 +411,7 @@ Net.RiftEnded.OnClientEvent:Connect(ShowRiftEnded)
 
 Net.RiftWorld.OnClientEvent:Connect(function(world)
 	if world.Active then
+		Audio.Play("RiftWhoosh")
 		riftStatusLabel.Text = "Une faille s'est ouverte ! Entre dans le portail."
 		riftStatusLabel.Visible = true
 	else

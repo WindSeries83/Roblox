@@ -1,5 +1,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
 
 local Net = require(ReplicatedStorage.Shared.Net)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
@@ -8,6 +9,8 @@ local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
 local CreatureDisplay = {}
 
 local spawned: { [string]: Model } = {}
+local bases: { [string]: CFrame } = {}
+local order: { [string]: number } = {}
 local sanctuary: Folder? = nil
 
 local function DisplayColor(creature): Color3
@@ -58,12 +61,15 @@ function CreatureDisplay.Refresh(state)
 		if not alive[id] then
 			model:Destroy()
 			spawned[id] = nil
+			bases[id] = nil
+			order[id] = nil
 		end
 	end
 
 	local index = 0
 	for _, creature in state.Creatures do
 		index += 1
+		order[creature.Id] = index
 		local model = spawned[creature.Id]
 		if not model or not model.Parent then
 			local template = templates:FindFirstChild(creature.SpeciesId)
@@ -79,7 +85,8 @@ function CreatureDisplay.Refresh(state)
 
 		local scale = 1 + (creature.Stage - 1) * 0.25
 		if model.PrimaryPart then
-			model:PivotTo(GridPosition(index))
+			bases[creature.Id] = GridPosition(index)
+			model:PivotTo(bases[creature.Id])
 			pcall(function()
 				model:ScaleTo(scale)
 			end)
@@ -91,6 +98,18 @@ function CreatureDisplay.Refresh(state)
 		end
 	end
 end
+
+RunService.Heartbeat:Connect(function(t)
+	for id, model in spawned do
+		local base = bases[id]
+		local idx = order[id] or 0
+		if base and model.PrimaryPart then
+			local bob = math.sin(t * 2 + idx * 0.8) * 0.15
+			local tilt = math.sin(t * 1.3 + idx * 0.8) * 0.02
+			model:PivotTo(base * CFrame.new(0, bob, 0) * CFrame.Angles(0, 0, tilt))
+		end
+	end
+end)
 
 Net.Sync.OnClientEvent:Connect(function(state)
 	CreatureDisplay.Refresh(state)

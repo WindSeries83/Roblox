@@ -16,6 +16,8 @@ return {
 		RareEgg = { Rare = 100 },
 	},
 
+	FIRST_HATCH_WEIGHTS = { Common = 40, Uncommon = 40, Rare = 20 },
+
 	MUTATION_WEIGHTS = {
 		None = 88,
 		Shadow = 10,

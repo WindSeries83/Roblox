@@ -1,3 +1,5 @@
+local Audio = require(script.Parent.Audio)
+
 local UiKit = {}
 
 UiKit.TINTS = {
@@ -13,6 +15,11 @@ function UiKit.Create(className: string, props: { [string]: any }): Instance
 	local inst = Instance.new(className)
 	for key, value in props do
 		inst[key] = value
+	end
+	if className == "TextButton" then
+		inst.Activated:Connect(function()
+			Audio.Play("UiClick")
+		end)
 	end
 	return inst
 end

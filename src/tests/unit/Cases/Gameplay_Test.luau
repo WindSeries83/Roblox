@@ -62,6 +62,24 @@ return function(t)
 		end)
 	end)
 
+	-- A forced single-key weight table yields that rarity every time.
+	t.test("override weights force a single rarity", function()
+		for _ = 1, 50 do
+			local roll = Gameplay.RollEgg("CommonEgg", nil, { Common = 100 })
+			expect.equal(roll.Rarity, "Common")
+		end
+	end)
+
+	-- The first-hatch pity weights only produce keys of that table.
+	t.test("first hatch weights only roll their own rarities", function()
+		local weights = Config.FIRST_HATCH_WEIGHTS
+		expect.truthy(weights ~= nil)
+		for _ = 1, 100 do
+			local roll = Gameplay.RollEgg("CommonEgg", nil, weights)
+			expect.truthy(weights[roll.Rarity] ~= nil)
+		end
+	end)
+
 	-- Power scales with rarity and mutation multipliers (Moonhowl 24 x Rare 2.5 x Frost 5).
 	t.test("power scales with rarity and mutation multipliers", function()
 		local creature = Gameplay.CreateCreature("Rare", "Moonhowl", "Frost")

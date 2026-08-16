@@ -42,8 +42,8 @@ function Gameplay.MutationWeights(bonus: number?): { [string]: number }
 	return weights
 end
 
-function Gameplay.RollEgg(tier: string, mutationBonus: number?)
-	local weights = Config.EGG_RARITY_WEIGHTS[tier]
+function Gameplay.RollEgg(tier: string, mutationBonus: number?, rarityWeights: { [string]: number }?)
+	local weights = rarityWeights or Config.EGG_RARITY_WEIGHTS[tier]
 	assert(weights, `Unknown egg tier: {tostring(tier)}`)
 
 	local rarity = Gameplay.WeightedRoll(weights)
