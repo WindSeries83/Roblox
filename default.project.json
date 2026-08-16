@@ -1025,6 +1025,72 @@
                                                                                         "$className":  "MeshPart"
                                                                                     }
                                                                   },
+                                                     "EmberWisp":  {
+                                                                       "ember core_geom":  {
+                                                                                               "$properties":  {
+                                                                                                                   "Size":  [
+                                                                                                                                1.742,
+                                                                                                                                1.901,
+                                                                                                                                1.45
+                                                                                                                            ],
+                                                                                                                   "TextureID":  "rbxassetid://94404601312961",
+                                                                                                                   "CanQuery":  false,
+                                                                                                                   "CanTouch":  false,
+                                                                                                                   "CanCollide":  false,
+                                                                                                                   "Anchored":  true,
+                                                                                                                   "MeshId":  "rbxassetid://131214943405427",
+                                                                                                                   "Position":  [
+                                                                                                                                    19.997,
+                                                                                                                                    1.214,
+                                                                                                                                    -29.568
+                                                                                                                                ]
+                                                                                                               },
+                                                                                               "$className":  "MeshPart"
+                                                                                           },
+                                                                       "$className":  "Model",
+                                                                       "smoke trail_geom":  {
+                                                                                                "$properties":  {
+                                                                                                                    "Size":  [
+                                                                                                                                 0.266,
+                                                                                                                                 0.351,
+                                                                                                                                 0.248
+                                                                                                                             ],
+                                                                                                                    "TextureID":  "rbxassetid://82403856547289",
+                                                                                                                    "CanQuery":  false,
+                                                                                                                    "CanTouch":  false,
+                                                                                                                    "CanCollide":  false,
+                                                                                                                    "Anchored":  true,
+                                                                                                                    "MeshId":  "rbxassetid://75077497256692",
+                                                                                                                    "Position":  [
+                                                                                                                                     20.547,
+                                                                                                                                     1.218,
+                                                                                                                                     -28.852
+                                                                                                                                 ]
+                                                                                                                },
+                                                                                                "$className":  "MeshPart"
+                                                                                            },
+                                                                       "body_geom":  {
+                                                                                         "$properties":  {
+                                                                                                             "Size":  [
+                                                                                                                          3.227,
+                                                                                                                          4,
+                                                                                                                          2.452
+                                                                                                                      ],
+                                                                                                             "TextureID":  "rbxassetid://76007522884229",
+                                                                                                             "CanQuery":  false,
+                                                                                                             "CanTouch":  false,
+                                                                                                             "CanCollide":  false,
+                                                                                                             "Anchored":  true,
+                                                                                                             "MeshId":  "rbxassetid://115005919295309",
+                                                                                                             "Position":  [
+                                                                                                                              19.993,
+                                                                                                                              1.995,
+                                                                                                                              -30.061
+                                                                                                                          ]
+                                                                                                         },
+                                                                                         "$className":  "MeshPart"
+                                                                                     }
+                                                                   },
                                                      "PondSentinel":  {
                                                                           "rear right leg_geom":  {
                                                                                                       "$properties":  {
