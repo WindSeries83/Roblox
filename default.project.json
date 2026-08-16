@@ -32,6 +32,11 @@
                                                                     "$path":  "src/client"
                                                                 }
                                    },
+                 "StarterGui":  {
+                                    "UiLoader":  {
+                                                     "$path":  "src/client/UiLoader.client.luau"
+                                                 }
+                                },
                  "Workspace":  {
                                    "$properties":  {
                                                        "FilteringEnabled":  true
