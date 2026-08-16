@@ -5,6 +5,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
+local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Net = require(ReplicatedStorage.Shared.Net)
 
@@ -13,6 +14,7 @@ local HatchService = {}
 local log
 local essenceService
 local saveService
+local indexService
 
 function HatchService:GrantEgg(player: Player, tier: string, source: string)
 	local profile = saveService:GetProfile(player)
@@ -48,10 +50,26 @@ local function Announce(player: Player, roll)
 	log:Economy("Hatch", "Announce", payload)
 end
 
+local function CollarBonus(profile): number
+	local bonus = 0
+	for _, creature in profile.Data.Creatures do
+		for _, item in creature.Equipment do
+			if item.Type == "Collar" then
+				local def = Equipment.Collar.Tiers[item.Tier]
+				if def then
+					bonus += def.MutationChanceBonus
+				end
+			end
+		end
+	end
+	return math.min(bonus, Config.COLLAR_MUTATION_CAP)
+end
+
 function HatchService:Init(container)
 	log = container:Get("Log")
 	essenceService = container:Get("EssenceService")
 	saveService = container:Get("SaveService")
+	indexService = container:Get("IndexService")
 end
 
 function HatchService:Start()
@@ -84,12 +102,13 @@ function HatchService:Start()
 		end
 
 		local egg = table.remove(profile.Data.Eggs, eggIndex)
-		local roll = Gameplay.RollEgg(egg.Tier)
+		local roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile))
 		local creature = Gameplay.CreateCreature(roll.Rarity, roll.SpeciesId, roll.Mutation)
 
 		table.insert(profile.Data.Creatures, creature)
 		profile.Data.Stats.TotalHatched += 1
 		profile.Data.LastPlayed = os.time()
+		indexService:Register(player, roll.SpeciesId, roll.Rarity, roll.Mutation)
 
 		local species = Species[roll.SpeciesId]
 		local mutationName = roll.Mutation ~= false and Mutations[roll.Mutation].Name or nil

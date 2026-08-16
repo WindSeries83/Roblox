@@ -2,21 +2,20 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
+local UiKit = require(script.Parent.UiKit)
 local Net = require(ReplicatedStorage.Shared.Net)
-local Config = require(ReplicatedStorage.Shared.Config)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
+
+local SanctuaryPanel = require(script.Parent.Panels.SanctuaryPanel)
+local EggPanel = require(script.Parent.Panels.EggPanel)
+local IndexPanel = require(script.Parent.Panels.IndexPanel)
+local BreedingPanel = require(script.Parent.Panels.BreedingPanel)
+local RebirthPanel = require(script.Parent.Panels.RebirthPanel)
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local TINTS = {
-	DARK = Color3.fromRGB(20, 20, 26),
-	PANEL = Color3.fromRGB(30, 30, 40),
-	ACCENT = Color3.fromRGB(140, 60, 255),
-	WHITE = Color3.fromRGB(235, 235, 245),
-	RED = Color3.fromRGB(220, 60, 60),
-	GREEN = Color3.fromRGB(70, 190, 100),
-}
+local TINTS = UiKit.TINTS
 
 local TIER_NAMES = {
 	CommonEgg = "Œuf commun",
@@ -24,72 +23,23 @@ local TIER_NAMES = {
 	RareEgg = "Œuf rare",
 }
 
-local function Create(className: string, props: { [string]: any }): Instance
-	local inst = Instance.new(className)
-	for key, value in props do
-		inst[key] = value
-	end
-	return inst
-end
-
-local function Corner(inst: GuiObject)
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
-	corner.Parent = inst
-end
-
-local function Padding(inst: Instance, amount: number)
-	local pad = Instance.new("UIPadding")
-	pad.PaddingLeft = UDim.new(0, amount)
-	pad.PaddingRight = UDim.new(0, amount)
-	pad.PaddingTop = UDim.new(0, amount)
-	pad.PaddingBottom = UDim.new(0, amount)
-	pad.Parent = inst
-end
-
-local function Bar(parent: Instance, color: Color3): TextLabel
-	local bg = Create("Frame", {
-		BackgroundColor3 = Color3.fromRGB(0, 0, 0),
-		BackgroundTransparency = 0.5,
-		Size = UDim2.fromScale(1, 0.3),
-		Parent = parent,
-	})
-	Corner(bg)
-	local fill = Create("Frame", {
-		BackgroundColor3 = color,
-		Size = UDim2.fromScale(1, 1),
-		Parent = bg,
-	})
-	Corner(fill)
-	local label = Create("TextLabel", {
-		BackgroundTransparency = 1,
-		TextColor3 = TINTS.WHITE,
-		Font = Enum.Font.GothamBold,
-		TextScaled = true,
-		Size = UDim2.fromScale(1, 1),
-		Text = "",
-		Parent = bg,
-	})
-	return label, fill
-end
-
-local ui = Create("ScreenGui", {
+local ui = UiKit.Create("ScreenGui", {
 	Name = "RiftBeastsUi",
 	ResetOnSpawn = false,
 	IgnoreGuiInset = true,
 	Parent = playerGui,
 })
 
-local topBar = Create("Frame", {
+local topBar = UiKit.Create("Frame", {
 	BackgroundColor3 = TINTS.PANEL,
-	Size = UDim2.fromOffset(260, 64),
+	Size = UDim2.fromOffset(300, 64),
 	Position = UDim2.fromOffset(12, 12),
 	Parent = ui,
 })
-Corner(topBar)
-Padding(topBar, 12)
+UiKit.Corner(topBar)
+UiKit.Padding(topBar, 12)
 
-local essenceLabel = Create("TextLabel", {
+local essenceLabel = UiKit.Create("TextLabel", {
 	BackgroundTransparency = 1,
 	TextColor3 = TINTS.ACCENT,
 	Font = Enum.Font.GothamBold,
@@ -100,7 +50,7 @@ local essenceLabel = Create("TextLabel", {
 	Parent = topBar,
 })
 
-local rateLabel = Create("TextLabel", {
+local rateLabel = UiKit.Create("TextLabel", {
 	BackgroundTransparency = 1,
 	TextColor3 = TINTS.WHITE,
 	TextSize = 14,
@@ -111,93 +61,73 @@ local rateLabel = Create("TextLabel", {
 	Parent = topBar,
 })
 
-local creaturePanel = Create("Frame", {
+local content = UiKit.Create("Frame", {
 	BackgroundColor3 = TINTS.PANEL,
-	Size = UDim2.fromOffset(320, 300),
-	Position = UDim2.fromScale(1, 0.5),
-	AnchorPoint = Vector2.new(1, 0.5),
+	Position = UDim2.fromScale(0.5, 0.5),
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Size = UDim2.fromScale(0.72, 0.72),
 	Parent = ui,
 })
-Corner(creaturePanel)
-Padding(creaturePanel, 10)
+UiKit.Corner(content)
+UiKit.Padding(content, 12)
 
-Create("TextLabel", {
-	BackgroundTransparency = 1,
-	TextColor3 = TINTS.WHITE,
-	Font = Enum.Font.GothamBold,
-	TextSize = 18,
-	TextXAlignment = Enum.TextXAlignment.Left,
-	Size = UDim2.fromScale(1, 0.1),
-	Text = "Créatures",
-	Parent = creaturePanel,
+local tabBar = UiKit.Create("Frame", {
+	BackgroundColor3 = TINTS.DARK,
+	Size = UDim2.fromScale(0.1, 1),
+	Parent = content,
 })
-
-local creatureList = Create("ScrollingFrame", {
-	BackgroundTransparency = 1,
-	ScrollBarThickness = 4,
-	CanvasSize = UDim2.fromScale(0, 0),
-	AutomaticCanvasSize = Enum.AutomaticSize.Y,
-	Position = UDim2.fromScale(0, 0.12),
-	Size = UDim2.fromScale(1, 0.88),
-	Parent = creaturePanel,
-})
-
-Create("UIListLayout", {
+UiKit.Corner(tabBar)
+UiKit.Padding(tabBar, 6)
+UiKit.Create("UIListLayout", {
 	Padding = UDim.new(0, 6),
 	SortOrder = Enum.SortOrder.LayoutOrder,
-	Parent = creatureList,
+	Parent = tabBar,
 })
 
-local eggPanel = Create("Frame", {
-	BackgroundColor3 = TINTS.PANEL,
-	Size = UDim2.fromOffset(380, 240),
-	Position = UDim2.fromOffset(12, 84),
-	Parent = ui,
-})
-Corner(eggPanel)
-Padding(eggPanel, 10)
-
-Create("TextLabel", {
+local panelsFrame = UiKit.Create("Frame", {
 	BackgroundTransparency = 1,
-	TextColor3 = TINTS.WHITE,
-	Font = Enum.Font.GothamBold,
-	TextSize = 18,
-	TextXAlignment = Enum.TextXAlignment.Left,
-	Size = UDim2.fromScale(1, 0.14),
-	Text = "Œufs",
-	Parent = eggPanel,
+	Position = UDim2.fromScale(0.11, 0),
+	Size = UDim2.fromScale(0.89, 1),
+	Parent = content,
 })
 
-local shopRow = Create("Frame", {
-	BackgroundTransparency = 1,
-	Position = UDim2.fromScale(0, 0.16),
-	Size = UDim2.fromScale(1, 0.2),
-	Parent = eggPanel,
-})
+local panels = {}
+local function AddTab(name: string, panelModule: any)
+	local button = UiKit.Create("TextButton", {
+		BackgroundColor3 = TINTS.PANEL,
+		TextColor3 = TINTS.WHITE,
+		Font = Enum.Font.GothamBold,
+		TextSize = 13,
+		Size = UDim2.fromScale(1, 0.09),
+		Text = name,
+		Parent = tabBar,
+	})
+	UiKit.Corner(button)
 
-Create("UIListLayout", {
-	FillDirection = Enum.FillDirection.Horizontal,
-	Padding = UDim.new(0, 6),
-	Parent = shopRow,
-})
+	local frame = panelModule.Create(panelsFrame)
+	frame.Visible = false
 
-local eggList = Create("ScrollingFrame", {
-	BackgroundTransparency = 1,
-	ScrollBarThickness = 4,
-	CanvasSize = UDim2.fromScale(0, 0),
-	AutomaticCanvasSize = Enum.AutomaticSize.Y,
-	Position = UDim2.fromScale(0, 0.4),
-	Size = UDim2.fromScale(1, 0.6),
-	Parent = eggPanel,
-})
+	button.Activated:Connect(function()
+		for _, panel in panels do
+			panel.frame.Visible = false
+		end
+		frame.Visible = true
+	end)
 
-Create("UIListLayout", {
-	Padding = UDim.new(0, 4),
-	SortOrder = Enum.SortOrder.LayoutOrder,
-	Parent = eggList,
-})
+	table.insert(panels, { module = panelModule, frame = frame })
+end
 
-local riftHud = Create("Frame", {
+AddTab("Sanctuaire", SanctuaryPanel)
+AddTab("Œufs", EggPanel)
+AddTab("Index", IndexPanel)
+AddTab("Élevage", BreedingPanel)
+AddTab("Renaissance", RebirthPanel)
+
+if panels[1] then
+	panels[1].frame.Visible = true
+end
+
+local riftHud = UiKit.Create("Frame", {
 	BackgroundColor3 = TINTS.PANEL,
 	Size = UDim2.fromOffset(420, 190),
 	Position = UDim2.fromScale(0.5, 1),
@@ -205,10 +135,10 @@ local riftHud = Create("Frame", {
 	Visible = false,
 	Parent = ui,
 })
-Corner(riftHud)
-Padding(riftHud, 12)
+UiKit.Corner(riftHud)
+UiKit.Padding(riftHud, 12)
 
-Create("TextLabel", {
+UiKit.Create("TextLabel", {
 	BackgroundTransparency = 1,
 	TextColor3 = TINTS.ACCENT,
 	Font = Enum.Font.GothamBold,
@@ -218,17 +148,15 @@ Create("TextLabel", {
 	Parent = riftHud,
 })
 
-local guardianLabel, guardianFill = Bar(riftHud, TINTS.RED)
+local guardianLabel, guardianFill = UiKit.Bar(riftHud, TINTS.RED)
 guardianLabel.Position = UDim2.fromScale(0, 0.2)
 guardianLabel.Size = UDim2.fromScale(1, 0.12)
-guardianLabel.Parent = riftHud
 
-local playerHpLabel, playerHpFill = Bar(riftHud, TINTS.GREEN)
+local playerHpLabel, playerHpFill = UiKit.Bar(riftHud, TINTS.GREEN)
 playerHpLabel.Position = UDim2.fromScale(0, 0.36)
 playerHpLabel.Size = UDim2.fromScale(1, 0.12)
-playerHpLabel.Parent = riftHud
 
-local attackButton = Create("TextButton", {
+local attackButton = UiKit.Create("TextButton", {
 	BackgroundColor3 = TINTS.ACCENT,
 	TextColor3 = TINTS.WHITE,
 	Font = Enum.Font.GothamBold,
@@ -238,9 +166,9 @@ local attackButton = Create("TextButton", {
 	Text = "Attaquer",
 	Parent = riftHud,
 })
-Corner(attackButton)
+UiKit.Corner(attackButton)
 
-local riftHint = Create("TextLabel", {
+local riftHint = UiKit.Create("TextLabel", {
 	BackgroundTransparency = 1,
 	TextColor3 = TINTS.WHITE,
 	TextSize = 14,
@@ -250,7 +178,7 @@ local riftHint = Create("TextLabel", {
 	Parent = riftHud,
 })
 
-local announcement = Create("Frame", {
+local announcement = UiKit.Create("Frame", {
 	BackgroundColor3 = TINTS.PANEL,
 	Size = UDim2.fromOffset(520, 56),
 	Position = UDim2.fromScale(0.5, 0.06),
@@ -259,9 +187,9 @@ local announcement = Create("Frame", {
 	ZIndex = 10,
 	Parent = ui,
 })
-Corner(announcement)
+UiKit.Corner(announcement)
 
-local announcementLabel = Create("TextLabel", {
+local announcementLabel = UiKit.Create("TextLabel", {
 	BackgroundTransparency = 1,
 	TextColor3 = TINTS.WHITE,
 	Font = Enum.Font.GothamBold,
@@ -272,7 +200,7 @@ local announcementLabel = Create("TextLabel", {
 	Parent = announcement,
 })
 
-local flashOverlay = Create("Frame", {
+local flashOverlay = UiKit.Create("Frame", {
 	BackgroundColor3 = TINTS.WHITE,
 	BackgroundTransparency = 1,
 	Size = UDim2.fromScale(1, 1),
@@ -280,7 +208,7 @@ local flashOverlay = Create("Frame", {
 	Parent = ui,
 })
 
-local reveal = Create("Frame", {
+local reveal = UiKit.Create("Frame", {
 	BackgroundColor3 = TINTS.PANEL,
 	Size = UDim2.fromOffset(420, 150),
 	Position = UDim2.fromScale(0.5, 0.4),
@@ -289,9 +217,9 @@ local reveal = Create("Frame", {
 	ZIndex = 20,
 	Parent = ui,
 })
-Corner(reveal)
+UiKit.Corner(reveal)
 
-local revealLabel = Create("TextLabel", {
+local revealLabel = UiKit.Create("TextLabel", {
 	BackgroundTransparency = 1,
 	TextColor3 = TINTS.WHITE,
 	Font = Enum.Font.GothamBold,
@@ -303,7 +231,7 @@ local revealLabel = Create("TextLabel", {
 	Parent = reveal,
 })
 
-local revealButton = Create("TextButton", {
+local revealButton = UiKit.Create("TextButton", {
 	BackgroundColor3 = TINTS.ACCENT,
 	TextColor3 = TINTS.WHITE,
 	Font = Enum.Font.GothamBold,
@@ -315,9 +243,9 @@ local revealButton = Create("TextButton", {
 	ZIndex = 20,
 	Parent = reveal,
 })
-Corner(revealButton)
+UiKit.Corner(revealButton)
 
-local riftStatusLabel = Create("TextLabel", {
+local riftStatusLabel = UiKit.Create("TextLabel", {
 	BackgroundColor3 = TINTS.PANEL,
 	BackgroundTransparency = 0.2,
 	TextColor3 = TINTS.ACCENT,
@@ -331,7 +259,7 @@ local riftStatusLabel = Create("TextLabel", {
 	Text = "",
 	Parent = ui,
 })
-Corner(riftStatusLabel)
+UiKit.Corner(riftStatusLabel)
 
 local announceTween
 local function ShowAnnouncement(text: string)
@@ -367,123 +295,14 @@ local function Flash(intensity: number)
 	end)
 end
 
-local function SetBar(fill: Frame, label: TextLabel, value: number, max: number)
-	local ratio = math.clamp(value / max, 0, 1)
-	fill.Size = UDim2.fromScale(ratio, 1)
-	label.Text = `{math.max(0, math.floor(value))} / {math.floor(max)}`
-end
-
-local function RenderCreatures(creatures)
-	for _, child in creatureList:GetChildren() do
-		if child:IsA("GuiObject") then
-			child:Destroy()
-		end
-	end
-	for _, creature in creatures do
-		local row = Create("Frame", {
-			BackgroundColor3 = TINTS.DARK,
-			Size = UDim2.fromScale(1, 0),
-			AutomaticSize = Enum.AutomaticSize.Y,
-			Parent = creatureList,
-		})
-		Corner(row)
-		Padding(row, 8)
-		local speciesName = Species[creature.SpeciesId] and Species[creature.SpeciesId].Name or creature.SpeciesId
-		local label = Create("TextLabel", {
-			BackgroundTransparency = 1,
-			TextColor3 = TINTS.WHITE,
-			TextSize = 14,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.fromScale(1, 0),
-			AutomaticSize = Enum.AutomaticSize.Y,
-			TextWrapped = true,
-			Text = `{speciesName} — Niv. {creature.Level} — Puissance {creature.Power}`,
-			Parent = row,
-		})
-		local rarity = string.upper(creature.Rarity)
-		label.Text = `[{rarity}] {label.Text}`
-	end
-end
-
-local function RenderEggs(eggs)
-	for _, child in eggList:GetChildren() do
-		if child:IsA("GuiObject") then
-			child:Destroy()
-		end
-	end
-	for _, egg in eggs do
-		local row = Create("Frame", {
-			BackgroundColor3 = TINTS.DARK,
-			Size = UDim2.fromScale(1, 0),
-			AutomaticSize = Enum.AutomaticSize.Y,
-			Parent = eggList,
-		})
-		Corner(row)
-		Padding(row, 8)
-		Create("TextLabel", {
-			BackgroundTransparency = 1,
-			TextColor3 = TINTS.WHITE,
-			TextSize = 14,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.fromScale(1, 0.4),
-			Text = TIER_NAMES[egg.Tier] or egg.Tier,
-			Parent = row,
-		})
-		local button = Create("TextButton", {
-			BackgroundColor3 = TINTS.ACCENT,
-			TextColor3 = TINTS.WHITE,
-			Font = Enum.Font.GothamBold,
-			TextSize = 13,
-			Position = UDim2.fromScale(0.55, 0),
-			Size = UDim2.fromScale(0.45, 0.4),
-			Text = "Éclore",
-			Parent = row,
-		})
-		Corner(button)
-		button.Activated:Connect(function()
-			Net.HatchEgg:FireServer(egg.Id)
-		end)
-	end
-end
-
-local function RenderShop(prices)
-	for _, child in shopRow:GetChildren() do
-		if child:IsA("GuiObject") then
-			child:Destroy()
-		end
-	end
-	local tierOrder = { "CommonEgg", "UncommonEgg", "RareEgg" }
-	for _, tier in tierOrder do
-		local price = prices[tier]
-		if not price then
-			continue
-		end
-		local button = Create("TextButton", {
-			BackgroundColor3 = TINTS.DARK,
-			TextColor3 = TINTS.WHITE,
-			Font = Enum.Font.GothamBold,
-			TextSize = 13,
-			Size = UDim2.fromScale(1 / 3, 1),
-			LayoutOrder = 1,
-			Text = `{TIER_NAMES[tier]}\n{price} Essence`,
-			TextWrapped = true,
-			Parent = shopRow,
-		})
-		Corner(button)
-		button.Activated:Connect(function()
-			Net.BuyEgg:FireServer(tier)
-		end)
-	end
-end
-
 local function ShowRiftSync(state)
 	if not state.InRift then
 		riftHud.Visible = false
 		return
 	end
 	riftHud.Visible = true
-	SetBar(guardianFill, guardianLabel, state.GuardianHP, state.GuardianMaxHP)
-	SetBar(playerHpFill, playerHpLabel, state.PlayerHP, state.PlayerMaxHP)
+	UiKit.SetBar(guardianFill, guardianLabel, state.GuardianHP, state.GuardianMaxHP)
+	UiKit.SetBar(playerHpFill, playerHpLabel, state.PlayerHP, state.PlayerMaxHP)
 	if state.Phase == "Crystal" then
 		attackButton.Visible = false
 		riftHint.Text = "Touche le cristal pour récupérer les récompenses !"
@@ -496,8 +315,9 @@ end
 local function ShowRiftEnded(result)
 	riftHud.Visible = false
 	if result.Win then
+		local relicText = result.RelicTier and `\nRelique T{result.RelicTier} obtenue !` or ""
 		ShowAnnouncement(
-			`Faille terminée : +{result.Essence} Essence et {TIER_NAMES[result.EggTier] or result.EggTier}`
+			`Faille terminée : +{result.Essence} Essence et {TIER_NAMES[result.EggTier] or result.EggTier}{relicText}`
 		)
 		Flash(0.35)
 	else
@@ -513,12 +333,23 @@ revealButton.Activated:Connect(function()
 	reveal.Visible = false
 end)
 
-Net.Sync.OnClientEvent:Connect(function(state)
+local state = nil
+
+local function RefreshAll(newState)
+	state = newState
 	essenceLabel.Text = `Essence : {state.Essence}`
 	rateLabel.Text = `Rendement : {string.format("%.1f", state.Rate)} / s`
-	RenderCreatures(state.Creatures)
-	RenderEggs(state.Eggs)
-end)
+	if state.Stars > 0 then
+		rateLabel.Text ..= ` — ★{state.Stars}`
+	end
+	for _, panel in panels do
+		if panel.module.Refresh then
+			panel.module.Refresh(state)
+		end
+	end
+end
+
+Net.Sync.OnClientEvent:Connect(RefreshAll)
 
 Net.HatchResult.OnClientEvent:Connect(function(result)
 	local mutationText = result.MutationName and ` {result.MutationName}` or ""
@@ -530,6 +361,14 @@ Net.HatchResult.OnClientEvent:Connect(function(result)
 	end
 end)
 
+Net.BreedResult.OnClientEvent:Connect(function(result)
+	local species = Species[result.Creature.SpeciesId]
+	local name = species and species.Name or result.Creature.SpeciesId
+	revealLabel.Text = `Élevage réussi !\n{name} — Génération {result.Creature.Generation}`
+	revealLabel.TextColor3 = TINTS.ACCENT
+	reveal.Visible = true
+end)
+
 Net.RareDrop.OnClientEvent:Connect(function(payload)
 	local mutationText = payload.MutationName and ` {payload.MutationName}` or ""
 	ShowAnnouncement(`{payload.PlayerName} a obtenu {payload.SpeciesName} ({payload.RarityName}{mutationText}) !`)
@@ -539,8 +378,8 @@ Net.RiftSync.OnClientEvent:Connect(ShowRiftSync)
 
 Net.RiftEnded.OnClientEvent:Connect(ShowRiftEnded)
 
-Net.RiftWorld.OnClientEvent:Connect(function(state)
-	if state.Active then
+Net.RiftWorld.OnClientEvent:Connect(function(world)
+	if world.Active then
 		riftStatusLabel.Text = "Une faille s'est ouverte ! Entre dans le portail."
 		riftStatusLabel.Visible = true
 	else
@@ -548,6 +387,6 @@ Net.RiftWorld.OnClientEvent:Connect(function(state)
 	end
 end)
 
-RenderShop(Config.EGG_PRICES)
+require(script.Parent.CreatureDisplay)
 
 return nil

@@ -3,11 +3,14 @@ local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local Index = require(ReplicatedStorage.Shared.Index)
+local Rebirth = require(ReplicatedStorage.Shared.Rebirth)
 
 local EssenceService = {}
 
 local log
 local saveService
+local dataSync
 
 function EssenceService.ComputeRate(creatures: { any }): number
 	return Gameplay.ComputeRate(creatures)
@@ -19,7 +22,9 @@ function EssenceService.GetRate(player: Player): number
 		return 0
 	end
 	local sanctuaryMult = 1 + Config.SANCTUARY_LEVEL_BONUS * (profile.Data.SanctuaryLevel - 1)
-	return EssenceService.ComputeRate(profile.Data.Creatures) * sanctuaryMult
+	local indexMult = Index.ComputeMult(profile.Data.Index)
+	local starMult = Rebirth.StarEssenceMult(profile.Data.Stars)
+	return EssenceService.ComputeRate(profile.Data.Creatures) * sanctuaryMult * indexMult * starMult
 end
 
 function EssenceService:Add(player: Player, amount: number, source: string)
@@ -70,10 +75,10 @@ end
 function EssenceService:Init(container)
 	log = container:Get("Log")
 	saveService = container:Get("SaveService")
+	dataSync = container:Get("DataSync")
 end
 
 function EssenceService:Start()
-	local net = require(ReplicatedStorage.Shared.Net)
 	local accumulator = 0
 	local lastLog = 0
 
@@ -91,13 +96,7 @@ function EssenceService:Start()
 				profile.Data.Stats.TotalEssenceEarned += rate
 				profile.Data.LastPlayed = os.time()
 			end
-			net.Sync:FireClient(player, {
-				Essence = math.floor(profile.Data.Essence),
-				Creatures = profile.Data.Creatures,
-				Eggs = profile.Data.Eggs,
-				Rate = rate,
-				SanctuaryLevel = profile.Data.SanctuaryLevel,
-			})
+			dataSync:Send(player)
 		end
 
 		if os.clock() - lastLog > 60 then

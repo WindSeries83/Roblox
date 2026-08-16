@@ -3,7 +3,15 @@
     "tree":  {
                  "$className":  "DataModel",
                  "ServerScriptService":  {
-                                             "$path":  "src/server",
+                                             "ServerScriptService":  {
+                                                                         "$path":  "src/server/Main.server.luau"
+                                                                     },
+                                             "Bootstrap":  {
+                                                               "$path":  "src/server/Bootstrap.luau"
+                                                           },
+                                             "Services":  {
+                                                              "$path":  "src/server/Services"
+                                                          },
                                              "ServerPackages":  {
                                                                     "$path":  "ServerPackages"
                                                                 },

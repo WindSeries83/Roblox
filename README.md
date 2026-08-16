@@ -43,14 +43,14 @@ Les tests vivent dans `src/tests/unit/` (mappés sur `ServerStorage.UnitTest`).
 require(game.ServerStorage.UnitTest.RunUnitTest)()
 ```
 
-Attendu : `[SUMMARY] 26 run, 26 passed, 0 failed`.
+Attendu : `[SUMMARY] 59 run, 59 passed, 0 failed`.
 
 ## Architecture
 
 ```
 src/
   server/
-    init.server.luau      -> Bootstraps les services
+    Main.server.luau       -> Bootstraps les services (enfant du service)
     Bootstrap.luau        -> Registry vanilla (Init -> Start)
     Services/             -> Log, SaveService (ProfileStore), EssenceService,
                              HatchService, RiftService, PlayerDataService

@@ -12,6 +12,7 @@ local log
 local essenceService
 local hatchService
 local saveService
+local itemService
 
 local portal: Model? = nil
 local worldActive = false
@@ -164,13 +165,23 @@ local function WinRift(player: Player)
 	local eggTier = Gameplay.WeightedRoll(Config.RIFT_EGG_WEIGHTS)
 	hatchService:GrantEgg(player, eggTier, "Rift")
 
+	local relicRoll = Gameplay.WeightedRoll(Config.RIFT_RELIC_WEIGHTS)
+	local relicTier = nil
+	if relicRoll and relicRoll ~= "None" then
+		relicTier = tonumber(relicRoll:sub(2))
+		if relicTier then
+			itemService:GrantItem(player, "Relic", relicTier, "Rift")
+		end
+	end
+
 	profile.Data.Stats.RiftsCompleted += 1
 
-	Net.RiftEnded:FireClient(player, { Win = true, Essence = essence, EggTier = eggTier })
+	Net.RiftEnded:FireClient(player, { Win = true, Essence = essence, EggTier = eggTier, RelicTier = relicTier })
 	log:Economy("Rift", "Complete", {
 		Player = player.Name,
 		Essence = essence,
 		EggTier = eggTier,
+		RelicTier = relicTier,
 		Total = profile.Data.Stats.RiftsCompleted,
 	})
 
@@ -245,6 +256,7 @@ function RiftService:Init(container)
 	essenceService = container:Get("EssenceService")
 	hatchService = container:Get("HatchService")
 	saveService = container:Get("SaveService")
+	itemService = container:Get("ItemService")
 end
 
 function RiftService:GetStatePayload()
