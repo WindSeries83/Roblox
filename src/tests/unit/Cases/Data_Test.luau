@@ -47,7 +47,7 @@ return function(t)
 			seen[id] = true
 		end
 		for id, value in Rarities do
-			if type(id) == "string" and type(value) == "table" then
+			if type(id) == "string" and type(value) == "table" and id ~= "ORDER" then
 				expect.truthy(seen[id])
 			end
 		end
@@ -63,7 +63,7 @@ return function(t)
 			seen[id] = true
 		end
 		for id, value in Mutations do
-			if type(id) == "string" and type(value) == "table" then
+			if type(id) == "string" and type(value) == "table" and id ~= "ORDER" then
 				expect.truthy(seen[id])
 			end
 		end

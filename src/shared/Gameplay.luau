@@ -45,7 +45,7 @@ function Gameplay.RollEgg(tier: string)
 	local speciesId = pool[Random.new():NextInteger(1, #pool)]
 
 	local mutationRoll = Gameplay.WeightedRoll(Config.MUTATION_WEIGHTS)
-	local mutation = mutationRoll == "None" and false or mutationRoll
+	local mutation = if mutationRoll == "None" then false else mutationRoll
 
 	return {
 		SpeciesId = speciesId,
