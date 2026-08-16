@@ -50,5 +50,41 @@
       { "name": "head_geom", "meshId": "rbxassetid://104570928875391", "textureId": "rbxassetid://96693017451226", "size": [1.766, 0.727, 0.644], "offset": [-0.012, 0.811, 1.376] },
       { "name": "body_geom", "meshId": "rbxassetid://73745674038083", "textureId": "rbxassetid://137307338473070", "size": [5, 4.406, 3.903], "offset": [-0.01, 0.121, -0.007] }
     ]
+  },
+  "CinderSeraph": {
+    "parts": [
+      { "name": "tail_geom", "meshId": "rbxassetid://112974815157540", "textureId": "rbxassetid://108597268595317", "size": [2.809, 0.979, 1.932], "offset": [-0.013, -2.149, -2.041] },
+      { "name": "body_geom", "meshId": "rbxassetid://97956084169288", "textureId": "rbxassetid://94962215555183", "size": [2.784, 5.527, 4.958], "offset": [-0.007, -0.01, 0.514] },
+      { "name": "wings_geom", "meshId": "rbxassetid://88815581688595", "textureId": "rbxassetid://76106501993749", "size": [0.05, 0.255, 0.345], "offset": [-1.28, -0.226, 1.932] }
+    ]
+  },
+  "GaleFox": {
+    "parts": [
+      { "name": "tail_geom", "meshId": "rbxassetid://80961342014883", "textureId": "rbxassetid://109704840535658", "size": [1.168, 1.327, 1.236], "offset": [0.74, -0.283, -1.705] },
+      { "name": "rear right leg_geom", "meshId": "rbxassetid://131242687489667", "textureId": "rbxassetid://116576675126547", "size": [1.164, 1.319, 1.232], "offset": [-0.748, -0.28, -1.707] },
+      { "name": "rear left leg_geom", "meshId": "rbxassetid://88333482421414", "textureId": "rbxassetid://120565094437516", "size": [0.883, 1.571, 1.473], "offset": [0.582, -1.222, -0.613] },
+      { "name": "front right leg_geom", "meshId": "rbxassetid://100517405003842", "textureId": "rbxassetid://127843719505892", "size": [0.881, 1.565, 1.473], "offset": [0.582, -1.223, -0.613] },
+      { "name": "front left leg_geom", "meshId": "rbxassetid://140444790235980", "textureId": "rbxassetid://88348677446092", "size": [0.88, 1.568, 1.478], "offset": [-0.593, -1.223, -0.611] },
+      { "name": "head_geom", "meshId": "rbxassetid://117877656167946", "textureId": "rbxassetid://76849879925943", "size": [2.915, 2.534, 3.304], "offset": [-0.009, 0.725, 0.658] },
+      { "name": "body_geom", "meshId": "rbxassetid://123684369538589", "textureId": "rbxassetid://94824914698581", "size": [1.187, 1.641, 3.354], "offset": [-0.008, -1.092, 0.142] }
+    ]
+  },
+  "FrostMite": {
+    "parts": [
+      { "name": "legs_geom", "meshId": "rbxassetid://139555672316890", "textureId": "rbxassetid://128963433786215", "size": [3.187, 0.982, 2.713], "offset": [-0.005, -1.507, -0.005] },
+      { "name": "body_geom", "meshId": "rbxassetid://102337197496667", "textureId": "rbxassetid://134901590277939", "size": [3.06, 3.773, 3.234], "offset": [-0.001, 0.1, -0.004] },
+      { "name": "head_geom", "meshId": "rbxassetid://96617951707863", "textureId": "rbxassetid://107947615401022", "size": [2.867, 2.602, 2.701], "offset": [-0.005, 0.701, 0.17] }
+    ]
+  },
+  "PondSentinel": {
+    "parts": [
+      { "name": "tail_geom", "meshId": "rbxassetid://102689565422035", "textureId": "rbxassetid://122405843231276", "size": [0.38, 0.714, 0.472], "offset": [-0.009, -0.901, -2.069] },
+      { "name": "rear right leg_geom", "meshId": "rbxassetid://135219485897987", "textureId": "rbxassetid://139258188099701", "size": [1.645, 1.643, 2.426], "offset": [-1.188, -1.542, -0.827] },
+      { "name": "rear left leg_geom", "meshId": "rbxassetid://88694309013759", "textureId": "rbxassetid://94831900392415", "size": [1.651, 1.649, 2.421], "offset": [1.172, -1.545, -0.833] },
+      { "name": "front right leg_geom", "meshId": "rbxassetid://135790154671026", "textureId": "rbxassetid://138183994074487", "size": [1.056, 2.417, 1.441], "offset": [-0.965, -1.13, 1.146] },
+      { "name": "front left leg_geom", "meshId": "rbxassetid://104603043886174", "textureId": "rbxassetid://79614531681566", "size": [1.055, 2.421, 1.438], "offset": [0.951, -1.13, 1.148] },
+      { "name": "head_geom", "meshId": "rbxassetid://85887445929928", "textureId": "rbxassetid://99544731575476", "size": [2.179, 2.092, 0.959], "offset": [-0.007, 1.3, 1.19] },
+      { "name": "body_geom", "meshId": "rbxassetid://118039690850250", "textureId": "rbxassetid://98091204992325", "size": [3.036, 3.641, 5], "offset": [-0.007, -0.553, -0.006] }
+    ]
   }
 }
