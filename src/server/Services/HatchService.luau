@@ -5,6 +5,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Net = require(ReplicatedStorage.Shared.Net)
 
 local HatchService = {}
@@ -12,59 +13,6 @@ local HatchService = {}
 local log
 local essenceService
 local saveService
-
-local function WeightedRoll(weights: { [string]: number }): string
-	local total = 0
-	for _, weight in weights do
-		total += weight
-	end
-	local roll = Random.new():NextNumber() * total
-	for key, weight in weights do
-		roll -= weight
-		if roll <= 0 then
-			return key
-		end
-	end
-	return (next(weights))
-end
-
-function HatchService.RollEgg(tier: string)
-	local weights = Config.EGG_RARITY_WEIGHTS[tier]
-	local rarity = WeightedRoll(weights)
-
-	local pool = {}
-	for speciesId, def in Species do
-		if def.Rarity == rarity then
-			table.insert(pool, speciesId)
-		end
-	end
-	local speciesId = pool[Random.new():NextInteger(1, #pool)]
-
-	local mutationWeight = WeightedRoll(Config.MUTATION_WEIGHTS)
-	local mutation = mutationWeight == "None" and false or mutationWeight
-
-	return {
-		SpeciesId = speciesId,
-		Rarity = rarity,
-		Mutation = mutation,
-	}
-end
-
-function HatchService.CreateCreature(rarity: string, speciesId: string, mutation)
-	local species = Species[speciesId]
-	local rarityDef = Rarities[rarity]
-	local mutationDef = mutation ~= false and Mutations[mutation] or nil
-	local power = math.round(species.BasePower * rarityDef.PowerMult * (mutationDef and mutationDef.Multiplier or 1))
-
-	return {
-		Id = HttpService:GenerateGUID(false),
-		SpeciesId = speciesId,
-		Rarity = rarity,
-		Mutation = mutation,
-		Level = 1,
-		Power = power,
-	}
-end
 
 function HatchService:GrantEgg(player: Player, tier: string, source: string)
 	local profile = saveService:GetProfile(player)
@@ -81,14 +29,9 @@ function HatchService:GrantEgg(player: Player, tier: string, source: string)
 	log:Economy("Eggs", "Grant", { Player = player.Name, Tier = tier, Source = source, EggId = egg.Id })
 end
 
-local function RarityRank(rarity: string): number
-	local rank = table.find(Rarities.ORDER, rarity)
-	return rank or 0
-end
-
 local function Announce(player: Player, roll)
-	local announceRank = RarityRank(Config.ANNOUNCE_MIN_RARITY)
-	if RarityRank(roll.Rarity) < announceRank then
+	local announceRank = Gameplay.RarityRank(Config.ANNOUNCE_MIN_RARITY)
+	if Gameplay.RarityRank(roll.Rarity) < announceRank then
 		return
 	end
 
@@ -141,8 +84,8 @@ function HatchService:Start()
 		end
 
 		local egg = table.remove(profile.Data.Eggs, eggIndex)
-		local roll = HatchService.RollEgg(egg.Tier)
-		local creature = HatchService.CreateCreature(roll.Rarity, roll.SpeciesId, roll.Mutation)
+		local roll = Gameplay.RollEgg(egg.Tier)
+		local creature = Gameplay.CreateCreature(roll.Rarity, roll.SpeciesId, roll.Mutation)
 
 		table.insert(profile.Data.Creatures, creature)
 		profile.Data.Stats.TotalHatched += 1
@@ -150,7 +93,7 @@ function HatchService:Start()
 
 		local species = Species[roll.SpeciesId]
 		local mutationName = roll.Mutation ~= false and Mutations[roll.Mutation].Name or nil
-		local announced = RarityRank(roll.Rarity) >= RarityRank(Config.ANNOUNCE_MIN_RARITY)
+		local announced = Gameplay.RarityRank(roll.Rarity) >= Gameplay.RarityRank(Config.ANNOUNCE_MIN_RARITY)
 
 		Net.HatchResult:FireClient(player, {
 			EggId = eggId,

@@ -3,6 +3,7 @@ local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Net = require(ReplicatedStorage.Shared.Net)
 
 local RiftService = {}
@@ -18,21 +19,6 @@ local worldEndsAt = 0
 
 local Combat = {}
 local nextGuardianTick = 0
-
-local function WeightedRoll(weights: { [string]: number }): string
-	local total = 0
-	for _, weight in weights do
-		total += weight
-	end
-	local roll = Random.new():NextNumber() * total
-	for key, weight in weights do
-		roll -= weight
-		if roll <= 0 then
-			return key
-		end
-	end
-	return (next(weights))
-end
 
 local function TeamPower(player: Player): number
 	local profile = saveService:GetProfile(player)
@@ -175,7 +161,7 @@ local function WinRift(player: Player)
 		math.max(Config.RIFT_MIN_REWARD, math.floor(rate * Config.RIFT_REWARD_SECONDS * Config.RIFT_ESSENCE_MULT))
 	essenceService:Add(player, essence, "RiftCrystal")
 
-	local eggTier = WeightedRoll(Config.RIFT_EGG_WEIGHTS)
+	local eggTier = Gameplay.WeightedRoll(Config.RIFT_EGG_WEIGHTS)
 	hatchService:GrantEgg(player, eggTier, "Rift")
 
 	profile.Data.Stats.RiftsCompleted += 1

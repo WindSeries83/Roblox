@@ -2,9 +2,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
-local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
-local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
-local Species = require(ReplicatedStorage.Shared.Data.Species)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 
 local EssenceService = {}
 
@@ -12,17 +10,7 @@ local log
 local saveService
 
 function EssenceService.ComputeRate(creatures: { any }): number
-	local rate = 0
-	for _, creature in creatures do
-		local species = Species[creature.SpeciesId]
-		local rarity = Rarities[creature.Rarity]
-		local mutation = creature.Mutation ~= false and Mutations[creature.Mutation] or nil
-		if species and rarity then
-			local mult = rarity.EssenceMult * (mutation and mutation.Multiplier or 1)
-			rate += species.BaseRate * mult
-		end
-	end
-	return rate
+	return Gameplay.ComputeRate(creatures)
 end
 
 function EssenceService.GetRate(player: Player): number
