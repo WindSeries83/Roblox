@@ -25,6 +25,7 @@ function IndexPanel.Create(parent)
 	UiKit.Title(frame, "Index")
 
 	summaryLabel = UiKit.Create("TextLabel", {
+		Name = "SummaryLabel",
 		BackgroundTransparency = 1,
 		TextColor3 = UiKit.TINTS.ACCENT,
 		Font = Enum.Font.GothamBold,
@@ -36,6 +37,7 @@ function IndexPanel.Create(parent)
 	})
 
 	entryList = UiKit.Scroller(frame, UDim2.fromScale(0, 0.08), UDim2.fromScale(1, 0.92))
+	entryList.Name = "EntryList"
 	return frame
 end
 

@@ -6,6 +6,7 @@ local IndexService = {}
 
 local log
 local saveService
+local questService
 
 function IndexService:Register(player: Player, speciesId: string, rarity: string, mutation: any): boolean
 	local profile = saveService:GetProfile(player)
@@ -23,6 +24,9 @@ function IndexService:Register(player: Player, speciesId: string, rarity: string
 		Rarity = rarity,
 		Mutation = tostring(mutation),
 	})
+	if questService then
+		questService:OnIndex(player)
+	end
 	return true
 end
 
@@ -37,6 +41,7 @@ end
 function IndexService:Init(container)
 	log = container:Get("Log")
 	saveService = container:Get("SaveService")
+	questService = container:Get("QuestService")
 end
 
 return IndexService

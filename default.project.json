@@ -87,10 +87,19 @@
                                                            "RebirthConfirm":  {
                                                                                   "$className":  "RemoteEvent"
                                                                               },
-                                                           "UpgradeSanctuary":  {
-                                                                                    "$className":  "RemoteEvent"
-                                                                                }
-                                                       }
+"UpgradeSanctuary":  {
+                                                                                     "$className":  "RemoteEvent"
+                                                                                 },
+                                                            "QuestsSync":  {
+                                                                             "$className":  "RemoteEvent"
+                                                                         },
+                                                            "QuestClaim":  {
+                                                                              "$className":  "RemoteEvent"
+                                                                          },
+                                                            "TutorialComplete":  {
+                                                                                        "$className":  "RemoteEvent"
+                                                                                    }
+                                                        }
                                        },
                  "StarterPlayer":  {
                                        "StarterPlayerScripts":  {

@@ -7,6 +7,7 @@ local ORDER = {
 	"SaveService",
 	"DataSync",
 	"EssenceService",
+	"QuestService",
 	"IndexService",
 	"EvolutionService",
 	"ItemService",

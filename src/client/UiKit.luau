@@ -16,7 +16,7 @@ function UiKit.Create(className: string, props: { [string]: any }): Instance
 	for key, value in props do
 		inst[key] = value
 	end
-	if className == "TextButton" then
+	if className == "TextButton" or className == "ImageButton" then
 		inst.Activated:Connect(function()
 			Audio.Play("UiClick")
 		end)

@@ -27,6 +27,45 @@ local VOLUMES = {
 	EvolutionWhoosh = 0.6,
 }
 
+local MUSIC_IDS = {
+	Sanctuary = "rbxassetid://97878486673197",
+	Rift = "rbxassetid://96584039561549",
+}
+
+local MUSIC_VOLUMES = {
+	Sanctuary = 0.18,
+	Rift = 0.22,
+}
+
+local music: { [string]: Sound } = {}
+local currentMusic: string? = nil
+
+function Audio.SetMusic(name: string?)
+	if currentMusic == name then
+		return
+	end
+	for musicName, sound in music do
+		if musicName == name then
+			sound.Volume = MUSIC_VOLUMES[musicName]
+			sound:Resume()
+		else
+			sound:Stop()
+		end
+	end
+	currentMusic = name
+end
+
+for name, id in MUSIC_IDS do
+	local sound = Instance.new("Sound")
+	sound.Name = name
+	sound.SoundId = id
+	sound.Volume = MUSIC_VOLUMES[name]
+	sound.Looped = true
+	sound.PlayOnRemove = false
+	sound.Parent = SoundService
+	music[name] = sound
+end
+
 function Audio.Play(name: string, volume: number?)
 	local soundId = SOUND_IDS[name]
 	if not soundId then
@@ -71,6 +110,18 @@ local function DiffSync(state)
 	previousState = state
 end
 
+Net.RiftWorld.OnClientEvent:Connect(function(world)
+	if world.Active then
+		Audio.SetMusic("Rift")
+	else
+		Audio.SetMusic("Sanctuary")
+	end
+end)
+
 Net.Sync.OnClientEvent:Connect(DiffSync)
+
+task.delay(1, function()
+	Audio.SetMusic("Sanctuary")
+end)
 
 return Audio

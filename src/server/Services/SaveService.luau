@@ -6,19 +6,30 @@ local SaveService = {}
 
 SaveService.Profiles = {}
 
-local DATA_VERSION = 2
+local DATA_VERSION = 3
 
 local Store = ProfileStore.New("RiftBeastsData_v1", {
 	Essence = 0,
 	Creatures = {},
 	Eggs = {},
 	SanctuaryLevel = 1,
-	Stats = { TotalHatched = 0, TotalEssenceEarned = 0, RiftsCompleted = 0 },
+	Stats = {
+		TotalHatched = 0,
+		TotalEssenceEarned = 0,
+		RiftsCompleted = 0,
+		TotalBred = 0,
+	},
 	Index = {},
 	Items = {},
 	Stars = 0,
 	Rebirths = 0,
 	LastPlayed = 0,
+	Quests = {
+		Day = "",
+		Daily = {},
+		Achievements = {},
+	},
+	TutorialDone = false,
 	Version = DATA_VERSION,
 })
 
@@ -38,6 +49,17 @@ local MIGRATIONS = {
 			creature.HatchedAt = creature.HatchedAt or 0
 		end
 		data.Version = 2
+	end,
+	[2] = function(data)
+		data.Stats = data.Stats or {}
+		data.Stats.TotalBred = data.Stats.TotalBred or 0
+		data.Quests = data.Quests or {
+			Day = "",
+			Daily = {},
+			Achievements = {},
+		}
+		data.TutorialDone = data.TutorialDone or false
+		data.Version = 3
 	end,
 }
 

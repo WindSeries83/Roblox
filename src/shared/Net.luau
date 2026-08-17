@@ -34,5 +34,8 @@ Net.RebirthRequest = Event("RebirthRequest")
 Net.RebirthPreview = Event("RebirthPreview")
 Net.RebirthConfirm = Event("RebirthConfirm")
 Net.UpgradeSanctuary = Event("UpgradeSanctuary")
+Net.QuestsSync = Event("QuestsSync")
+Net.QuestClaim = Event("QuestClaim")
+Net.TutorialComplete = Event("TutorialComplete")
 
 return Net

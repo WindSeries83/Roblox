@@ -6,17 +6,37 @@ local UiKit = require(script.Parent.UiKit)
 local Audio = require(script.Parent.Audio)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
+local Config = require(ReplicatedStorage.Shared.Config)
 
 local SanctuaryPanel = require(script.Parent.Panels.SanctuaryPanel)
 local EggPanel = require(script.Parent.Panels.EggPanel)
 local IndexPanel = require(script.Parent.Panels.IndexPanel)
 local BreedingPanel = require(script.Parent.Panels.BreedingPanel)
 local RebirthPanel = require(script.Parent.Panels.RebirthPanel)
+local QuestsPanel = require(script.Parent.Panels.QuestsPanel)
+local TutorialBridge = require(ReplicatedStorage.Shared.TutorialBridge)
+local Fx = require(script.Parent.Fx)
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
+game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
+task.spawn(function()
+	for _ = 1, 10 do
+		local chat = playerGui:FindFirstChild("Chat")
+		if chat then
+			chat:Destroy()
+		end
+		task.wait(0.5)
+	end
+end)
+
 local TINTS = UiKit.TINTS
+
+local viewportWidth = pcall(function()
+	return workspace.CurrentCamera.ViewportSize.X
+end) and workspace.CurrentCamera.ViewportSize.X or 800
+local compact = viewportWidth < 700
 
 local TIER_NAMES = {
 	CommonEgg = "Œuf commun",
@@ -32,8 +52,9 @@ local ui = UiKit.Create("ScreenGui", {
 })
 
 local topBar = UiKit.Create("Frame", {
+	Name = "TopBar",
 	BackgroundColor3 = TINTS.PANEL,
-	Size = UDim2.fromOffset(300, 64),
+	Size = UDim2.fromOffset(if compact then 230 else 300, if compact then 56 else 64),
 	Position = UDim2.fromOffset(12, 12),
 	Parent = ui,
 })
@@ -41,6 +62,7 @@ UiKit.Corner(topBar)
 UiKit.Padding(topBar, 12)
 
 local essenceLabel = UiKit.Create("TextLabel", {
+	Name = "EssenceLabel",
 	BackgroundTransparency = 1,
 	TextColor3 = TINTS.ACCENT,
 	Font = Enum.Font.GothamBold,
@@ -52,6 +74,7 @@ local essenceLabel = UiKit.Create("TextLabel", {
 })
 
 local rateLabel = UiKit.Create("TextLabel", {
+	Name = "RateLabel",
 	BackgroundTransparency = 1,
 	TextColor3 = TINTS.WHITE,
 	TextSize = 14,
@@ -63,10 +86,11 @@ local rateLabel = UiKit.Create("TextLabel", {
 })
 
 local content = UiKit.Create("Frame", {
+	Name = "Content",
 	BackgroundColor3 = TINTS.PANEL,
 	Position = UDim2.fromScale(0.5, 0.5),
 	AnchorPoint = Vector2.new(0.5, 0.5),
-	Size = UDim2.fromScale(0.72, 0.72),
+	Size = UDim2.fromScale(if compact then 0.96 else 0.72, if compact then 0.96 else 0.72),
 	Visible = false,
 	Parent = ui,
 })
@@ -74,19 +98,16 @@ UiKit.Corner(content)
 UiKit.Padding(content, 12)
 
 local tabBar = UiKit.Create("Frame", {
+	Name = "TabBar",
 	BackgroundColor3 = TINTS.DARK,
 	Size = UDim2.fromScale(0.1, 1),
 	Parent = content,
 })
 UiKit.Corner(tabBar)
 UiKit.Padding(tabBar, 6)
-UiKit.Create("UIListLayout", {
-	Padding = UDim.new(0, 6),
-	SortOrder = Enum.SortOrder.LayoutOrder,
-	Parent = tabBar,
-})
 
 local panelsFrame = UiKit.Create("Frame", {
+	Name = "PanelsFrame",
 	BackgroundTransparency = 1,
 	Position = UDim2.fromScale(0.11, 0),
 	Size = UDim2.fromScale(0.89, 1),
@@ -94,19 +115,25 @@ local panelsFrame = UiKit.Create("Frame", {
 })
 
 local panels = {}
+local tabCount = 0
 local function AddTab(name: string, panelModule: any)
+	tabCount += 1
 	local button = UiKit.Create("TextButton", {
+		Name = `Tab{tabCount}`,
 		BackgroundColor3 = TINTS.PANEL,
 		TextColor3 = TINTS.WHITE,
 		Font = Enum.Font.GothamBold,
 		TextSize = 13,
-		Size = UDim2.fromScale(1, 0.09),
+		Size = UDim2.fromOffset(112, 60),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(6, 6 + (tabCount - 1) * 12),
 		Text = name,
 		Parent = tabBar,
 	})
 	UiKit.Corner(button)
 
 	local frame = panelModule.Create(panelsFrame)
+	frame.Name = `Panel{tabCount}`
 	frame.Visible = false
 
 	button.Activated:Connect(function()
@@ -124,18 +151,75 @@ AddTab("Œufs", EggPanel)
 AddTab("Index", IndexPanel)
 AddTab("Élevage", BreedingPanel)
 AddTab("Renaissance", RebirthPanel)
+AddTab("Objectifs", QuestsPanel)
+
+local lastTabLayoutHeight = 0
+local function LayoutTabs()
+	local height = tabBar.AbsoluteSize.Y
+	if math.abs(height - lastTabLayoutHeight) <= 1 then
+		return
+	end
+	lastTabLayoutHeight = height
+	local tabHeight = 0.09 * math.max(0, height - 12)
+	local tabWidth = math.max(0, tabBar.AbsoluteSize.X - 12)
+	local i = 0
+	for _, tab in tabBar:GetChildren() do
+		if tab:IsA("TextButton") then
+			i += 1
+			tab.Size = UDim2.fromOffset(tabWidth, tabHeight)
+			tab.Position = UDim2.fromOffset(6 + tabWidth / 2, 6 + (i - 1) * (tabHeight + 6) + tabHeight / 2)
+		end
+	end
+end
+task.spawn(function()
+	while tabBar.Parent do
+		LayoutTabs()
+		task.wait(0.5)
+	end
+end)
 
 if panels[1] then
 	panels[1].frame.Visible = true
 end
 
+local questBadge = UiKit.Create("TextLabel", {
+	Name = "QuestBadge",
+	BackgroundColor3 = TINTS.GREEN,
+	BackgroundTransparency = 0.1,
+	TextColor3 = TINTS.DARK,
+	Font = Enum.Font.GothamBold,
+	TextSize = 14,
+	Size = UDim2.fromOffset(24, 24),
+	Position = UDim2.new(1, -6, 0, -6),
+	AnchorPoint = Vector2.new(1, 0),
+	ZIndex = 5,
+	Text = "",
+	Parent = topBar,
+})
+UiKit.Corner(questBadge)
+
+local function UpdateQuestBadge(quests)
+	local ready = 0
+	if quests and quests.Daily then
+		for _, quest in quests.Daily do
+			local def = Config and Config.DAILY_QUESTS[quest.Id]
+			if def and not quest.Claimed and quest.Progress >= def.Target then
+				ready += 1
+			end
+		end
+	end
+	questBadge.Text = if ready > 0 then `{ready}` else ""
+	questBadge.Visible = ready > 0
+end
+
 local menuButton = UiKit.Create("TextButton", {
+	Name = "MenuButton",
 	BackgroundColor3 = TINTS.ACCENT,
 	TextColor3 = TINTS.WHITE,
 	Font = Enum.Font.GothamBold,
-	TextSize = 16,
-	Size = UDim2.fromOffset(140, 40),
-	Position = UDim2.fromOffset(324, 12),
+	TextSize = if compact then 14 else 16,
+	Size = UDim2.fromOffset(if compact then 110 else 140, if compact then 40 else 40),
+	Position = UDim2.fromOffset(if compact then 254 else 324, 12),
 	Text = "Menu",
 	Parent = ui,
 })
@@ -144,6 +228,7 @@ UiKit.Corner(menuButton)
 local function SetMenuOpen(open: boolean)
 	content.Visible = open
 	menuButton.Text = if open then "Fermer" else "Menu"
+	TutorialBridge.Set("MenuOpen", open)
 end
 
 menuButton.Activated:Connect(function()
@@ -153,8 +238,9 @@ end)
 SetMenuOpen(false)
 
 local riftHud = UiKit.Create("Frame", {
+	Name = "RiftHud",
 	BackgroundColor3 = TINTS.PANEL,
-	Size = UDim2.fromOffset(420, 190),
+	Size = UDim2.fromOffset(if compact then 330 else 420, if compact then 170 else 190),
 	Position = UDim2.fromScale(0.5, 1),
 	AnchorPoint = Vector2.new(0.5, 1),
 	Visible = false,
@@ -204,9 +290,10 @@ local riftHint = UiKit.Create("TextLabel", {
 })
 
 local announcement = UiKit.Create("Frame", {
+	Name = "Announcement",
 	BackgroundColor3 = TINTS.PANEL,
-	Size = UDim2.fromOffset(520, 56),
-	Position = UDim2.fromScale(0.5, 0.06),
+	Size = UDim2.fromOffset(if compact then 340 else 520, if compact then 56 else 56),
+	Position = UDim2.fromScale(0.5, if compact then 0.12 else 0.06),
 	AnchorPoint = Vector2.new(0.5, 0),
 	Visible = false,
 	ZIndex = 10,
@@ -226,16 +313,19 @@ local announcementLabel = UiKit.Create("TextLabel", {
 })
 
 local flashOverlay = UiKit.Create("Frame", {
+	Name = "FlashOverlay",
 	BackgroundColor3 = TINTS.WHITE,
 	BackgroundTransparency = 1,
 	Size = UDim2.fromScale(1, 1),
+	Visible = false,
 	ZIndex = 100,
 	Parent = ui,
 })
 
 local reveal = UiKit.Create("Frame", {
+	Name = "Reveal",
 	BackgroundColor3 = TINTS.PANEL,
-	Size = UDim2.fromOffset(420, 150),
+	Size = UDim2.fromOffset(if compact then 330 else 420, if compact then 140 else 150),
 	Position = UDim2.fromScale(0.5, 0.4),
 	AnchorPoint = Vector2.new(0.5, 0.5),
 	Visible = false,
@@ -257,6 +347,7 @@ local revealLabel = UiKit.Create("TextLabel", {
 })
 
 local revealButton = UiKit.Create("TextButton", {
+	Name = "RevealButton",
 	BackgroundColor3 = TINTS.ACCENT,
 	TextColor3 = TINTS.WHITE,
 	Font = Enum.Font.GothamBold,
@@ -271,13 +362,14 @@ local revealButton = UiKit.Create("TextButton", {
 UiKit.Corner(revealButton)
 
 local riftStatusLabel = UiKit.Create("TextLabel", {
+	Name = "RiftStatusLabel",
 	BackgroundColor3 = TINTS.PANEL,
 	BackgroundTransparency = 0.2,
 	TextColor3 = TINTS.ACCENT,
 	Font = Enum.Font.GothamBold,
-	TextSize = 16,
-	Size = UDim2.fromOffset(240, 36),
-	Position = UDim2.fromScale(0.5, 0.16),
+	TextSize = if compact then 13 else 16,
+	Size = UDim2.fromOffset(if compact then 180 else 240, if compact then 32 else 36),
+	Position = UDim2.fromScale(0.5, if compact then 0.18 else 0.16),
 	AnchorPoint = Vector2.new(0.5, 0),
 	Visible = false,
 	ZIndex = 10,
@@ -346,6 +438,11 @@ local function ShowRiftEnded(result)
 			`Faille terminée : +{result.Essence} Essence et {TIER_NAMES[result.EggTier] or result.EggTier}{relicText}`
 		)
 		Flash(0.35)
+		Fx.Confetti(
+			workspace.CurrentCamera.CFrame.Position - workspace.CurrentCamera.CFrame.LookVector * 12,
+			TINTS.ACCENT,
+			30
+		)
 	else
 		ShowAnnouncement("Défaite face au gardien. Tes créatures n'étaient pas prêtes.")
 	end
@@ -369,6 +466,7 @@ local function RefreshAll(newState)
 	if state.Stars > 0 then
 		rateLabel.Text ..= ` — ★{state.Stars}`
 	end
+	UpdateQuestBadge(state.Quests)
 	for _, panel in panels do
 		if panel.module.Refresh then
 			panel.module.Refresh(state)
@@ -416,6 +514,28 @@ Net.RiftWorld.OnClientEvent:Connect(function(world)
 		riftStatusLabel.Visible = true
 	else
 		riftStatusLabel.Visible = false
+	end
+end)
+
+Net.QuestsSync.OnClientEvent:Connect(function(payload)
+	if not payload or not payload.Quests then
+		return
+	end
+	UpdateQuestBadge(payload.Quests)
+	for _, panel in panels do
+		if panel.module.Refresh then
+			panel.module.Refresh(state)
+		end
+	end
+	local notice = payload.Notice
+	if notice then
+		if notice.Type == "QuestComplete" then
+			ShowAnnouncement(`Quête terminée : {notice.Name} !`)
+			Flash(0.2)
+		elseif notice.Type == "Achievement" then
+			ShowAnnouncement(`Succès débloqué : {notice.Name} !`)
+			Flash(0.25)
+		end
 	end
 end)
 

@@ -32,6 +32,7 @@ function RebirthPanel.Create(parent)
 	UiKit.Title(frame, "Renaissance")
 
 	progressLabel = UiKit.Create("TextLabel", {
+		Name = "ProgressLabel",
 		BackgroundTransparency = 1,
 		TextColor3 = UiKit.TINTS.WHITE,
 		TextSize = 14,
@@ -43,11 +44,13 @@ function RebirthPanel.Create(parent)
 	})
 
 	local requestButton = UiKit.Button(frame, "Calculer l'aperçu", UDim2.fromScale(0.3, 0.08), UDim2.fromScale(0, 0.1))
+	requestButton.Name = "RequestButton"
 	requestButton.Activated:Connect(function()
 		Net.RebirthRequest:FireServer()
 	end)
 
 	previewLabel = UiKit.Create("TextLabel", {
+		Name = "PreviewLabel",
 		BackgroundTransparency = 1,
 		TextColor3 = UiKit.TINTS.ACCENT,
 		TextSize = 14,
@@ -60,6 +63,7 @@ function RebirthPanel.Create(parent)
 	})
 
 	confirmButton = UiKit.Button(frame, "Renaître", UDim2.fromScale(0.3, 0.08), UDim2.fromScale(0, 0.62))
+	confirmButton.Name = "ConfirmButton"
 	confirmButton.Visible = false
 	confirmButton.Activated:Connect(function()
 		Net.RebirthConfirm:FireServer()

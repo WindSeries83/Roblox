@@ -16,6 +16,7 @@ local log
 local essenceService
 local saveService
 local indexService
+local questService
 
 function HatchService:GrantEgg(player: Player, tier: string, source: string)
 	local profile = saveService:GetProfile(player)
@@ -71,6 +72,7 @@ function HatchService:Init(container)
 	essenceService = container:Get("EssenceService")
 	saveService = container:Get("SaveService")
 	indexService = container:Get("IndexService")
+	questService = container:Get("QuestService")
 end
 
 function HatchService:Start()
@@ -128,6 +130,7 @@ function HatchService:Start()
 		local species = Species[roll.SpeciesId]
 		local mutationName = roll.Mutation ~= false and Mutations[roll.Mutation].Name or nil
 		local announced = Gameplay.RarityRank(roll.Rarity) >= Gameplay.RarityRank(Config.ANNOUNCE_MIN_RARITY)
+		questService:OnHatch(player, roll.Mutation ~= false)
 
 		Net.HatchResult:FireClient(player, {
 			EggId = eggId,

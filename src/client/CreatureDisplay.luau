@@ -5,12 +5,14 @@ local RunService = game:GetService("RunService")
 local Net = require(ReplicatedStorage.Shared.Net)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
+local Fx = require(script.Parent.Fx)
 
 local CreatureDisplay = {}
 
 local spawned: { [string]: Model } = {}
 local bases: { [string]: CFrame } = {}
 local order: { [string]: number } = {}
+local stages: { [string]: number } = {}
 local sanctuary: Folder? = nil
 
 local function DisplayColor(creature): Color3
@@ -63,6 +65,7 @@ function CreatureDisplay.Refresh(state)
 			spawned[id] = nil
 			bases[id] = nil
 			order[id] = nil
+			stages[id] = nil
 		end
 	end
 
@@ -81,6 +84,10 @@ function CreatureDisplay.Refresh(state)
 			PrepareClone(model)
 			model.Parent = sanctuary
 			spawned[creature.Id] = model
+			local primary = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
+			if primary then
+				Fx.Burst(primary, DisplayColor(creature), 26)
+			end
 		end
 
 		local scale = 1 + (creature.Stage - 1) * 0.25
@@ -91,6 +98,14 @@ function CreatureDisplay.Refresh(state)
 				model:ScaleTo(scale)
 			end)
 		end
+		local previousStage = stages[creature.Id]
+		if previousStage and creature.Stage > previousStage then
+			local primary = model.PrimaryPart
+			if primary then
+				Fx.Burst(primary, Color3.fromRGB(255, 215, 90), 34)
+			end
+		end
+		stages[creature.Id] = creature.Stage
 		for _, part in model:GetDescendants() do
 			if part:IsA("BasePart") then
 				part.Color = DisplayColor(creature)

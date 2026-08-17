@@ -13,6 +13,7 @@ local saveService
 local essenceService
 local indexService
 local dataSync
+local questService
 
 local cooldowns: { [Player]: number } = {}
 
@@ -31,6 +32,7 @@ function BreedingService:Init(container)
 	essenceService = container:Get("EssenceService")
 	indexService = container:Get("IndexService")
 	dataSync = container:Get("DataSync")
+	questService = container:Get("QuestService")
 end
 
 function BreedingService:Start()
@@ -83,6 +85,9 @@ function BreedingService:Start()
 			MotherId = mother.Id,
 			Creature = child,
 		})
+
+		profile.Data.Stats.TotalBred += 1
+		questService:OnBreed(player)
 
 		log:Economy("Breeding", "Success", {
 			Player = player.Name,

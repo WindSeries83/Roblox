@@ -5,5 +5,6 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 if not playerGui:FindFirstChild("RiftBeastsUi") then
+	require(StarterPlayerScripts:WaitForChild("Tutorial"))
 	require(StarterPlayerScripts:WaitForChild("Ui"))
 end

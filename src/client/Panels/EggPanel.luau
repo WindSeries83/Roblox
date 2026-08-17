@@ -28,6 +28,7 @@ function EggPanel.Create(parent)
 	UiKit.Title(frame, "Œufs")
 
 	shopRow = UiKit.Create("Frame", {
+		Name = "ShopRow",
 		BackgroundTransparency = 1,
 		Position = UDim2.fromScale(0, 0.06),
 		Size = UDim2.fromScale(1, 0.08),
@@ -40,6 +41,7 @@ function EggPanel.Create(parent)
 	})
 
 	itemShopRow = UiKit.Create("Frame", {
+		Name = "ItemShopRow",
 		BackgroundTransparency = 1,
 		Position = UDim2.fromScale(0, 0.15),
 		Size = UDim2.fromScale(1, 0.08),
@@ -52,11 +54,19 @@ function EggPanel.Create(parent)
 	})
 
 	eggList = UiKit.Scroller(frame, UDim2.fromScale(0, 0.25), UDim2.fromScale(1, 0.75))
+	eggList.Name = "EggList"
+	for _, child in eggList:GetChildren() do
+		if child:IsA("UIListLayout") then
+			child:Destroy()
+		end
+	end
 
 	local tierOrder = { "CommonEgg", "UncommonEgg", "RareEgg" }
+	local tierNames = { CommonEgg = "BuyCommon", UncommonEgg = "BuyUncommon", RareEgg = "BuyRare" }
 	for _, tier in tierOrder do
 		local price = Config.EGG_PRICES[tier]
 		local button = UiKit.Create("TextButton", {
+			Name = tierNames[tier],
 			BackgroundColor3 = UiKit.TINTS.DARK,
 			TextColor3 = UiKit.TINTS.WHITE,
 			Font = Enum.Font.GothamBold,
@@ -96,21 +106,31 @@ end
 
 function EggPanel.Refresh(state)
 	UiKit.Clear(eggList)
-	for _, egg in state.Eggs do
+	local rowWidth = eggList.AbsoluteSize.X - 4
+	for i, egg in state.Eggs do
 		local row = UiKit.Cell(eggList)
-		UiKit.Create("TextLabel", {
+		row.Size = UDim2.fromOffset(rowWidth, 52)
+		row.Position = UDim2.fromOffset(0, (i - 1) * 58)
+		local label = UiKit.Create("TextLabel", {
 			BackgroundTransparency = 1,
 			TextColor3 = UiKit.TINTS.WHITE,
+			Font = Enum.Font.GothamBold,
 			TextSize = 14,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.fromScale(1, 0.4),
+			Position = UDim2.fromScale(0, 0.5),
+			AnchorPoint = Vector2.new(0, 0.5),
+			Size = UDim2.fromOffset(0, 22),
+			AutomaticSize = Enum.AutomaticSize.X,
 			Text = TIER_NAMES[egg.Tier] or egg.Tier,
 			Parent = row,
 		})
-		local button = UiKit.Button(row, "Éclore", UDim2.fromScale(0.45, 0.4), UDim2.fromScale(0.55, 0))
+		local button = UiKit.Button(row, "Éclore", UDim2.new(0.55, 0, 0, 36), UDim2.fromScale(0.45, 0.5))
+		button.Name = "HatchButton"
+		button.AnchorPoint = Vector2.new(0, 0.5)
 		button.Activated:Connect(function()
 			Net.HatchEgg:FireServer(egg.Id)
 		end)
+		eggList.CanvasSize = UDim2.fromOffset(0, #state.Eggs * 58)
 	end
 end
 

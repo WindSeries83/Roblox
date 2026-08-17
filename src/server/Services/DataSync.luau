@@ -28,6 +28,8 @@ function DataSync:Send(player: Player)
 		Stars = profile.Data.Stars,
 		Rebirths = profile.Data.Rebirths,
 		Stats = profile.Data.Stats,
+		Quests = profile.Data.Quests,
+		TutorialDone = profile.Data.TutorialDone,
 	})
 end
 

@@ -11,6 +11,7 @@ local EssenceService = {}
 local log
 local saveService
 local dataSync
+local questService
 
 function EssenceService.ComputeRate(creatures: { any }): number
 	return Gameplay.ComputeRate(creatures)
@@ -45,6 +46,9 @@ function EssenceService:Add(player: Player, amount: number, source: string)
 		Source = source,
 		Total = profile.Data.Essence,
 	})
+	if questService then
+		questService:OnEssenceGained(player, gained, source)
+	end
 	return gained
 end
 
@@ -76,6 +80,7 @@ function EssenceService:Init(container)
 	log = container:Get("Log")
 	saveService = container:Get("SaveService")
 	dataSync = container:Get("DataSync")
+	questService = container:Get("QuestService")
 end
 
 function EssenceService:Start()
@@ -95,6 +100,9 @@ function EssenceService:Start()
 				profile.Data.Essence += rate
 				profile.Data.Stats.TotalEssenceEarned += rate
 				profile.Data.LastPlayed = os.time()
+				if questService then
+					questService:OnEssenceGained(player, rate, "Passive")
+				end
 			end
 			dataSync:Send(player)
 		end

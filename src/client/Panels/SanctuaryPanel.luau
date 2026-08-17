@@ -110,11 +110,13 @@ function SanctuaryPanel.Create(parent)
 	UiKit.Title(frame, "Créatures")
 
 	local header = UiKit.Create("Frame", {
+		Name = "Header",
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 44),
 		Parent = frame,
 	})
 	upgradeLabel = UiKit.Create("TextLabel", {
+		Name = "UpgradeLabel",
 		BackgroundTransparency = 1,
 		TextColor3 = UiKit.TINTS.WHITE,
 		TextSize = 14,
@@ -125,13 +127,16 @@ function SanctuaryPanel.Create(parent)
 		Parent = header,
 	})
 	upgradeButton = UiKit.Button(header, "Améliorer", UDim2.new(0.35, 0, 0, 32), UDim2.new(0.65, 0, 0.5, -16))
+	upgradeButton.Name = "UpgradeButton"
 	upgradeButton.Activated:Connect(function()
 		Net.UpgradeSanctuary:FireServer()
 	end)
 
 	creatureList = UiKit.Scroller(frame, UDim2.fromScale(0, 0.14), UDim2.fromScale(0.5, 0.86))
+	creatureList.Name = "CreatureList"
 
 	detail = UiKit.Create("Frame", {
+		Name = "Detail",
 		BackgroundColor3 = UiKit.TINTS.PANEL,
 		Position = UDim2.fromScale(0.52, 0.14),
 		Size = UDim2.fromScale(0.48, 0.86),

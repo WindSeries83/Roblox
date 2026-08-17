@@ -71,6 +71,59 @@ return {
 	SANCTUARY_UPGRADE_COST_MULT = 4,
 
 	COLLAR_MUTATION_CAP = 0.25,
+
+	TUTORIAL_REWARD = 50,
+
+	DAILY_QUESTS_COUNT = 3,
+
+	DAILY_QUESTS = {
+		HatchDaily = {
+			Name = "Éclore des œufs",
+			Desc = "Éclos {target} œufs",
+			Target = 2,
+			Reward = 100,
+		},
+		RiftDaily = {
+			Name = "Vaincre la faille",
+			Desc = "Gagne un combat de faille",
+			Target = 1,
+			Reward = 150,
+		},
+		BreedDaily = {
+			Name = "Croiser des créatures",
+			Desc = "Réussis un élevage",
+			Target = 1,
+			Reward = 120,
+		},
+		EssenceDaily = {
+			Name = "Gagner de l'essence",
+			Desc = "Gagne {target} essence (récompenses exclues)",
+			Target = 500,
+			Reward = 100,
+		},
+		IndexDaily = {
+			Name = "Découvrir des espèces",
+			Desc = "Découvre {target} nouvelles entrées de l'index",
+			Target = 2,
+			Reward = 150,
+		},
+	},
+
+	ACHIEVEMENTS = {
+		FirstHatch = { Name = "Premier pas", Desc = "Éclos ton premier œuf", Reward = 50 },
+		TenHatch = { Name = "Collectionneur", Desc = "Éclos 10 œufs", Reward = 200 },
+		HundredHatch = { Name = "Éleveur acharné", Desc = "Éclos 100 œufs", Reward = 1000 },
+		FiveCreatures = { Name = "Meute grandissante", Desc = "Possède 5 créatures", Reward = 100 },
+		FirstRift = { Name = "Brèche vaincue", Desc = "Gagne une faille", Reward = 200 },
+		RiftMaster = { Name = "Dompteur de faille", Desc = "Gagne 10 failles", Reward = 1000 },
+		FirstBreed = { Name = "Élevage réussi", Desc = "Croise deux créatures", Reward = 150 },
+		Breeder = { Name = "Maître éleveur", Desc = "Croise 10 fois", Reward = 800 },
+		FirstRebirth = { Name = "Nouvelle ère", Desc = "Renaît une première fois", Reward = 500 },
+		FirstMutation = { Name = "Chanceux", Desc = "Obtiens une créature mutée", Reward = 300 },
+		Dex10 = { Name = "Explorateur", Desc = "Découvre 10 entrées de l'index", Reward = 150 },
+		Dex50 = { Name = "Naturaliste", Desc = "Découvre 50 entrées de l'index", Reward = 1500 },
+		Essence10k = { Name = "Banquier", Desc = "Gagne 10 000 essence au total", Reward = 500 },
+	},
 }
 
 -- SYNC_MARKER

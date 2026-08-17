@@ -149,10 +149,14 @@ function BreedingPanel.Create(parent)
 	})
 
 	leftList = UiKit.Scroller(frame, UDim2.fromScale(0, 0.12), UDim2.fromScale(0.3, 0.72))
+	leftList.Name = "LeftList"
 	rightList = UiKit.Scroller(frame, UDim2.fromScale(0.35, 0.12), UDim2.fromScale(0.3, 0.72))
+	rightList.Name = "RightList"
 	treeList = UiKit.Scroller(frame, UDim2.fromScale(0.7, 0.12), UDim2.fromScale(0.3, 0.72))
+	treeList.Name = "TreeList"
 
 	local breedButton = UiKit.Button(frame, "Croiser", UDim2.fromScale(0.3, 0.08), UDim2.fromScale(0.35, 0.86))
+	breedButton.Name = "BreedButton"
 	breedButton.Activated:Connect(function()
 		if selection.left and selection.right then
 			Net.BreedCreatures:FireServer(selection.left, selection.right)

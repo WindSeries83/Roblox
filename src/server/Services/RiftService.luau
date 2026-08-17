@@ -9,10 +9,11 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local RiftService = {}
 
 local log
+local saveService
 local essenceService
 local hatchService
-local saveService
 local itemService
+local questService
 
 local portal: Model? = nil
 local worldActive = false
@@ -175,6 +176,7 @@ local function WinRift(player: Player)
 	end
 
 	profile.Data.Stats.RiftsCompleted += 1
+	questService:OnRiftWon(player)
 
 	Net.RiftEnded:FireClient(player, { Win = true, Essence = essence, EggTier = eggTier, RelicTier = relicTier })
 	log:Economy("Rift", "Complete", {
@@ -253,10 +255,11 @@ end
 
 function RiftService:Init(container)
 	log = container:Get("Log")
+	saveService = container:Get("SaveService")
 	essenceService = container:Get("EssenceService")
 	hatchService = container:Get("HatchService")
-	saveService = container:Get("SaveService")
 	itemService = container:Get("ItemService")
+	questService = container:Get("QuestService")
 end
 
 function RiftService:GetStatePayload()
