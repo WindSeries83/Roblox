@@ -28,7 +28,7 @@ local function PrepareClone(model: Model)
 		end
 	end
 	if not model.PrimaryPart then
-		local first = model:FindFirstChildOfClass("BasePart")
+		local first = model:FindFirstChildWhichIsA("BasePart")
 		if first then
 			model.PrimaryPart = first
 		end

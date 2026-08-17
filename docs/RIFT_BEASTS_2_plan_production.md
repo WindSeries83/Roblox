@@ -167,6 +167,8 @@ Plus lent que le trafic Roblox natif, mais bien plus fidèle.
 - [x] Sons (éclosion, drop rare, faille, upgrade, évolution, rebirth, clic) : 8 assets Creator Store insérés dans le place + module `Audio.luau` (IDs en dur dans le repo)
 - Sauvegarde DataStore : à revalider sur place **publié** (Studio : « Roblox API services unavailable » attendu)
 - Place Studio : sauvegarder le fichier (`Ctrl+S`) après toute synchro MCP — les remotes sont désormais déclarées dans `default.project.json`
+- [x] **Faille testée de bout en bout** (playtest réel, RiftInterval=30s temporaire) : ouverture cyclique, entrée par Touched, combat (dégâts `floor(power×0.8)`, gardien 12 PV/2,5 s), GuardianDown → cristal, win par proximité <6 studs ou Touched, récompenses (essence `rate×60×mult` source RiftCrystal + œuf RIFT_EGG_WEIGHTS), compteur `RiftsCompleted`. Edge case : un joueur sans créatures (power 0) ne peut pas gagner — perte rapide, pas de softlock.
+- [x] **Bug display corrigé** : `FindFirstChildOfClass("BasePart")` ne matche pas les `MeshPart` (className exact) → `PrimaryPart` jamais défini sur les clones → PivotTo/grid/anim jamais exécutés (créatures display superposées aux templates, d'où « les créatures alignées » visibles en Edit). Fix : `FindFirstChildWhichIsA("BasePart")`. Les 10 templates déplacés sous la map (y=-500) dans le place **et** `default.project.json` (54 parts).
 
 ## 7. Décisions P3 actées
 
