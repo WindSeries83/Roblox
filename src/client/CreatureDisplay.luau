@@ -13,7 +13,27 @@ local spawned: { [string]: Model } = {}
 local bases: { [string]: CFrame } = {}
 local order: { [string]: number } = {}
 local stages: { [string]: number } = {}
+local ranks: { [string]: number } = {}
 local sanctuary: Folder? = nil
+
+local RARITY_SIZE = { 1, 1.12, 1.25, 1.38, 1.5, 1.62, 1.75, 1.9 }
+local RARITY_PARTICLES = { 0, 4, 10, 16, 24, 32, 44, 60 }
+
+local function RarityRank(rarity: string): number
+	for i, name in Rarities.ORDER do
+		if name == rarity then
+			return i
+		end
+	end
+	return 1
+end
+
+local function MutationScale(mutation: any): number
+	if mutation ~= false and Mutations[mutation] then
+		return 1 + math.log10(Mutations[mutation].Multiplier) * 0.06
+	end
+	return 1
+end
 
 local function DisplayColor(creature): Color3
 	if creature.Mutation ~= false and Mutations[creature.Mutation] then
@@ -73,6 +93,9 @@ function CreatureDisplay.Refresh(state)
 	for _, creature in state.Creatures do
 		index += 1
 		order[creature.Id] = index
+		local rank = RarityRank(creature.Rarity)
+		ranks[creature.Id] = rank
+		local displayColor = DisplayColor(creature)
 		local model = spawned[creature.Id]
 		if not model or not model.Parent then
 			local template = templates:FindFirstChild(creature.SpeciesId)
@@ -86,11 +109,48 @@ function CreatureDisplay.Refresh(state)
 			spawned[creature.Id] = model
 			local primary = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
 			if primary then
-				Fx.Burst(primary, DisplayColor(creature), 26)
+				Fx.Burst(primary, displayColor, 26)
+				if rank >= 2 then
+					local aura = Instance.new("Part")
+					aura.Name = "Aura"
+					aura.Shape = Enum.PartType.Cylinder
+					aura.Size = Vector3.new(2.6, 0.15, 2.6)
+					aura.Position = primary.Position + Vector3.new(0, -1.4, 0)
+					aura.Anchored = true
+					aura.CanCollide = false
+					aura.CanQuery = false
+					aura.CanTouch = false
+					aura.CastShadow = false
+					aura.Material = Enum.Material.Neon
+					aura.Color = displayColor
+					aura.Transparency = 0.45
+					aura.Parent = model
+					local glow = Instance.new("PointLight")
+					glow.Color = displayColor
+					glow.Brightness = 0.6 + rank * 0.12
+					glow.Range = 8
+					glow.Shadows = false
+					glow.Parent = aura
+					local emitter = Instance.new("ParticleEmitter")
+					emitter.Name = "Ambient"
+					emitter.Rate = RARITY_PARTICLES[rank] or 0
+					emitter.Lifetime = NumberRange.new(1, 2)
+					emitter.Speed = NumberRange.new(0.5, 1.5)
+					emitter.SpreadAngle = Vector2.new(10, 60)
+					emitter.EmissionDirection = Enum.NormalId.Top
+					emitter.Size =
+						NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.3), NumberSequenceKeypoint.new(1, 0.6) })
+					emitter.Transparency =
+						NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.5), NumberSequenceKeypoint.new(1, 1) })
+					emitter.Color = ColorSequence.new(displayColor)
+					emitter.LightEmission = 0.5
+					emitter.LightInfluence = 0
+					emitter.Parent = primary
+				end
 			end
 		end
 
-		local scale = 1 + (creature.Stage - 1) * 0.25
+		local scale = (1 + (creature.Stage - 1) * 0.25) * (RARITY_SIZE[rank] or 1) * MutationScale(creature.Mutation)
 		if model.PrimaryPart then
 			bases[creature.Id] = GridPosition(index)
 			model:PivotTo(bases[creature.Id])
@@ -108,7 +168,21 @@ function CreatureDisplay.Refresh(state)
 		stages[creature.Id] = creature.Stage
 		for _, part in model:GetDescendants() do
 			if part:IsA("BasePart") then
-				part.Color = DisplayColor(creature)
+				if part.Name ~= "Aura" then
+					part.Color = displayColor
+				end
+			end
+		end
+		local aura = model:FindFirstChild("Aura")
+		if aura then
+			aura.Color = displayColor
+			local glow = aura:FindFirstChildOfClass("PointLight")
+			if glow then
+				glow.Color = displayColor
+			end
+			local emitter = model.PrimaryPart and model.PrimaryPart:FindFirstChild("Ambient")
+			if emitter then
+				emitter.Color = ColorSequence.new(displayColor)
 			end
 		end
 	end
@@ -118,8 +192,9 @@ RunService.Heartbeat:Connect(function(t)
 	for id, model in spawned do
 		local base = bases[id]
 		local idx = order[id] or 0
+		local rank = ranks[id] or 1
 		if base and model.PrimaryPart then
-			local bob = math.sin(t * 2 + idx * 0.8) * 0.15
+			local bob = math.sin(t * 2 + idx * 0.8) * (0.15 + (rank - 1) * 0.06)
 			local tilt = math.sin(t * 1.3 + idx * 0.8) * 0.02
 			model:PivotTo(base * CFrame.new(0, bob, 0) * CFrame.Angles(0, 0, tilt))
 		end
