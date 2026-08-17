@@ -166,8 +166,9 @@ function SanctuaryPanel.Refresh(state)
 
 	UiKit.Clear(creatureList)
 	local selected = detail and detail:GetAttribute("SelectedId") or nil
-	for _, creature in state.Creatures do
+	for i, creature in state.Creatures do
 		local row = UiKit.Cell(creatureList)
+		row.Name = `CreatureRow{i}`
 		local button = UiKit.Create("TextButton", {
 			BackgroundTransparency = 1,
 			TextColor3 = UiKit.TINTS.WHITE,

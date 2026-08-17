@@ -40,7 +40,7 @@ end
 local function GridPosition(index: number): CFrame
 	local row = math.floor((index - 1) / 8)
 	local column = (index - 1) % 8
-	return CFrame.new(-36 + column * 3, 3, -18 + row * 3) * CFrame.Angles(0, math.rad(180), 0)
+	return CFrame.new(-36 + column * 3, 11, -18 + row * 3) * CFrame.Angles(0, math.rad(180), 0)
 end
 
 function CreatureDisplay.Refresh(state)

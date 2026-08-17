@@ -21,7 +21,7 @@ local function DailyInfo(quests)
 				Type = "Daily",
 				Id = quest.Id,
 				Name = def.Name,
-				Desc = def.Desc,
+				Desc = def.Desc:gsub("{target}", tostring(def.Target)),
 				Progress = quest.Progress,
 				Target = def.Target,
 				Reward = def.Reward,
@@ -52,6 +52,7 @@ end
 
 local function AddQuestRow(parent: Instance, row, onClaim: (string) -> ())
 	local cell = UiKit.Cell(parent)
+	cell.Name = `QuestRow_{row.Id}`
 
 	local header = UiKit.Create("Frame", {
 		BackgroundTransparency = 1,
@@ -106,7 +107,7 @@ local function AddQuestRow(parent: Instance, row, onClaim: (string) -> ())
 			})
 		elseif done then
 			local claim = UiKit.Button(cell, "Réclamer", UDim2.fromOffset(110, 32), UDim2.fromScale(0, 1))
-			claim.Name = "ClaimButton"
+			claim.Name = `Claim_{row.Id}`
 			claim.Position = UDim2.fromScale(0.5, 0)
 			claim.AnchorPoint = Vector2.new(0.5, 0)
 			claim.TextSize = 13

@@ -20,16 +20,23 @@ local Fx = require(script.Parent.Fx)
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
-task.spawn(function()
-	for _ = 1, 10 do
-		local chat = playerGui:FindFirstChild("Chat")
-		if chat then
-			chat:Destroy()
-		end
-		task.wait(0.5)
-	end
+local tcs = game:GetService("TextChatService")
+pcall(function()
+	tcs.ChatWindowConfiguration.VerticalAlignment = Enum.VerticalAlignment.Bottom
+	tcs.ChatWindowConfiguration.HorizontalAlignment = Enum.HorizontalAlignment.Left
 end)
+if tcs.ChatVersion == Enum.ChatVersion.LegacyChatService then
+	game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
+	task.spawn(function()
+		for _ = 1, 10 do
+			local chat = playerGui:FindFirstChild("Chat")
+			if chat then
+				chat:Destroy()
+			end
+			task.wait(0.5)
+		end
+	end)
+end
 
 local TINTS = UiKit.TINTS
 
@@ -141,6 +148,7 @@ local function AddTab(name: string, panelModule: any)
 			panel.frame.Visible = false
 		end
 		frame.Visible = true
+		TutorialBridge.SetActive(name)
 	end)
 
 	table.insert(panels, { module = panelModule, frame = frame })

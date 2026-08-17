@@ -85,6 +85,7 @@ function EggPanel.Create(parent)
 	for _, itemType in { "Heart", "Collar" } do
 		for tier, def in Equipment[itemType].Tiers do
 			local button = UiKit.Create("TextButton", {
+				Name = `Buy{itemType}{tier}`,
 				BackgroundColor3 = UiKit.TINTS.DARK,
 				TextColor3 = UiKit.TINTS.WHITE,
 				Font = Enum.Font.GothamBold,
@@ -109,6 +110,7 @@ function EggPanel.Refresh(state)
 	local rowWidth = eggList.AbsoluteSize.X - 4
 	for i, egg in state.Eggs do
 		local row = UiKit.Cell(eggList)
+		row.Name = `EggRow{i}`
 		row.Size = UDim2.fromOffset(rowWidth, 52)
 		row.Position = UDim2.fromOffset(0, (i - 1) * 58)
 		local label = UiKit.Create("TextLabel", {
@@ -125,7 +127,7 @@ function EggPanel.Refresh(state)
 			Parent = row,
 		})
 		local button = UiKit.Button(row, "Éclore", UDim2.new(0.55, 0, 0, 36), UDim2.fromScale(0.45, 0.5))
-		button.Name = "HatchButton"
+		button.Name = `HatchButton{i}`
 		button.AnchorPoint = Vector2.new(0, 0.5)
 		button.Activated:Connect(function()
 			Net.HatchEgg:FireServer(egg.Id)

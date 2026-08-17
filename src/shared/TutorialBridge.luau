@@ -11,6 +11,11 @@ function TutorialBridge.Set(key: string, value: any)
 	event:Fire(key)
 end
 
+function TutorialBridge.SetActive(tabName: string)
+	TutorialBridge.state.ActiveTab = tabName
+	event:Fire("ActiveTab")
+end
+
 function TutorialBridge.Changed(callback: (string) -> ())
 	return event.Event:Connect(callback)
 end

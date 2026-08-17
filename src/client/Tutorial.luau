@@ -21,8 +21,8 @@ local STEPS = {
 		Need = "MenuOpen",
 	},
 	{
-		Text = "Va dans l'onglet Œufs et achète ton premier œuf.",
-		Need = "Eggs",
+		Text = "Ouvre l'onglet Œufs et achète ton premier œuf.",
+		Need = "EggsTab",
 	},
 	{
 		Text = "Clique sur Éclore pour faire apparaître ta première créature !",
@@ -30,7 +30,7 @@ local STEPS = {
 	},
 	{
 		Text = "Ouvre l'onglet Sanctuaire : ta créature s'y promène.",
-		Need = "Creature",
+		Need = "SanctuaryTab",
 	},
 	{
 		Text = "C'est tout ! Une récompense de 50 essence t'attend.",
@@ -165,10 +165,10 @@ local function Check()
 	local advance = false
 	if step.Need == "MenuOpen" then
 		advance = TutorialBridge.state.MenuOpen
-	elseif step.Need == "Eggs" then
-		advance = state ~= nil and #state.Eggs > 0
-	elseif step.Need == "Creature" then
-		advance = state ~= nil and #state.Creatures >= 1
+	elseif step.Need == "EggsTab" then
+		advance = TutorialBridge.state.ActiveTab == "Œufs"
+	elseif step.Need == "SanctuaryTab" then
+		advance = TutorialBridge.state.ActiveTab == "Sanctuaire"
 	end
 	if advance then
 		ShowStep(stepIndex + 1)
@@ -196,7 +196,7 @@ Net.HatchResult.OnClientEvent:Connect(function()
 end)
 
 TutorialBridge.Changed(function(key)
-	if key == "MenuOpen" then
+	if key == "MenuOpen" or key == "ActiveTab" then
 		Check()
 	end
 end)
