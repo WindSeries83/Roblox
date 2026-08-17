@@ -50,7 +50,7 @@ local function PrepareClone(model: Model)
 		end
 	end
 	if not model.PrimaryPart then
-		local first = model:FindFirstChildWhichIsA("BasePart")
+		local first = model:FindFirstChildWhichIsA("BasePart", true)
 		if first then
 			model.PrimaryPart = first
 		end
@@ -107,7 +107,7 @@ function CreatureDisplay.Refresh(state)
 			PrepareClone(model)
 			model.Parent = sanctuary
 			spawned[creature.Id] = model
-			local primary = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
+			local primary = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)
 			if primary then
 				Fx.Burst(primary, displayColor, 26)
 				if rank >= 2 then

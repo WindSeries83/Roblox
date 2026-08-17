@@ -67,6 +67,14 @@ local topBar = UiKit.Create("Frame", {
 })
 UiKit.Corner(topBar)
 UiKit.Padding(topBar, 12)
+local topBarGradient = Instance.new("UIGradient")
+topBarGradient.Name = "Gradient"
+topBarGradient.Color = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, TINTS.PANEL),
+	ColorSequenceKeypoint.new(1, TINTS.DARK),
+})
+topBarGradient.Rotation = 90
+topBarGradient.Parent = topBar
 
 local essenceLabel = UiKit.Create("TextLabel", {
 	Name = "EssenceLabel",
@@ -233,14 +241,42 @@ local menuButton = UiKit.Create("TextButton", {
 })
 UiKit.Corner(menuButton)
 
+local menuTargetSize = UDim2.fromScale(if compact then 0.96 else 0.72, if compact then 0.96 else 0.72)
+local menuTween
+local menuOpen = false
+
 local function SetMenuOpen(open: boolean)
-	content.Visible = open
+	if menuTween then
+		menuTween:Cancel()
+	end
+	menuOpen = open
+	if open then
+		content.Visible = true
+		content.Size = UDim2.fromScale(menuTargetSize.X.Scale * 0.96, menuTargetSize.Y.Scale * 0.96)
+		content.BackgroundTransparency = 0.45
+		menuTween = TweenService:Create(content, TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Size = menuTargetSize,
+			BackgroundTransparency = 0,
+		})
+		menuTween:Play()
+	else
+		menuTween = TweenService:Create(content, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+			Size = UDim2.fromScale(menuTargetSize.X.Scale * 0.96, menuTargetSize.Y.Scale * 0.96),
+			BackgroundTransparency = 0.45,
+		})
+		menuTween.Completed:Connect(function()
+			if not menuOpen then
+				content.Visible = false
+			end
+		end)
+		menuTween:Play()
+	end
 	menuButton.Text = if open then "Fermer" else "Menu"
 	TutorialBridge.Set("MenuOpen", open)
 end
 
 menuButton.Activated:Connect(function()
-	SetMenuOpen(not content.Visible)
+	SetMenuOpen(not menuOpen)
 end)
 
 SetMenuOpen(false)

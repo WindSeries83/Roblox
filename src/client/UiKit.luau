@@ -11,6 +11,8 @@ UiKit.TINTS = {
 	GREEN = Color3.fromRGB(70, 190, 100),
 }
 
+local TweenService = game:GetService("TweenService")
+
 function UiKit.Create(className: string, props: { [string]: any }): Instance
 	local inst = Instance.new(className)
 	for key, value in props do
@@ -19,6 +21,20 @@ function UiKit.Create(className: string, props: { [string]: any }): Instance
 	if className == "TextButton" or className == "ImageButton" then
 		inst.Activated:Connect(function()
 			Audio.Play("UiClick")
+		end)
+		local hoverScale = Instance.new("UIScale")
+		inst.MouseEnter:Connect(function()
+			if not hoverScale.Parent then
+				hoverScale.Parent = inst
+			end
+			TweenService:Create(hoverScale, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+				Scale = 1.05,
+			}):Play()
+		end)
+		inst.MouseLeave:Connect(function()
+			TweenService:Create(hoverScale, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+				Scale = 1,
+			}):Play()
 		end)
 	end
 	return inst
