@@ -169,6 +169,9 @@ Plus lent que le trafic Roblox natif, mais bien plus fidèle.
 - Place Studio : sauvegarder le fichier (`Ctrl+S`) après toute synchro MCP — les remotes sont désormais déclarées dans `default.project.json`
 - [x] **Faille testée de bout en bout** (playtest réel, RiftInterval=30s temporaire) : ouverture cyclique, entrée par Touched, combat (dégâts `floor(power×0.8)`, gardien 12 PV/2,5 s), GuardianDown → cristal, win par proximité <6 studs ou Touched, récompenses (essence `rate×60×mult` source RiftCrystal + œuf RIFT_EGG_WEIGHTS), compteur `RiftsCompleted`. Edge case : un joueur sans créatures (power 0) ne peut pas gagner — perte rapide, pas de softlock.
 - [x] **Bug display corrigé** : `FindFirstChildOfClass("BasePart")` ne matche pas les `MeshPart` (className exact) → `PrimaryPart` jamais défini sur les clones → PivotTo/grid/anim jamais exécutés (créatures display superposées aux templates, d'où « les créatures alignées » visibles en Edit). Fix : `FindFirstChildWhichIsA("BasePart")`. Les 10 templates déplacés sous la map (y=-500) dans le place **et** `default.project.json` (54 parts).
+- [x] **LOT A — Tutoriel joué de bout en bout (MCP)** : Continuer → Menu → onglet Œufs → Éclore (MossCrawler, succès FirstHatch +50) → Récompense (+50), 74/74 tests verts. Fixes : chat Roblox désactivé (recouvrait les 3 premiers onglets et bloquait les clics), positions explicites des onglets, fix crash nil des barres de progression des quêtes.
+- [ ] **À trancher** : l'étape 3 du tutoriel (« achète un œuf ») est auto-sautée car un œuf de départ est offert par PlayerDataService — soit retirer l'étape, soit la garder avec Need=Essence (achat impossible à ce stade).
+- [ ] **À trancher** : chat Roblox désactivé dans `Ui.luau` — décider si le jeu gardera un chat (le réactiver + positionner l'UI ailleurs) ou non.
 
 ## 7. Décisions P3 actées
 
