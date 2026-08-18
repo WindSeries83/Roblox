@@ -15,6 +15,8 @@ local indexService
 local dataSync
 local questService
 
+local container
+
 local cooldowns: { [Player]: number } = {}
 
 local function FindCreature(creatures: { any }, creatureId: string)
@@ -26,13 +28,14 @@ local function FindCreature(creatures: { any }, creatureId: string)
 	return nil
 end
 
-function BreedingService:Init(container)
-	log = container:Get("Log")
-	saveService = container:Get("SaveService")
-	essenceService = container:Get("EssenceService")
-	indexService = container:Get("IndexService")
-	dataSync = container:Get("DataSync")
-	questService = container:Get("QuestService")
+function BreedingService:Init(cont)
+	container = cont
+	log = cont:Get("Log")
+	saveService = cont:Get("SaveService")
+	essenceService = cont:Get("EssenceService")
+	indexService = cont:Get("IndexService")
+	dataSync = cont:Get("DataSync")
+	questService = cont:Get("QuestService")
 end
 
 function BreedingService:Start()
@@ -55,7 +58,8 @@ function BreedingService:Start()
 			return
 		end
 
-		local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel)
+		local bonusSlots = if profile.Data.Entitlements.MoreSlots then 2 else 0
+		local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel, bonusSlots)
 		if #profile.Data.Creatures >= maxCreatures then
 			log:Economy("Breeding", "CapReached", {
 				Player = player.Name,
@@ -88,6 +92,10 @@ function BreedingService:Start()
 
 		profile.Data.Stats.TotalBred += 1
 		questService:OnBreed(player)
+		local seasonService = container:Get("SeasonService")
+		if seasonService then
+			seasonService:OnBreed(player)
+		end
 
 		log:Economy("Breeding", "Success", {
 			Player = player.Name,

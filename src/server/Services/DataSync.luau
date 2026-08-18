@@ -30,6 +30,7 @@ function DataSync:Send(player: Player)
 		Stats = profile.Data.Stats,
 		Quests = profile.Data.Quests,
 		TutorialDone = profile.Data.TutorialDone,
+		Entitlements = profile.Data.Entitlements,
 	})
 end
 

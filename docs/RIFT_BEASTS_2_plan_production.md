@@ -94,17 +94,17 @@ Renaissance 1 ~13–18 min · Renaissance 2 ~30–40 min · Renaissance 3 ~1h10�
 **Sortie :** aucune progression bloquée, aucune inflation prévisible. ✓ (64/64 tests verts, playtest remotes : cap, upgrade, rebirth)
 
 ### P4 — Social & monétisation · 3–4 semaines
-- [ ] Trading + place de marché + anti-arnaque
-- [ ] Duels de sanctuaires
-- [ ] Gamepasses et bundles
-- [ ] Season pass v1
-- [ ] Classements et sanctuaires visitables
+- [x] Trading + place de marché + anti-arnaque
+- [x] Duels de sanctuaires
+- [x] Gamepasses et bundles
+- [x] Season pass v1
+- [x] Classements et sanctuaires visitables
 
 ### P5 — Pré-lancement · 2 semaines
-- [ ] Icône et miniatures : **le poste le plus rentable du projet**. Tester plusieurs variantes.
+- [ ] Icône et miniatures : **le poste le plus rentable du projet**. Tester plusieurs variantes. (3 variantes IA à générer → l'humain tranche)
 - [x] Rétention des 3 premières minutes : premier drop rare dans les 60 s — **pity au premier œuf** (`FIRST_HATCH_WEIGHTS` 40/40/20 au lieu de 75/20/5), appliqué au premier œuf commun éclos
-- [ ] Discord ouvert **avant** la sortie
-- [ ] Playtest fermé avec 20–30 joueurs adultes recrutés sur Discord / Reddit
+- [ ] Discord ouvert **avant** la sortie (tâche humaine — notes fournies)
+- [ ] Playtest fermé avec 20–30 joueurs adultes recrutés sur Discord / Reddit (tâche humaine — notes fournies)
 - [x] Anti-triche : vérifier que rien de monétaire ne passe par le client — **audité : 0 mutation d'Essence côté client** (affichage uniquement, toute la monnaie est serveur)
 
 ### P6 — Lancement & live ops · permanent
@@ -178,6 +178,8 @@ Plus lent que le trafic Roblox natif, mais bien plus fidèle.
 - [x] **V2 — Créatures** : 10 espèces régénérées en low-poly texturé « crépuscule » (generate_mesh, ~2-3 studs) et remplacées dans `Workspace.Creatures` (y=-500). Nettoyage requis : les maillages générés contenaient des copies libres à l'origine (54 supprimées) qui ne suivaient pas PivotTo, et `PrimaryPart` devait être défini récursivement (`FindFirstChildWhichIsA("BasePart", true)`) — même correction dans `CreatureDisplay`. Lisibilité de rareté (bible §3.1) dans `CreatureDisplay` : taille (1 → 1.9 × par rang × stade × mutation log10), aura Neon + PointLight colorés (rang ≥ 2), particules ambiantes (rate 4 → 60 par rang), lévitation amplifiée par rang. Vérifié en playtest : CinderSeraph Rare muté Ombre (pity 1er œuf) — grille, aura, particules, taille 1.25×, annonce serveur.
 - [x] **V3 — UI & game feel** : animation d'ouverture/fermeture du menu (TweenService : scale 0.96→1 + transparence), hover des boutons (UIScale 1.05 sur MouseEnter/Leave, aucun impact layout), barre supérieure avec dégradé, lucioles ambiantes (20 points Neon client-only dérivant sur l'île), caméra au spawn (CameraType Scriptable 1,2 s → Custom). `default.project.json` : `Workspace` réduit à `$properties` + `SpawnLocation` (Baseplate/Creatures retirés → place-owned, sinon rojo restaurerait l'ancien monde).
 - [x] **Restes V3** : flip `ChatVersion = TextChatService` (Explorer) + `Ctrl+S` du place + validation visuelle finale — tout clôturé le 18/08. L'alerte Rojo sur `ChatVersion` (propriété verrouillée) est éliminée par le retrait de la déclaration dans `default.project.json`.
+- [x] **P4 — Social & monétisation (18/08, 113/113 tests)** : migration v4 (Season, Titles, Entitlements, Stats.DuelsWon/Lost/MarketSales, MarketHistory), marché d'Essence (frais 5 %, cap 5 listings, retrait double confirmation + 60 s, crédits différés si vendeur déconnecté), duels statiques seedés (mise en escrow, remboursement sur refus/timeout 60 s), gamepasses (MoreSlots +2, PassiveBoost +50 %, AutoHatch, StarterBundle, SeasonPremium — **IDs placeholder 0 à renseigner**), season pass (XP par éclosion/faille/rebirth/quêtes/élevage, 20 niveaux, 2 pistes, créature exclusive CinderSeraph+Shadow au niv. max premium), classements (Essence totale, refresh 5 min, snapshots, MessagingService cross-serveur **à valider sur place publié**). Playtest MCP : 8 onglets UI, vente/retrait/auto-achat-refusé, claim season, classement + aperçu sanctuaire. 2 bugs serveur trouvés en playtest : `MessagingService:SubscribeAsync` bloque indéfiniment en Studio non publié (fix : guard `RunService:IsStudio()`), et script serveur doublon « Main » du .rbxlx (supprimé — reste `ServerScriptService` de Rojo comme unique point d'entrée). **Ctrl+S du place requis** pour persister la suppression de « Main ».
+- [x] **Rojo cassé le 18/08** : l'installation Rojo ne propageait plus les fichiers dans Studio (panels/remotes non créés) — diagnostic : le serveur `rojo serve` voyait les fichiers (sourcemap OK) mais le plugin Studio ne recevait rien. Solution de contournement : push manuel via MCP (multi_edit + recréation d'instances). **Réinstallation à prévoir** (sans perte : tout le code est dans git, `rojo build` régénère le place).
 
 ## 7. Décisions P3 actées
 

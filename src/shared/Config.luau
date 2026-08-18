@@ -10,6 +10,8 @@ return {
 		RareEgg = 800,
 	},
 
+	HATCH_COOLDOWN = 5,
+
 	EGG_RARITY_WEIGHTS = {
 		CommonEgg = { Common = 75, Uncommon = 20, Rare = 5 },
 		UncommonEgg = { Uncommon = 80, Rare = 20 },
@@ -71,6 +73,58 @@ return {
 	SANCTUARY_UPGRADE_COST_MULT = 4,
 
 	COLLAR_MUTATION_CAP = 0.25,
+
+	MARKET_FEE = 0.05,
+	MARKET_MAX_LISTINGS = 5,
+	MARKET_MIN_PRICE = 10,
+	MARKET_MAX_PRICE = 50000,
+	MARKET_WITHDRAW_DELAY = 60,
+	MARKET_LIST_LIMIT = 50,
+	MARKET_COOLDOWN = 2,
+	MARKET_QUERY_COOLDOWN = 5,
+
+	DUEL_MIN_WAGER = 50,
+	DUEL_MAX_WAGER = 10000,
+	DUEL_COOLDOWN = 10,
+	DUEL_TIMEOUT = 60,
+	DUEL_MAX_TEAM = 5,
+
+	SEASON_MAX_LEVEL = 20,
+	SEASON_XP_PER_LEVEL = 100,
+	SEASON_XP = {
+		Hatch = 10,
+		Rift = 25,
+		Breed = 15,
+		Rebirth = 100,
+		Quest = 5,
+	},
+	SEASON_FREE_ESSENCE = { 50, 25 },
+	SEASON_PREMIUM_ESSENCE = { 100, 50 },
+	SEASON_EXCLUSIVE = {
+		SpeciesId = "CinderSeraph",
+		Rarity = "Rare",
+		Mutation = "Shadow",
+	},
+	SEASON_FREE_TITLE = "Gardien de la saison",
+	SEASON_EXCLUSIVE_TITLE = "Éclat de la Faille",
+
+	LEADERBOARD_TOP = 50,
+	LEADERBOARD_REFRESH = 300,
+	LEADERBOARD_QUERY_COOLDOWN = 5,
+
+	-- Placeholders: IDs réels à renseigner lors de la création des assets (P5 humain)
+	GAMEPASSES = {
+		MoreSlots = { Id = 0, Name = "Sanctuaire +2 places" },
+		PassiveBoost = { Id = 0, Name = "Rendement +50 %" },
+		AutoHatch = { Id = 0, Name = "Éclosion automatique" },
+		StarterBundle = { Id = 0, Name = "Pack de départ" },
+		SeasonPremium = { Id = 0, Name = "Piste premium de la saison" },
+	},
+	DEV_PRODUCTS = {
+		EssencePackSmall = { Id = 0, Name = "500 Essence", Amount = 500 },
+		EssencePackMedium = { Id = 0, Name = "2500 Essence", Amount = 2500 },
+		EssencePackLarge = { Id = 0, Name = "10000 Essence", Amount = 10000 },
+	},
 
 	TUTORIAL_REWARD = 50,
 

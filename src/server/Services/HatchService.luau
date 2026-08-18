@@ -18,6 +18,10 @@ local saveService
 local indexService
 local questService
 
+local container
+
+local hatchCooldowns: { [Player]: number } = {}
+
 function HatchService:GrantEgg(player: Player, tier: string, source: string)
 	local profile = saveService:GetProfile(player)
 	if not profile then
@@ -67,12 +71,13 @@ local function CollarBonus(profile): number
 	return math.min(bonus, Config.COLLAR_MUTATION_CAP)
 end
 
-function HatchService:Init(container)
-	log = container:Get("Log")
-	essenceService = container:Get("EssenceService")
-	saveService = container:Get("SaveService")
-	indexService = container:Get("IndexService")
-	questService = container:Get("QuestService")
+function HatchService:Init(cont)
+	container = cont
+	log = cont:Get("Log")
+	essenceService = cont:Get("EssenceService")
+	saveService = cont:Get("SaveService")
+	indexService = cont:Get("IndexService")
+	questService = cont:Get("QuestService")
 end
 
 function HatchService:Start()
@@ -104,7 +109,16 @@ function HatchService:Start()
 			return
 		end
 
-		local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel)
+		if not profile.Data.Entitlements.AutoHatch then
+			local lastHatch = hatchCooldowns[player] or 0
+			if os.clock() - lastHatch < Config.HATCH_COOLDOWN then
+				return
+			end
+			hatchCooldowns[player] = os.clock()
+		end
+
+		local bonusSlots = if profile.Data.Entitlements.MoreSlots then 2 else 0
+		local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel, bonusSlots)
 		if #profile.Data.Creatures >= maxCreatures then
 			log:Economy("Hatch", "CapReached", {
 				Player = player.Name,
@@ -131,6 +145,10 @@ function HatchService:Start()
 		local mutationName = roll.Mutation ~= false and Mutations[roll.Mutation].Name or nil
 		local announced = Gameplay.RarityRank(roll.Rarity) >= Gameplay.RarityRank(Config.ANNOUNCE_MIN_RARITY)
 		questService:OnHatch(player, roll.Mutation ~= false)
+		local seasonService = container:Get("SeasonService")
+		if seasonService then
+			seasonService:OnHatch(player)
+		end
 
 		Net.HatchResult:FireClient(player, {
 			EggId = eggId,

@@ -6,7 +6,7 @@ local SaveService = {}
 
 SaveService.Profiles = {}
 
-local DATA_VERSION = 3
+local DATA_VERSION = 4
 
 local Store = ProfileStore.New("RiftBeastsData_v1", {
 	Essence = 0,
@@ -18,6 +18,9 @@ local Store = ProfileStore.New("RiftBeastsData_v1", {
 		TotalEssenceEarned = 0,
 		RiftsCompleted = 0,
 		TotalBred = 0,
+		DuelsWon = 0,
+		DuelsLost = 0,
+		MarketSales = 0,
 	},
 	Index = {},
 	Items = {},
@@ -28,6 +31,21 @@ local Store = ProfileStore.New("RiftBeastsData_v1", {
 		Day = "",
 		Daily = {},
 		Achievements = {},
+	},
+	Season = {
+		Level = 1,
+		XP = 0,
+		ClaimedFree = {},
+		ClaimedPremium = {},
+	},
+	Titles = {},
+	MarketHistory = {},
+	Entitlements = {
+		MoreSlots = false,
+		PassiveBoost = false,
+		AutoHatch = false,
+		StarterBundle = false,
+		SeasonPremium = false,
 	},
 	TutorialDone = false,
 	Version = DATA_VERSION,
@@ -60,6 +78,30 @@ local MIGRATIONS = {
 		}
 		data.TutorialDone = data.TutorialDone or false
 		data.Version = 3
+	end,
+	[3] = function(data)
+		data.Stats = data.Stats or {}
+		data.Stats.DuelsWon = data.Stats.DuelsWon or 0
+		data.Stats.DuelsLost = data.Stats.DuelsLost or 0
+		data.Stats.MarketSales = data.Stats.MarketSales or 0
+		data.Season = data.Season or {
+			Level = 1,
+			XP = 0,
+			ClaimedFree = {},
+			ClaimedPremium = {},
+		}
+		data.Titles = data.Titles or {}
+		data.MarketHistory = data.MarketHistory or {}
+		data.Entitlements = data.Entitlements
+			or {
+				MoreSlots = false,
+				PassiveBoost = false,
+				AutoHatch = false,
+				StarterBundle = false,
+				SeasonPremium = false,
+			}
+		data.Entitlements.SeasonPremium = data.Entitlements.SeasonPremium or false
+		data.Version = 4
 	end,
 }
 

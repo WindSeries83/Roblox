@@ -14,6 +14,10 @@ local IndexPanel = require(script.Parent.Panels.IndexPanel)
 local BreedingPanel = require(script.Parent.Panels.BreedingPanel)
 local RebirthPanel = require(script.Parent.Panels.RebirthPanel)
 local QuestsPanel = require(script.Parent.Panels.QuestsPanel)
+local MarketPanel = require(script.Parent.Panels.MarketPanel)
+local DuelPanel = require(script.Parent.Panels.DuelPanel)
+local SeasonPanel = require(script.Parent.Panels.SeasonPanel)
+local LeaderboardPanel = require(script.Parent.Panels.LeaderboardPanel)
 local TutorialBridge = require(ReplicatedStorage.Shared.TutorialBridge)
 local Fx = require(script.Parent.Fx)
 
@@ -168,6 +172,99 @@ AddTab("Index", IndexPanel)
 AddTab("Élevage", BreedingPanel)
 AddTab("Renaissance", RebirthPanel)
 AddTab("Objectifs", QuestsPanel)
+AddTab("Marché", MarketPanel)
+
+-- Tab "Duels & Classements" : wrapper avec sous-onglets Duels / Saison / Classements
+do
+	tabCount += 1
+	local button = UiKit.Create("TextButton", {
+		Name = `Tab{tabCount}`,
+		BackgroundColor3 = TINTS.PANEL,
+		TextColor3 = TINTS.WHITE,
+		Font = Enum.Font.GothamBold,
+		TextSize = 13,
+		Size = UDim2.fromOffset(112, 60),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(6, 6 + (tabCount - 1) * 12),
+		Text = "Duels & Classements",
+		Parent = tabBar,
+	})
+	UiKit.Corner(button)
+
+	local frame = UiKit.Create("Frame", {
+		Name = `Panel{tabCount}`,
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 1),
+		Parent = panelsFrame,
+	})
+	frame.Visible = false
+
+	local subBar = UiKit.Create("Frame", {
+		Name = "SubBar",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 30),
+		Parent = frame,
+	})
+	local subPages = {
+		DuelPanel.Create(frame),
+		SeasonPanel.Create(frame),
+		LeaderboardPanel.Create(frame),
+	}
+	for _, page in subPages do
+		page.Position = UDim2.fromOffset(0, 32)
+		page.Visible = false
+	end
+	subPages[1].Visible = true
+	local subButtons = {}
+	for i, name in { "Duels", "Saison", "Classements" } do
+		local sub = UiKit.Create("TextButton", {
+			Name = `SubTab{i}`,
+			BackgroundColor3 = TINTS.DARK,
+			TextColor3 = TINTS.WHITE,
+			Font = Enum.Font.GothamBold,
+			TextSize = 13,
+			Size = UDim2.new(0.33, -4, 1, 0),
+			Position = UDim2.new(0.33 * (i - 1), 2, 0, 0),
+			Text = name,
+			Parent = subBar,
+		})
+		UiKit.Corner(sub)
+		sub.Activated:Connect(function()
+			for j, tab in subButtons do
+				tab.BackgroundColor3 = TINTS.DARK
+				subPages[j].Visible = false
+			end
+			sub.BackgroundColor3 = TINTS.PANEL
+			subPages[i].Visible = true
+		end)
+		table.insert(subButtons, sub)
+	end
+	subButtons[1].BackgroundColor3 = TINTS.PANEL
+
+	button.Activated:Connect(function()
+		for _, panel in panels do
+			panel.frame.Visible = false
+		end
+		frame.Visible = true
+		TutorialBridge.SetActive("Duels & Classements")
+	end)
+
+	table.insert(panels, {
+		module = {
+			Create = function()
+				return frame
+			end,
+			Refresh = function(state)
+				for _, pageModule in { DuelPanel, SeasonPanel, LeaderboardPanel } do
+					if pageModule.Refresh then
+						pageModule.Refresh(state)
+					end
+				end
+			end,
+		},
+		frame = frame,
+	})
+end
 
 local lastTabLayoutHeight = 0
 local function LayoutTabs()

@@ -10,6 +10,8 @@ local log
 local saveService
 local essenceService
 
+local container
+
 local function DayString(): string
 	return os.date("%Y-%m-%d")
 end
@@ -222,10 +224,11 @@ function QuestService:OnRebirth(player: Player)
 	UnlockAchievements(player)
 end
 
-function QuestService:Init(container)
-	log = container:Get("Log")
-	saveService = container:Get("SaveService")
-	essenceService = container:Get("EssenceService")
+function QuestService:Init(cont)
+	container = cont
+	log = cont:Get("Log")
+	saveService = cont:Get("SaveService")
+	essenceService = cont:Get("EssenceService")
 end
 
 function QuestService:Start()
@@ -248,6 +251,10 @@ function QuestService:Start()
 					Reward = def.Reward,
 				})
 				SyncQuests(player)
+				local seasonService = container:Get("SeasonService")
+				if seasonService then
+					seasonService:OnQuestClaim(player)
+				end
 				return
 			end
 		end

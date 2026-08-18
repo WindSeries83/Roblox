@@ -38,4 +38,25 @@ Net.QuestsSync = Event("QuestsSync")
 Net.QuestClaim = Event("QuestClaim")
 Net.TutorialComplete = Event("TutorialComplete")
 
+Net.MarketList = Event("MarketList")
+Net.MarketListings = Event("MarketListings")
+Net.MarketBuy = Event("MarketBuy")
+Net.MarketRemove = Event("MarketRemove")
+Net.MarketSync = Event("MarketSync")
+
+Net.DuelChallenge = Event("DuelChallenge")
+Net.DuelAccept = Event("DuelAccept")
+Net.DuelDecline = Event("DuelDecline")
+Net.DuelRequest = Event("DuelRequest")
+Net.DuelResult = Event("DuelResult")
+
+Net.SeasonSync = Event("SeasonSync")
+Net.SeasonRequest = Event("SeasonRequest")
+Net.SeasonClaim = Event("SeasonClaim")
+
+Net.LeaderboardRequest = Event("LeaderboardRequest")
+Net.LeaderboardSync = Event("LeaderboardSync")
+Net.LeaderboardVisit = Event("LeaderboardVisit")
+Net.LeaderboardDetail = Event("LeaderboardDetail")
+
 return Net

@@ -16,6 +16,11 @@ local ORDER = {
 	"BreedingService",
 	"RebirthService",
 	"SanctuaryService",
+	"MarketService",
+	"DuelService",
+	"SeasonService",
+	"LeaderboardService",
+	"PurchaseService",
 	"PlayerDataService",
 }
 

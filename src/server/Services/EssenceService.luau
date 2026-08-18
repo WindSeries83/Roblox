@@ -25,7 +25,8 @@ function EssenceService.GetRate(player: Player): number
 	local sanctuaryMult = 1 + Config.SANCTUARY_LEVEL_BONUS * (profile.Data.SanctuaryLevel - 1)
 	local indexMult = Index.ComputeMult(profile.Data.Index)
 	local starMult = Rebirth.StarEssenceMult(profile.Data.Stars)
-	return EssenceService.ComputeRate(profile.Data.Creatures) * sanctuaryMult * indexMult * starMult
+	local passMult = if profile.Data.Entitlements.PassiveBoost then 1.5 else 1
+	return EssenceService.ComputeRate(profile.Data.Creatures) * sanctuaryMult * indexMult * starMult * passMult
 end
 
 function EssenceService:Add(player: Player, amount: number, source: string)

@@ -154,7 +154,8 @@ function SanctuaryPanel.Create(parent)
 end
 
 function SanctuaryPanel.Refresh(state)
-	local maxCreatures = Sanctuary.MaxCreatures(state.SanctuaryLevel)
+	local bonusSlots = if state.Entitlements and state.Entitlements.MoreSlots then 2 else 0
+	local maxCreatures = Sanctuary.MaxCreatures(state.SanctuaryLevel, bonusSlots)
 	local cost = Sanctuary.UpgradeCost(state.SanctuaryLevel)
 	upgradeLabel.Text =
 		`Sanctuaire niveau {state.SanctuaryLevel} — {#state.Creatures}/{maxCreatures} créatures\nAméliorer : +{Sanctuary.SLOTS_PER_LEVEL} places (coût {cost} Essence)`

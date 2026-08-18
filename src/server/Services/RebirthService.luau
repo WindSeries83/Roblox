@@ -10,11 +10,14 @@ local saveService
 local dataSync
 local questService
 
-function RebirthService:Init(container)
-	log = container:Get("Log")
-	saveService = container:Get("SaveService")
-	dataSync = container:Get("DataSync")
-	questService = container:Get("QuestService")
+local container
+
+function RebirthService:Init(cont)
+	container = cont
+	log = cont:Get("Log")
+	saveService = cont:Get("SaveService")
+	dataSync = cont:Get("DataSync")
+	questService = cont:Get("QuestService")
 end
 
 function RebirthService:Start()
@@ -59,6 +62,10 @@ function RebirthService:Start()
 		Rebirth.ApplyReset(profile.Data)
 		profile.Data.LastPlayed = os.time()
 		questService:OnRebirth(player)
+		local seasonService = container:Get("SeasonService")
+		if seasonService then
+			seasonService:OnRebirth(player)
+		end
 
 		log:Economy("Rebirth", "Success", {
 			Player = player.Name,

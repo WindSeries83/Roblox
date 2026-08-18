@@ -1,4 +1,4 @@
-{
+﻿{
     "name":  "rift-beasts",
     "tree":  {
                  "$className":  "DataModel",
@@ -96,10 +96,61 @@
                                                            "QuestClaim":  {
                                                                               "$className":  "RemoteEvent"
                                                                           },
-                                                           "TutorialComplete":  {
+                                                            "TutorialComplete":  {
+                                                                                     "$className":  "RemoteEvent"
+                                                                                 },
+                                                            "MarketList":  {
+                                                                              "$className":  "RemoteEvent"
+                                                                          },
+                                                            "MarketListings":  {
                                                                                     "$className":  "RemoteEvent"
-                                                                                }
-                                                       }
+                                                                                },
+                                                            "MarketBuy":  {
+                                                                               "$className":  "RemoteEvent"
+                                                                           },
+                                                            "MarketRemove":  {
+                                                                                  "$className":  "RemoteEvent"
+                                                                              },
+                                                            "MarketSync":  {
+                                                                               "$className":  "RemoteEvent"
+                                                                           },
+                                                            "DuelChallenge":  {
+                                                                                  "$className":  "RemoteEvent"
+                                                                              },
+                                                            "DuelAccept":  {
+                                                                               "$className":  "RemoteEvent"
+                                                                           },
+                                                            "DuelDecline":  {
+                                                                                 "$className":  "RemoteEvent"
+                                                                             },
+                                                            "DuelRequest":  {
+                                                                                "$className":  "RemoteEvent"
+                                                                            },
+                                                            "DuelResult":  {
+                                                                               "$className":  "RemoteEvent"
+                                                                           },
+                                                            "SeasonSync":  {
+                                                                               "$className":  "RemoteEvent"
+                                                                           },
+                                                            "SeasonRequest":  {
+                                                                                     "$className":  "RemoteEvent"
+                                                                                 },
+                                                            "SeasonClaim":  {
+                                                                               "$className":  "RemoteEvent"
+                                                                           },
+                                                            "LeaderboardRequest":  {
+                                                                                      "$className":  "RemoteEvent"
+                                                                                  },
+                                                            "LeaderboardSync":  {
+                                                                                      "$className":  "RemoteEvent"
+                                                                                  },
+                                                            "LeaderboardVisit":  {
+                                                                                      "$className":  "RemoteEvent"
+                                                                                  },
+                                                            "LeaderboardDetail":  {
+                                                                                       "$className":  "RemoteEvent"
+                                                                                   }
+                                                        }
                                        },
                  "StarterPlayer":  {
                                        "StarterPlayerScripts":  {

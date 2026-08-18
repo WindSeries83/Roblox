@@ -4,8 +4,10 @@ local Sanctuary = {}
 
 Sanctuary.SLOTS_PER_LEVEL = Config.SANCTUARY_SLOTS_PER_LEVEL
 
-function Sanctuary.MaxCreatures(sanctuaryLevel: number): number
-	return Config.MAX_CREATURES_BASE + math.max(0, sanctuaryLevel - 1) * Config.SANCTUARY_SLOTS_PER_LEVEL
+function Sanctuary.MaxCreatures(sanctuaryLevel: number, bonusSlots: number?): number
+	return Config.MAX_CREATURES_BASE
+		+ math.max(0, sanctuaryLevel - 1) * Config.SANCTUARY_SLOTS_PER_LEVEL
+		+ (bonusSlots or 0)
 end
 
 function Sanctuary.NextLevelCost(sanctuaryLevel: number): number?

@@ -15,6 +15,8 @@ local hatchService
 local itemService
 local questService
 
+local container
+
 local portal: Model? = nil
 local worldActive = false
 local worldEndsAt = 0
@@ -177,6 +179,10 @@ local function WinRift(player: Player)
 
 	profile.Data.Stats.RiftsCompleted += 1
 	questService:OnRiftWon(player)
+	local seasonService = container:Get("SeasonService")
+	if seasonService then
+		seasonService:OnRiftWon(player)
+	end
 
 	Net.RiftEnded:FireClient(player, { Win = true, Essence = essence, EggTier = eggTier, RelicTier = relicTier })
 	log:Economy("Rift", "Complete", {
@@ -253,13 +259,14 @@ local function onCrystalTouched(part: BasePart)
 	end
 end
 
-function RiftService:Init(container)
-	log = container:Get("Log")
-	saveService = container:Get("SaveService")
-	essenceService = container:Get("EssenceService")
-	hatchService = container:Get("HatchService")
-	itemService = container:Get("ItemService")
-	questService = container:Get("QuestService")
+function RiftService:Init(cont)
+	container = cont
+	log = cont:Get("Log")
+	saveService = cont:Get("SaveService")
+	essenceService = cont:Get("EssenceService")
+	hatchService = cont:Get("HatchService")
+	itemService = cont:Get("ItemService")
+	questService = cont:Get("QuestService")
 end
 
 function RiftService:GetStatePayload()
