@@ -29,6 +29,27 @@ function Gameplay.WeightedRoll(weights: { [string]: number }): string?
 	return (next(weights))
 end
 
+function Gameplay.DropRates(weights: { [string]: number }): { { Id: string, Percent: number } }
+	if type(weights) ~= "table" then
+		return {}
+	end
+	local total = 0
+	for _, weight in weights do
+		total += weight
+	end
+	if total <= 0 then
+		return {}
+	end
+	local rates = {}
+	for id, weight in weights do
+		table.insert(rates, { Id = id, Percent = math.floor(100 * weight / total * 100 + 0.5) / 100 })
+	end
+	table.sort(rates, function(a, b)
+		return a.Percent > b.Percent
+	end)
+	return rates
+end
+
 function Gameplay.MutationWeights(bonus: number?): { [string]: number }
 	local bonusPoints = (bonus or 0) * 100
 	local weights = {

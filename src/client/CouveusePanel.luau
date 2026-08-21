@@ -3,6 +3,8 @@ local Workspace = game:GetService("Workspace")
 
 local Net = require(ReplicatedStorage.Shared.Net)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local UiKit = require(script.Parent.UiKit)
 
 local CouveusePanel = {}
@@ -13,6 +15,26 @@ local TIER_NAMES = {
 	RareEgg = "Œuf rare",
 }
 local TIER_ORDER = { "CommonEgg", "UncommonEgg", "RareEgg" }
+
+local function Hex(color: Color3): string
+	return string.format(
+		"#%02X%02X%02X",
+		math.floor(color.R * 255 + 0.5),
+		math.floor(color.G * 255 + 0.5),
+		math.floor(color.B * 255 + 0.5)
+	)
+end
+
+local function EggRatesText(weights: { [string]: number }): string
+	local parts = {}
+	for _, rate in Gameplay.DropRates(weights) do
+		local rarity = Rarities[rate.Id]
+		local name = rarity and rarity.Name or rate.Id
+		local color = rarity and rarity.Color or UiKit.TINTS.WHITE
+		table.insert(parts, `<font color="{Hex(color)}">{name} {string.format("%g", rate.Percent)} %</font>`)
+	end
+	return table.concat(parts, " · ")
+end
 
 local lastState = nil
 local panel: Frame? = nil
@@ -72,8 +94,31 @@ function CouveusePanel.Start()
 
 	UiKit.Title(panel, "Couveuse", 14)
 
-	eggList = UiKit.Scroller(panel, UDim2.fromOffset(0, 22), UDim2.new(1, 0, 1, -60))
+	eggList = UiKit.Scroller(panel, UDim2.fromOffset(0, 22), UDim2.new(1, 0, 1, -78))
 	eggList.Name = "EggList"
+
+	local ratesRow = UiKit.Create("Frame", {
+		Name = "RatesRow",
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 0, 1, -46),
+		Size = UDim2.new(1, 0, 0, 14),
+		Parent = panel,
+	})
+	for i, tier in TIER_ORDER do
+		UiKit.Create("TextLabel", {
+			Name = `Rates{tier}`,
+			RichText = true,
+			BackgroundTransparency = 1,
+			TextColor3 = UiKit.TINTS.WHITE,
+			TextSize = 9,
+			TextWrapped = true,
+			Position = UDim2.fromScale((i - 1) / 3, 0),
+			Size = UDim2.fromScale(1 / 3, 1),
+			Text = EggRatesText(Config.EGG_RARITY_WEIGHTS[tier]),
+			Parent = ratesRow,
+		})
+	end
 
 	local buyRow = UiKit.Create("Frame", {
 		Name = "BuyRow",

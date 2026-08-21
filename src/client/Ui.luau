@@ -6,7 +6,9 @@ local UiKit = require(script.Parent.UiKit)
 local Audio = require(script.Parent.Audio)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
+local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 
 local SanctuaryPanel = require(script.Parent.Panels.SanctuaryPanel)
 local EggPanel = require(script.Parent.Panels.EggPanel)
@@ -55,6 +57,30 @@ local TIER_NAMES = {
 	UncommonEgg = "Œuf peu commun",
 	RareEgg = "Œuf rare",
 }
+
+local function RatesLine(weights: { [string]: number }, nameOf: (string) -> string): string
+	local parts = {}
+	for _, rate in Gameplay.DropRates(weights) do
+		table.insert(parts, `{nameOf(rate.Id)} {string.format("%g", rate.Percent)} %`)
+	end
+	return table.concat(parts, " · ")
+end
+
+local function RiftEggRatesText(): string
+	return `Œufs : {RatesLine(Config.RIFT_EGG_WEIGHTS, function(id)
+		return TIER_NAMES[id] or id
+	end)}`
+end
+
+local function RiftRelicRatesText(): string
+	return `Reliques : {RatesLine(Config.RIFT_RELIC_WEIGHTS, function(id)
+		if id == "None" then
+			return "Aucune"
+		end
+		local tier = Equipment.Relic.Tiers[tonumber(string.sub(id, 2))]
+		return tier and tier.Name or id
+	end)}`
+end
 
 local ui = UiKit.Create("ScreenGui", {
 	Name = "RiftBeastsUi",
@@ -382,7 +408,7 @@ SetMenuOpen(false)
 local riftHud = UiKit.Create("Frame", {
 	Name = "RiftHud",
 	BackgroundColor3 = TINTS.PANEL,
-	Size = UDim2.fromOffset(if compact then 330 else 420, if compact then 170 else 190),
+	Size = UDim2.fromOffset(if compact then 330 else 420, if compact then 190 else 210),
 	Position = UDim2.fromScale(0.5, 1),
 	AnchorPoint = Vector2.new(0.5, 1),
 	Visible = false,
@@ -414,19 +440,34 @@ local attackButton = UiKit.Create("TextButton", {
 	TextColor3 = TINTS.WHITE,
 	Font = Enum.Font.GothamBold,
 	TextSize = 18,
-	Size = UDim2.fromScale(1, 0.2),
-	Position = UDim2.fromScale(0, 0.55),
+	Size = UDim2.fromScale(1, 0.16),
+	Position = UDim2.fromScale(0, 0.5),
 	Text = "Attaquer",
 	Parent = riftHud,
 })
 UiKit.Corner(attackButton)
 
+UiKit.Create("TextLabel", {
+	Name = "RiftRates",
+	RichText = true,
+	BackgroundTransparency = 1,
+	TextColor3 = TINTS.WHITE,
+	TextSize = if compact then 9 else 11,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	TextYAlignment = Enum.TextYAlignment.Top,
+	TextWrapped = true,
+	Position = UDim2.fromScale(0, 0.67),
+	Size = UDim2.fromScale(1, 0.18),
+	Text = `{RiftEggRatesText()}\n{RiftRelicRatesText()}`,
+	Parent = riftHud,
+})
+
 local riftHint = UiKit.Create("TextLabel", {
 	BackgroundTransparency = 1,
 	TextColor3 = TINTS.WHITE,
 	TextSize = 14,
-	Position = UDim2.fromScale(0, 0.78),
-	Size = UDim2.fromScale(1, 0.2),
+	Position = UDim2.fromScale(0, 0.86),
+	Size = UDim2.fromScale(1, 0.12),
 	Text = "",
 	Parent = riftHud,
 })

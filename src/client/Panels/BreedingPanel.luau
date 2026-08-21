@@ -3,6 +3,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UiKit = require(script.Parent.Parent.UiKit)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Stages = require(ReplicatedStorage.Shared.Data.Stages)
 
@@ -13,6 +15,44 @@ local rightList
 local treeList
 
 local selection = { left = nil, right = nil }
+
+local function Hex(color: Color3): string
+	return string.format(
+		"#%02X%02X%02X",
+		math.floor(color.R * 255 + 0.5),
+		math.floor(color.G * 255 + 0.5),
+		math.floor(color.B * 255 + 0.5)
+	)
+end
+
+local function Pct(value: number): string
+	return `{math.floor(value * 100 + 0.5)} %`
+end
+
+local function InheritanceText(): string
+	return `Héritage : même mutation des deux parents {Pct(Config.BREED_INHERIT_SAME)} · mutations différentes {Pct(
+		Config.BREED_INHERIT_ONE
+	)} chacune · un seul parent muté {Pct(Config.BREED_INHERIT_SINGLE)}`
+end
+
+local function MutationRatesText(weights: { [string]: number }): string
+	local parts = {}
+	for _, rate in Gameplay.DropRates(weights) do
+		local mutation = Mutations[rate.Id]
+		if rate.Id == "None" or not mutation then
+			table.insert(parts, `Aucune {string.format("%g", rate.Percent)} %`)
+		else
+			table.insert(
+				parts,
+				`<font color="{Hex(mutation.Color)}">{mutation.Name} ×{mutation.Multiplier} {string.format(
+					"%g",
+					rate.Percent
+				)} %</font>`
+			)
+		end
+	end
+	return table.concat(parts, " · ")
+end
 
 local function CreatureLabel(creature): string
 	local species = Species[creature.SpeciesId]
@@ -148,12 +188,39 @@ function BreedingPanel.Create(parent)
 		Parent = frame,
 	})
 
-	leftList = UiKit.Scroller(frame, UDim2.fromScale(0, 0.12), UDim2.fromScale(0.3, 0.72))
+	leftList = UiKit.Scroller(frame, UDim2.fromScale(0, 0.12), UDim2.fromScale(0.3, 0.66))
 	leftList.Name = "LeftList"
-	rightList = UiKit.Scroller(frame, UDim2.fromScale(0.35, 0.12), UDim2.fromScale(0.3, 0.72))
+	rightList = UiKit.Scroller(frame, UDim2.fromScale(0.35, 0.12), UDim2.fromScale(0.3, 0.66))
 	rightList.Name = "RightList"
-	treeList = UiKit.Scroller(frame, UDim2.fromScale(0.7, 0.12), UDim2.fromScale(0.3, 0.72))
+	treeList = UiKit.Scroller(frame, UDim2.fromScale(0.7, 0.12), UDim2.fromScale(0.3, 0.66))
 	treeList.Name = "TreeList"
+
+	UiKit.Create("TextLabel", {
+		Name = "ChancesInherit",
+		RichText = true,
+		BackgroundTransparency = 1,
+		TextColor3 = UiKit.TINTS.WHITE,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextWrapped = true,
+		Position = UDim2.fromScale(0, 0.79),
+		Size = UDim2.fromScale(1, 0.03),
+		Text = InheritanceText(),
+		Parent = frame,
+	})
+	UiKit.Create("TextLabel", {
+		Name = "ChancesMutation",
+		RichText = true,
+		BackgroundTransparency = 1,
+		TextColor3 = UiKit.TINTS.WHITE,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextWrapped = true,
+		Position = UDim2.fromScale(0, 0.825),
+		Size = UDim2.fromScale(1, 0.03),
+		Text = `Chances : {MutationRatesText(Config.BREED_MUTATION_WEIGHTS)}`,
+		Parent = frame,
+	})
 
 	local breedButton = UiKit.Button(frame, "Croiser", UDim2.fromScale(0.3, 0.08), UDim2.fromScale(0.35, 0.86))
 	breedButton.Name = "BreedButton"
