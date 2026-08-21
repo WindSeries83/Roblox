@@ -24,6 +24,7 @@ local TutorialBridge = require(ReplicatedStorage.Shared.TutorialBridge)
 local Fx = require(script.Parent.Fx)
 local Cinematic = require(script.Parent.Cinematic)
 local ObjectiveBanner = require(script.Parent.ObjectiveBanner)
+local RiftFx = require(script.Parent.RiftFx)
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -596,14 +597,29 @@ local function Flash(intensity: number)
 	end)
 end
 
+local lastGuardianHP: number? = nil
+local lastPlayerHP: number? = nil
+
 local function ShowRiftSync(state)
 	if not state.InRift then
 		riftHud.Visible = false
+		lastGuardianHP = nil
+		lastPlayerHP = nil
 		return
 	end
 	riftHud.Visible = true
 	UiKit.SetBar(guardianFill, guardianLabel, state.GuardianHP, state.GuardianMaxHP)
 	UiKit.SetBar(playerHpFill, playerHpLabel, state.PlayerHP, state.PlayerMaxHP)
+	if lastGuardianHP and state.GuardianHP < lastGuardianHP then
+		local original = guardianFill.BackgroundColor3
+		guardianFill.BackgroundColor3 = Color3.fromRGB(255, 90, 90)
+		TweenService:Create(guardianFill, TweenInfo.new(0.3), { BackgroundColor3 = original }):Play()
+	end
+	if lastPlayerHP and state.PlayerHP < lastPlayerHP then
+		RiftFx.OnGuardianHit()
+	end
+	lastGuardianHP = state.GuardianHP
+	lastPlayerHP = state.PlayerHP
 	if state.Phase == "Crystal" then
 		attackButton.Visible = false
 		riftHint.Text = "Touche le cristal pour récupérer les récompenses !"
@@ -634,6 +650,7 @@ end
 
 attackButton.Activated:Connect(function()
 	Audio.Play("RiftWhoosh", 0.3)
+	RiftFx.OnAttack()
 	Net.RiftAttack:FireServer()
 end)
 
@@ -776,5 +793,6 @@ ObjectiveBanner.Mount(ui)
 require(script.Parent.CreatureDisplay)
 require(script.Parent.CouveusePanel)
 require(script.Parent.FollowController).Start()
+require(script.Parent.FarmBehaviors).Start()
 
 return nil

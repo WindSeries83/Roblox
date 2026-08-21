@@ -1,8 +1,6 @@
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local Net = require(ReplicatedStorage.Shared.Net)
 local CreatureDisplay = require(script.Parent.CreatureDisplay)
 
 local FollowController = {}
@@ -10,14 +8,9 @@ local FollowController = {}
 local OFFSET = Vector3.new(0, 0, 3)
 local LERP = 0.12
 local smoothed: { [string]: CFrame } = {}
-local inRift = false
 
 FollowController.Current = {} -- [id] = CFrame du compagnon cette frame
 FollowController.Idle = true
-
-Net.RiftSync.OnClientEvent:Connect(function(payload)
-	inRift = payload.InRift == true
-end)
 
 local function CompanionId(): string?
 	local best, bestPower = nil, -1
@@ -33,14 +26,6 @@ function FollowController.Start()
 	RunService.Heartbeat:Connect(function(t)
 		table.clear(FollowController.Current)
 
-		if inRift then
-			for id in smoothed do
-				CreatureDisplay.Motion[id] = nil
-				smoothed[id] = nil
-			end
-			return
-		end
-
 		local character = Players.LocalPlayer.Character
 		local root = character and character:FindFirstChild("HumanoidRootPart")
 		if not root then
@@ -54,6 +39,10 @@ function FollowController.Start()
 		local id = CompanionId()
 		local model = id and CreatureDisplay.Models()[id]
 		if not id or not model or not model.PrimaryPart then
+			return
+		end
+		if model:GetAttribute("Lunging") then
+			FollowController.Current[id] = model:GetPivot()
 			return
 		end
 
