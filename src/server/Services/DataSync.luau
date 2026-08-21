@@ -5,9 +5,11 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local DataSync = {}
 
 local container
+local sessionLuck
 
 function DataSync:Init(cont)
 	container = cont
+	sessionLuck = cont:Get("SessionLuck")
 end
 
 function DataSync:Send(player: Player)
@@ -31,6 +33,7 @@ function DataSync:Send(player: Player)
 		Quests = profile.Data.Quests,
 		TutorialDone = profile.Data.TutorialDone,
 		Entitlements = profile.Data.Entitlements,
+		Luck = sessionLuck.For(player),
 	})
 end
 

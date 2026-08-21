@@ -14,6 +14,7 @@ local essenceService
 local indexService
 local dataSync
 local questService
+local sessionLuck
 
 local container
 
@@ -36,6 +37,7 @@ function BreedingService:Init(cont)
 	indexService = cont:Get("IndexService")
 	dataSync = cont:Get("DataSync")
 	questService = cont:Get("QuestService")
+	sessionLuck = cont:Get("SessionLuck")
 end
 
 function BreedingService:Start()
@@ -74,7 +76,7 @@ function BreedingService:Start()
 		end
 		cooldowns[player] = os.clock()
 
-		local roll = Breeding.RollChild(father, mother)
+		local roll = Breeding.RollChild(father, mother, sessionLuck.For(player))
 		local child = Gameplay.CreateCreature(roll.Rarity, roll.SpeciesId, roll.Mutation)
 		child.Parents = roll.Parents
 		child.Generation = roll.Generation

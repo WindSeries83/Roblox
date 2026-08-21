@@ -4,6 +4,9 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
+local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Log = require(script.Parent.Log)
 
 local PurchaseService = {}
@@ -48,7 +51,7 @@ end
 -- Pure : effet d'un pass sur le profil (testable sans container).
 function PurchaseService.PassEffect(passKey: string)
 	if passKey == "StarterBundle" then
-		return { Flag = "StarterBundle", Essence = 2000 }
+		return { Flag = "StarterBundle", Essence = 2000, Creature = { Rarity = "Rare", Mutation = "Shadow" } }
 	end
 	if passKey == "MoreSlots" or passKey == "PassiveBoost" or passKey == "AutoHatch" or passKey == "SeasonPremium" then
 		return { Flag = passKey, Essence = 0 }
@@ -66,9 +69,43 @@ function PurchaseService.GrantPass(player: Player, passKey: string): boolean
 	if not profile then
 		return false
 	end
+	-- Pas de re-grant : les effets consommables (essence, créature) ne sont
+	-- accordés qu'au premier grant ; le flag est reposé dans tous les cas.
+	local firstGrant = not profile.Data.Entitlements[effect.Flag]
 	profile.Data.Entitlements[effect.Flag] = true
-	if effect.Essence > 0 then
-		essenceService:Add(player, effect.Essence, "StarterBundle")
+	if firstGrant then
+		if effect.Essence > 0 then
+			essenceService:Add(player, effect.Essence, "StarterBundle")
+		end
+		if effect.Creature then
+			local bonusSlots = if profile.Data.Entitlements.MoreSlots then 2 else 0
+			local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel, bonusSlots)
+			if #profile.Data.Creatures < maxCreatures then
+				local pool = {}
+				for speciesId, def in Species do
+					if def.Rarity == effect.Creature.Rarity then
+						table.insert(pool, speciesId)
+					end
+				end
+				local speciesId = pool[Random.new():NextInteger(1, #pool)]
+				local creature = Gameplay.CreateCreature(effect.Creature.Rarity, speciesId, effect.Creature.Mutation)
+				table.insert(profile.Data.Creatures, creature)
+				LogPurchase("StarterCreature", {
+					Player = player.Name,
+					Species = speciesId,
+					Rarity = creature.Rarity,
+					Mutation = tostring(creature.Mutation),
+					CreatureId = creature.Id,
+				})
+			else
+				LogPurchase("StarterCreatureSkipped", {
+					Player = player.Name,
+					Reason = "CapReached",
+					Creatures = #profile.Data.Creatures,
+					MaxCreatures = maxCreatures,
+				})
+			end
+		end
 	end
 	profile.Data.LastPlayed = os.time()
 	LogPurchase("Gamepass", { Player = player.Name, Pass = passKey })

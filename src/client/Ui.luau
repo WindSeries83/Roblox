@@ -649,6 +649,9 @@ local function RefreshAll(newState)
 	if state.Stars > 0 then
 		rateLabel.Text ..= ` — ★{state.Stars}`
 	end
+	if state.Luck and state.Luck > 0 then
+		rateLabel.Text ..= ` — Chance +{math.floor(state.Luck * 100 + 0.5)} %`
+	end
 	UpdateQuestBadge(state.Quests)
 	ObjectiveBanner.Refresh(state)
 	for _, panel in panels do

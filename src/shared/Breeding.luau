@@ -48,10 +48,10 @@ function Breeding.RollChildMutation(a: any, b: any)
 	return if newRoll == "None" then false else newRoll
 end
 
-function Breeding.RollChild(a: any, b: any)
+function Breeding.RollChild(a: any, b: any, luck: number?)
 	return {
 		SpeciesId = a.SpeciesId,
-		Rarity = Ascension.RollFrom(Breeding.RollChildRarity(a, b)),
+		Rarity = Ascension.RollFrom(Breeding.RollChildRarity(a, b), luck),
 		Mutation = Breeding.RollChildMutation(a, b),
 		Parents = {
 			Father = a.Id,

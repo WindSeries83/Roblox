@@ -19,6 +19,7 @@ local essenceService
 local saveService
 local indexService
 local questService
+local sessionLuck
 
 local container
 
@@ -94,6 +95,7 @@ function HatchService:Init(cont)
 	saveService = cont:Get("SaveService")
 	indexService = cont:Get("IndexService")
 	questService = cont:Get("QuestService")
+	sessionLuck = cont:Get("SessionLuck")
 end
 
 function HatchService:Start()
@@ -145,13 +147,14 @@ function HatchService:Start()
 		end
 
 		local egg = table.remove(profile.Data.Eggs, eggIndex)
+		local luck = sessionLuck.For(player)
 		local rarityWeights = nil
 		if profile.Data.Stats.TotalHatched == 0 and egg.Tier == "CommonEgg" then
 			rarityWeights = Config.FIRST_HATCH_WEIGHTS
 		end
-		local roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile), rarityWeights)
+		local roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile) + luck, rarityWeights)
 		if egg.AscendChance then
-			roll.Rarity = Ascension.RollFrom(roll.Rarity, nil, egg.AscendChance)
+			roll.Rarity = Ascension.RollFrom(roll.Rarity, luck, egg.AscendChance)
 		end
 		if
 			Ascension.SecretTrigger(

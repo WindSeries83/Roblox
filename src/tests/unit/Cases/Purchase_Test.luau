@@ -37,6 +37,13 @@ return function(t)
 		expect.truthy(PurchaseService.PassEffect("StarterBundle").Essence > 0)
 	end)
 
+	t.test("StarterBundle bundles a mutated Rare creature", function()
+		local effect = PurchaseService.PassEffect("StarterBundle")
+		expect.equal(effect.Creature.Rarity, "Rare")
+		expect.equal(effect.Creature.Mutation, "Shadow")
+		expect.equal(effect.Essence, 2000)
+	end)
+
 	t.test("PassEffect rejects unknown passes", function()
 		expect.falsy(PurchaseService.PassEffect("Nope"))
 	end)
