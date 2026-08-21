@@ -186,7 +186,9 @@ function CreatureDisplay.Refresh(state)
 		local scale = (1 + (creature.Stage - 1) * 0.25) * (RARITY_SIZE[rank] or 1) * MutationScale(creature.Mutation)
 		if model.PrimaryPart then
 			bases[creature.Id] = GridPosition(index)
-			model:PivotTo(bases[creature.Id])
+			if not CreatureDisplay.Motion[creature.Id] then
+				model:PivotTo(bases[creature.Id])
+			end
 			pcall(function()
 				model:ScaleTo(scale)
 			end)
@@ -256,7 +258,7 @@ Net.Sync.OnClientEvent:Connect(function(state)
 	end
 end)
 
-local mouse = UserInputService:GetMouse()
+local mouse = Players.LocalPlayer:GetMouse()
 local hoveredId: string? = nil
 local lastHoverCheck = 0
 
