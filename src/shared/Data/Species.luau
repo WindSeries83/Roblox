@@ -5,6 +5,7 @@ return {
 		BaseRate = 1.0,
 		BasePower = 8,
 		Family = "Feral",
+		Role = "Digger",
 	},
 	PebbleHopper = {
 		Name = "Sauteur de galets",
@@ -12,6 +13,7 @@ return {
 		BaseRate = 0.9,
 		BasePower = 10,
 		Family = "Feral",
+		Role = "Gatherer",
 	},
 	MossCrawler = {
 		Name = "Rampant moussu",
@@ -19,6 +21,7 @@ return {
 		BaseRate = 1.1,
 		BasePower = 7,
 		Family = "Feral",
+		Role = "Digger",
 	},
 	EmberWisp = {
 		Name = "Feu follet de braise",
@@ -26,6 +29,7 @@ return {
 		BaseRate = 1.2,
 		BasePower = 6,
 		Family = "Feral",
+		Role = "Gatherer",
 	},
 	UmbraPup = {
 		Name = "Chiot d'ombre",
@@ -33,6 +37,7 @@ return {
 		BaseRate = 1.5,
 		BasePower = 14,
 		Family = "Wild",
+		Role = "Guardian",
 	},
 	FrostMite = {
 		Name = "Acarien de givre",
@@ -40,6 +45,7 @@ return {
 		BaseRate = 1.6,
 		BasePower = 12,
 		Family = "Wild",
+		Role = "Digger",
 	},
 	GaleFox = {
 		Name = "Renard de bourrasque",
@@ -47,6 +53,7 @@ return {
 		BaseRate = 1.4,
 		BasePower = 16,
 		Family = "Wild",
+		Role = "Gatherer",
 	},
 	PondSentinel = {
 		Name = "Sentinelle d'étang",
@@ -54,6 +61,7 @@ return {
 		BaseRate = 1.3,
 		BasePower = 15,
 		Family = "Wild",
+		Role = "Guardian",
 	},
 	Moonhowl = {
 		Name = "Hurle-lune",
@@ -61,6 +69,7 @@ return {
 		BaseRate = 2.5,
 		BasePower = 24,
 		Family = "Mystic",
+		Role = "Guardian",
 	},
 	CinderSeraph = {
 		Name = "Séraphin de cendre",
@@ -68,5 +77,6 @@ return {
 		BaseRate = 2.8,
 		BasePower = 22,
 		Family = "Mystic",
+		Role = "Digger",
 	},
 }
