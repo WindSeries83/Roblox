@@ -216,7 +216,7 @@ local function WinRift(player: Player)
 	essenceService:Add(player, essence, "RiftCrystal")
 
 	local eggTier = Gameplay.WeightedRoll(Config.RIFT_EGG_WEIGHTS)
-	hatchService:GrantEgg(player, eggTier, "Rift")
+	hatchService:GrantEgg(player, eggTier, "Rift", Config.RIFT_ASCEND_CHANCE)
 
 	local relicRoll = Gameplay.WeightedRoll(Config.RIFT_RELIC_WEIGHTS)
 	local relicTier = nil

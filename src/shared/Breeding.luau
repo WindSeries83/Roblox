@@ -1,3 +1,4 @@
+local Ascension = require(script.Parent.Ascension)
 local Config = require(script.Parent.Config)
 local Gameplay = require(script.Parent.Gameplay)
 
@@ -50,7 +51,7 @@ end
 function Breeding.RollChild(a: any, b: any)
 	return {
 		SpeciesId = a.SpeciesId,
-		Rarity = Breeding.RollChildRarity(a, b),
+		Rarity = Ascension.RollFrom(Breeding.RollChildRarity(a, b)),
 		Mutation = Breeding.RollChildMutation(a, b),
 		Parents = {
 			Father = a.Id,

@@ -1,6 +1,8 @@
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
+local Ascension = require(ReplicatedStorage.Shared.Ascension)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
@@ -22,7 +24,7 @@ local container
 
 local hatchCooldowns: { [Player]: number } = {}
 
-function HatchService:GrantEgg(player: Player, tier: string, source: string)
+function HatchService:GrantEgg(player: Player, tier: string, source: string, ascendChance: number?)
 	local profile = saveService:GetProfile(player)
 	if not profile then
 		return
@@ -31,6 +33,8 @@ function HatchService:GrantEgg(player: Player, tier: string, source: string)
 		Id = HttpService:GenerateGUID(false),
 		Tier = tier,
 		Timestamp = os.time(),
+		Source = source,
+		AscendChance = ascendChance,
 	}
 	table.insert(profile.Data.Eggs, egg)
 	profile.Data.LastPlayed = os.time()
@@ -69,6 +73,18 @@ local function CollarBonus(profile): number
 		end
 	end
 	return math.min(bonus, Config.COLLAR_MUTATION_CAP)
+end
+
+local function EquippedRelicTier(profile): string?
+	local highest = nil
+	for _, creature in profile.Data.Creatures do
+		for _, item in creature.Equipment or {} do
+			if item.Type == "Relic" and (highest == nil or item.Tier > highest) then
+				highest = item.Tier
+			end
+		end
+	end
+	return if highest ~= nil then `T{highest}` else nil
 end
 
 function HatchService:Init(cont)
@@ -134,6 +150,18 @@ function HatchService:Start()
 			rarityWeights = Config.FIRST_HATCH_WEIGHTS
 		end
 		local roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile), rarityWeights)
+		if egg.AscendChance then
+			roll.Rarity = Ascension.RollFrom(roll.Rarity, nil, egg.AscendChance)
+		end
+		if
+			Ascension.SecretTrigger(
+				egg.Tier,
+				Workspace:GetAttribute("EclipseActive") == true,
+				EquippedRelicTier(profile)
+			)
+		then
+			roll.Rarity = "Secret"
+		end
 		local creature = Gameplay.CreateCreature(roll.Rarity, roll.SpeciesId, roll.Mutation)
 
 		table.insert(profile.Data.Creatures, creature)

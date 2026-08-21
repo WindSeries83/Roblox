@@ -47,7 +47,7 @@ return function(t)
 		for _ = 1, 50 do
 			local child = Breeding.RollChild(a, b)
 			expect.equal(child.SpeciesId, "Moonhowl")
-			expect.truthy(child.Rarity == "Rare" or child.Rarity == "Epic")
+			expect.truthy(child.Rarity == "Rare" or child.Rarity == "Epic" or child.Rarity == "Legendary")
 		end
 	end)
 
