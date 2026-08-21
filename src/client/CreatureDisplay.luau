@@ -12,6 +12,7 @@ local CreatureHud = require(script.Parent.CreatureHud)
 local HoverCard = require(script.Parent.HoverCard)
 
 local CreatureDisplay = {}
+CreatureDisplay.Motion = {}
 
 local TINTS = require(script.Parent.UiKit).TINTS
 
@@ -24,6 +25,14 @@ local pops: { [string]: number } = {}
 local sanctuary: Folder? = nil
 local lastEssence = 0
 local lastState = nil
+
+function CreatureDisplay.Models()
+	return spawned
+end
+
+function CreatureDisplay.Creatures()
+	return if lastState then lastState.Creatures else {}
+end
 
 local RARITY_SIZE = { 1, 1.12, 1.25, 1.38, 1.5, 1.62, 1.75, 1.9 }
 local RARITY_PARTICLES = { 0, 4, 10, 16, 24, 32, 44, 60 }
@@ -214,6 +223,9 @@ end
 
 RunService.Heartbeat:Connect(function(t)
 	for id, model in spawned do
+		if CreatureDisplay.Motion[id] then
+			continue
+		end
 		local base = bases[id]
 		local idx = order[id] or 0
 		local rank = ranks[id] or 1

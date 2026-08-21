@@ -775,5 +775,6 @@ ObjectiveBanner.Mount(ui)
 
 require(script.Parent.CreatureDisplay)
 require(script.Parent.CouveusePanel)
+require(script.Parent.FollowController).Start()
 
 return nil
