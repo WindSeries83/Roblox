@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UiKit = require(script.Parent.Parent.UiKit)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Index = require(ReplicatedStorage.Shared.Index)
+local HoverCard = require(script.Parent.Parent.HoverCard)
 
 local IndexPanel = {}
 
@@ -71,6 +72,18 @@ function IndexPanel.Refresh(state)
 			Text = `{name} — {rarity} — {mutationName}`,
 			Parent = row,
 		})
+		local entry = {
+			SpeciesId = speciesId,
+			Rarity = rarity,
+			Mutation = if mutation ~= "false" then mutation else false,
+			Discovered = true,
+		}
+		row.MouseEnter:Connect(function()
+			HoverCard.Show(row, entry)
+		end)
+		row.MouseLeave:Connect(function()
+			HoverCard.Hide()
+		end)
 	end
 
 	local families = Index.FamilyCompletions(state.Index)

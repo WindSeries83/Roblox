@@ -2,12 +2,14 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local Net = require(ReplicatedStorage.Shared.Net)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
 local Fx = require(script.Parent.Fx)
 local CreatureHud = require(script.Parent.CreatureHud)
+local HoverCard = require(script.Parent.HoverCard)
 
 local CreatureDisplay = {}
 
@@ -112,6 +114,7 @@ function CreatureDisplay.Refresh(state)
 			end
 			model = template:Clone()
 			model.Name = `Display_{creature.SpeciesId}`
+			model:SetAttribute("CreatureId", creature.Id)
 			PrepareClone(model)
 			model.Parent = sanctuary
 			spawned[creature.Id] = model
@@ -238,6 +241,56 @@ Net.Sync.OnClientEvent:Connect(function(state)
 		if root then
 			Fx.FloatText(root.Position + Vector3.new(0, 5, 0), `+{math.floor(gained)}`, TINTS.ACCENT)
 		end
+	end
+end)
+
+local mouse = UserInputService:GetMouse()
+local hoveredId: string? = nil
+local lastHoverCheck = 0
+
+RunService.RenderStepped:Connect(function()
+	local now = os.clock()
+	if now - lastHoverCheck < 0.05 then
+		return
+	end
+	lastHoverCheck = now
+
+	local model = nil
+	local node = mouse.Target
+	while node and node ~= Workspace do
+		if node:IsA("Model") and node:GetAttribute("CreatureId") then
+			model = node
+			break
+		end
+		node = node.Parent
+	end
+
+	local id = model and model:GetAttribute("CreatureId")
+	if id == hoveredId then
+		return
+	end
+	hoveredId = id
+
+	local creature = nil
+	if id and lastState then
+		for _, candidate in lastState.Creatures do
+			if candidate.Id == id then
+				creature = candidate
+				break
+			end
+		end
+	end
+	if creature then
+		HoverCard.Show(model.PrimaryPart or model, {
+			SpeciesId = creature.SpeciesId,
+			Rarity = creature.Rarity,
+			Mutation = creature.Mutation,
+			Level = creature.Level,
+			Power = creature.Power,
+			SuggestedPrice = CreatureHud.SuggestedPrice(creature.Rarity),
+		})
+	else
+		HoverCard.Hide()
 	end
 end)
 

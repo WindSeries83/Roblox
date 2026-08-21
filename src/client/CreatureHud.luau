@@ -36,7 +36,7 @@ local function RarityRank(rarity: string): number
 	return 1
 end
 
-local function SuggestedPrice(rarity: string): number
+function CreatureHud.SuggestedPrice(rarity: string): number
 	return math.max(
 		Config.MARKET_MIN_PRICE,
 		math.floor(Config.EGG_PRICES.CommonEgg * (1 + (RarityRank(rarity) - 1) * 2))
@@ -228,7 +228,7 @@ function CreatureHud.Open(creature, state)
 	if not screen or not screen.Parent then
 		Build()
 	end
-	priceBox.Text = tostring(SuggestedPrice(creature.Rarity))
+	priceBox.Text = tostring(CreatureHud.SuggestedPrice(creature.Rarity))
 	screen.Enabled = true
 	Render()
 end

@@ -7,6 +7,8 @@ local Stages = require(ReplicatedStorage.Shared.Data.Stages)
 local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
 local Evolution = require(ReplicatedStorage.Shared.Evolution)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
+local CreatureHud = require(script.Parent.Parent.CreatureHud)
+local HoverCard = require(script.Parent.Parent.HoverCard)
 
 local SanctuaryPanel = {}
 
@@ -184,6 +186,19 @@ function SanctuaryPanel.Refresh(state)
 		button.Activated:Connect(function()
 			detail:SetAttribute("SelectedId", creature.Id)
 			RenderDetail(creature, state.Items)
+		end)
+		row.MouseEnter:Connect(function()
+			HoverCard.Show(row, {
+				SpeciesId = creature.SpeciesId,
+				Rarity = creature.Rarity,
+				Mutation = creature.Mutation,
+				Level = creature.Level,
+				Power = creature.Power,
+				SuggestedPrice = CreatureHud.SuggestedPrice(creature.Rarity),
+			})
+		end)
+		row.MouseLeave:Connect(function()
+			HoverCard.Hide()
 		end)
 		if creature.Id == selected then
 			RenderDetail(creature, state.Items)

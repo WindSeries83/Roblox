@@ -6,6 +6,8 @@ local Audio = require(script.Parent.Parent.Audio)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
+local CreatureHud = require(script.Parent.Parent.CreatureHud)
+local HoverCard = require(script.Parent.Parent.HoverCard)
 
 local MarketPanel = {}
 
@@ -32,6 +34,22 @@ local function CreatureLine(creature): string
 	return `[{string.upper(creature.Rarity)}] {SpeciesName(creature)} — Niv. {creature.Level}{mutation}`
 end
 
+local function HookHover(cell: Instance, creature, price: number)
+	cell.MouseEnter:Connect(function()
+		HoverCard.Show(cell, {
+			SpeciesId = creature.SpeciesId,
+			Rarity = creature.Rarity,
+			Mutation = creature.Mutation,
+			Level = creature.Level,
+			Power = creature.Power,
+			SuggestedPrice = price,
+		})
+	end)
+	cell.MouseLeave:Connect(function()
+		HoverCard.Hide()
+	end)
+end
+
 local function ShowPage(page: Instance)
 	for _, tab in subBar:GetChildren() do
 		if tab:IsA("TextButton") then
@@ -50,6 +68,7 @@ end
 
 local function SellRow(creature)
 	local cell = UiKit.Cell(sellPage)
+	HookHover(cell, creature, CreatureHud.SuggestedPrice(creature.Rarity))
 	UiKit.Create("TextLabel", {
 		BackgroundTransparency = 1,
 		TextColor3 = TINTS.WHITE,
@@ -78,6 +97,7 @@ end
 local function BuyRow(listing, essence)
 	local cell = UiKit.Cell(buyPage)
 	local creature = listing.Creature
+	HookHover(cell, creature, listing.Price)
 	UiKit.Create("TextLabel", {
 		BackgroundTransparency = 1,
 		TextColor3 = TINTS.WHITE,
@@ -106,6 +126,7 @@ end
 local function MineRow(listing)
 	local cell = UiKit.Cell(minePage)
 	local creature = listing.Creature
+	HookHover(cell, creature, listing.Price)
 	UiKit.Create("TextLabel", {
 		BackgroundTransparency = 1,
 		TextColor3 = TINTS.WHITE,
