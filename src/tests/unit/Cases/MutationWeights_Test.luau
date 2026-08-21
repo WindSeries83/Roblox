@@ -32,14 +32,15 @@ return function(t)
 	end)
 
 	-- Long-run distribution stays near config odds and never leaves the table.
-	t.test("20000 rolls stay in bounds and hit Celestial", function()
+	-- 100k rolls: Celestial lambda = 10, P(zero) ~ 4.5e-5, so the count check is not flaky.
+	t.test("100000 rolls stay in bounds and hit Celestial", function()
 		local counts = {}
-		for _ = 1, 20000 do
+		for _ = 1, 100000 do
 			local roll = Gameplay.WeightedRoll(Config.MUTATION_WEIGHTS)
 			expect.truthy(roll ~= nil and Config.MUTATION_WEIGHTS[roll] ~= nil)
 			counts[roll] = (counts[roll] or 0) + 1
 		end
-		local shadowShare = counts.Shadow / 20000
+		local shadowShare = counts.Shadow / 100000
 		expect.truthy(shadowShare >= 0.08 and shadowShare <= 0.12)
 		expect.truthy((counts.Celestial or 0) > 0)
 	end)
@@ -52,7 +53,7 @@ return function(t)
 			total += weight
 		end
 		expect.truthy(total > 0)
-		for _ = 1, 20000 do
+		for _ = 1, 100000 do
 			local roll = Gameplay.WeightedRoll(Config.BREED_MUTATION_WEIGHTS)
 			expect.truthy(roll == "None" or Mutations[roll] ~= nil)
 		end

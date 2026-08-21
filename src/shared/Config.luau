@@ -63,7 +63,15 @@ return {
 	BREED_INHERIT_SAME = 0.8,
 	BREED_INHERIT_ONE = 0.4,
 	BREED_INHERIT_SINGLE = 0.6,
-	BREED_MUTATION_WEIGHTS = { None = 95, Shadow = 4, Frost = 1 },
+	BREED_MUTATION_WEIGHTS = {
+		None = 94,
+		Shadow = 5,
+		Frost = 0.85,
+		Golden = 0.1,
+		Prismatic = 0.035,
+		Corrupted = 0.01,
+		Celestial = 0.005,
+	},
 
 	ASCEND_CHANCE = 0.03,
 	RIFT_ASCEND_CHANCE = 0.08,
