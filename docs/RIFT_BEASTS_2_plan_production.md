@@ -100,6 +100,15 @@ Renaissance 1 ~13–18 min · Renaissance 2 ~30–40 min · Renaissance 3 ~1h10�
 - [x] Season pass v1
 - [x] Classements et sanctuaires visitables
 
+### P4.5 — Monde vivant (game feel) · fait
+- [x] Arche de faille permanente (construite au démarrage, s'illumine à l'ouverture) + payload `RiftWorld.NextAt` → compte à rebours client
+- [x] Couveuse 3D dans le monde (socle + œuf + ProximityPrompt) et `CouveusePanel` (achat/éclosion sans ouvrir le menu)
+- [x] Créatures cliquables dans l'enclos → `CreatureHud` (équiper / évoluer / vendre avec prix suggéré)
+- [x] Feedbacks : `Fx.FloatText` (+N Essence flottant), burst + saut au clic créature
+- [x] `ObjectiveBanner` directionnel (faille active > quêtes prêtes > premier œuf > renaissance) — fonctions pures dans `Shared/Objective` testées
+
+**Playtest MCP bout en bout ✓** (121/121 tests) : achat œuf (100→50), éclosion ×5, équipement Cœur (+5 niveau max), mise au marché (listing créé), entrée faille par marche réelle, combat gardien (dégâts selon puissance d'équipe), victoire + récompenses (~+1900 Essence), cycle faille 15 s/180 s via attribut de test, bandeau directionnel actif pendant la faille, badge quêtes « 2 ». Divers : suppression de `init.client.luau` (vestige) qui bloquait la synchro Rojo du dossier client ; BOM réapparu sur `default.project.json` retiré ; anti-rebond sur le toggle du prompt couveuse ; `CouveuseGui.AlwaysOnTop=false` (le pass AlwaysOnTop ne se rend pas dans cette session Studio — occlusion possible par le décor, acceptable).
+
 ### P5 — Pré-lancement · 2 semaines
 - [ ] Icône et miniatures : **le poste le plus rentable du projet**. Tester plusieurs variantes. (3 variantes IA à générer → l'humain tranche)
 - [x] Rétention des 3 premières minutes : premier drop rare dans les 60 s — **pity au premier œuf** (`FIRST_HATCH_WEIGHTS` 40/40/20 au lieu de 75/20/5), appliqué au premier œuf commun éclos

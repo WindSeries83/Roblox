@@ -1,3 +1,4 @@
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
@@ -6,15 +7,21 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
 local Fx = require(script.Parent.Fx)
+local CreatureHud = require(script.Parent.CreatureHud)
 
 local CreatureDisplay = {}
+
+local TINTS = require(script.Parent.UiKit).TINTS
 
 local spawned: { [string]: Model } = {}
 local bases: { [string]: CFrame } = {}
 local order: { [string]: number } = {}
 local stages: { [string]: number } = {}
 local ranks: { [string]: number } = {}
+local pops: { [string]: number } = {}
 local sanctuary: Folder? = nil
+local lastEssence = 0
+local lastState = nil
 
 local RARITY_SIZE = { 1, 1.12, 1.25, 1.38, 1.5, 1.62, 1.75, 1.9 }
 local RARITY_PARTICLES = { 0, 4, 10, 16, 24, 32, 44, 60 }
@@ -86,6 +93,7 @@ function CreatureDisplay.Refresh(state)
 			bases[id] = nil
 			order[id] = nil
 			stages[id] = nil
+			pops[id] = nil
 		end
 	end
 
@@ -107,6 +115,19 @@ function CreatureDisplay.Refresh(state)
 			PrepareClone(model)
 			model.Parent = sanctuary
 			spawned[creature.Id] = model
+			local click = Instance.new("ClickDetector")
+			click.MaxActivationDistance = 40
+			click.MouseClick:Connect(function()
+				local primary = model.PrimaryPart
+				if primary then
+					Fx.Burst(primary, DisplayColor(creature), 26)
+					pops[creature.Id] = os.clock() + 0.5
+				end
+				CreatureHud.Open(creature, lastState)
+			end)
+			if model.PrimaryPart then
+				click.Parent = model.PrimaryPart
+			end
 			local primary = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)
 			if primary then
 				Fx.Burst(primary, displayColor, 26)
@@ -196,13 +217,28 @@ RunService.Heartbeat:Connect(function(t)
 		if base and model.PrimaryPart then
 			local bob = math.sin(t * 2 + idx * 0.8) * (0.15 + (rank - 1) * 0.06)
 			local tilt = math.sin(t * 1.3 + idx * 0.8) * 0.02
-			model:PivotTo(base * CFrame.new(0, bob, 0) * CFrame.Angles(0, 0, tilt))
+			local popUntil = pops[id] or 0
+			local pop = 0
+			if t < popUntil then
+				pop = math.sin((popUntil - t) * 8) * 1.2
+			end
+			model:PivotTo(base * CFrame.new(0, bob + pop, 0) * CFrame.Angles(0, 0, tilt))
 		end
 	end
 end)
 
 Net.Sync.OnClientEvent:Connect(function(state)
 	CreatureDisplay.Refresh(state)
+	lastState = state
+	local gained = state.Essence - lastEssence
+	lastEssence = state.Essence
+	if gained >= 1 then
+		local character = Players.LocalPlayer.Character
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		if root then
+			Fx.FloatText(root.Position + Vector3.new(0, 5, 0), `+{math.floor(gained)}`, TINTS.ACCENT)
+		end
+	end
 end)
 
 return CreatureDisplay

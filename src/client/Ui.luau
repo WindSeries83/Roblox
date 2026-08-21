@@ -20,6 +20,7 @@ local SeasonPanel = require(script.Parent.Panels.SeasonPanel)
 local LeaderboardPanel = require(script.Parent.Panels.LeaderboardPanel)
 local TutorialBridge = require(ReplicatedStorage.Shared.TutorialBridge)
 local Fx = require(script.Parent.Fx)
+local ObjectiveBanner = require(script.Parent.ObjectiveBanner)
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -608,6 +609,7 @@ local function RefreshAll(newState)
 		rateLabel.Text ..= ` — ★{state.Stars}`
 	end
 	UpdateQuestBadge(state.Quests)
+	ObjectiveBanner.Refresh(state)
 	for _, panel in panels do
 		if panel.module.Refresh then
 			panel.module.Refresh(state)
@@ -648,12 +650,55 @@ Net.RiftSync.OnClientEvent:Connect(ShowRiftSync)
 
 Net.RiftEnded.OnClientEvent:Connect(ShowRiftEnded)
 
+local riftCountdown: Thread? = nil
+
+local function RequestRiftState()
+	Net.RiftRequest:FireServer()
+end
+
+local function StartRiftCountdown(nextAt: number)
+	if riftCountdown then
+		coroutine.close(riftCountdown)
+		riftCountdown = nil
+	end
+	riftCountdown = task.spawn(function()
+		while riftStatusLabel and riftStatusLabel.Parent do
+			local remaining = math.max(0, nextAt - os.time())
+			riftStatusLabel.Text =
+				`Prochaine faille dans {string.format("%d:%02d", math.floor(remaining / 60), remaining % 60)}`
+			riftStatusLabel.Visible = remaining > 0
+			if remaining <= 0 then
+				break
+			end
+			task.wait(1)
+		end
+	end)
+end
+
+task.spawn(function()
+	-- le serveur peut ne pas avoir connecte RiftRequest au tout debut : retries
+	for i = 1, 5 do
+		task.wait(1.5 + i * 2)
+		RequestRiftState()
+	end
+end)
+
 Net.RiftWorld.OnClientEvent:Connect(function(world)
 	if world.Active then
+		if riftCountdown then
+			coroutine.close(riftCountdown)
+			riftCountdown = nil
+		end
 		Audio.Play("RiftWhoosh")
 		riftStatusLabel.Text = "Une faille s'est ouverte ! Entre dans le portail."
 		riftStatusLabel.Visible = true
+	elseif world.NextAt and world.NextAt > 0 then
+		StartRiftCountdown(world.NextAt)
 	else
+		if riftCountdown then
+			coroutine.close(riftCountdown)
+			riftCountdown = nil
+		end
 		riftStatusLabel.Visible = false
 	end
 end)
@@ -680,6 +725,9 @@ Net.QuestsSync.OnClientEvent:Connect(function(payload)
 	end
 end)
 
+ObjectiveBanner.Mount(ui)
+
 require(script.Parent.CreatureDisplay)
+require(script.Parent.CouveusePanel)
 
 return nil

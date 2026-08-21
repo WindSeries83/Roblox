@@ -1,0 +1,243 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Net = require(ReplicatedStorage.Shared.Net)
+local Config = require(ReplicatedStorage.Shared.Config)
+local Species = require(ReplicatedStorage.Shared.Data.Species)
+local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
+local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
+local Evolution = require(ReplicatedStorage.Shared.Evolution)
+local UiKit = require(script.Parent.UiKit)
+
+local CreatureHud = {}
+
+local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local TINTS = UiKit.TINTS
+
+local screen: ScreenGui? = nil
+local titleLabel: TextLabel? = nil
+local stageLabel: TextLabel? = nil
+local xpLabel: TextLabel? = nil
+local xpFill: Frame? = nil
+local equipButton: TextButton? = nil
+local evolveButton: TextButton? = nil
+local priceBox: TextBox? = nil
+
+local currentId: string? = nil
+local lastState = nil
+
+local function RarityRank(rarity: string): number
+	for i, name in Rarities.ORDER do
+		if name == rarity then
+			return i
+		end
+	end
+	return 1
+end
+
+local function SuggestedPrice(rarity: string): number
+	return math.max(
+		Config.MARKET_MIN_PRICE,
+		math.floor(Config.EGG_PRICES.CommonEgg * (1 + (RarityRank(rarity) - 1) * 2))
+	)
+end
+
+local function Close()
+	currentId = nil
+	if screen then
+		screen.Enabled = false
+	end
+end
+
+local function CurrentCreature()
+	if not currentId or not lastState then
+		return nil
+	end
+	for _, creature in lastState.Creatures do
+		if creature.Id == currentId then
+			return creature
+		end
+	end
+	return nil
+end
+
+local function Render()
+	local creature = CurrentCreature()
+	if not creature then
+		Close()
+		return
+	end
+
+	local species = Species[creature.SpeciesId]
+	local rarity = Rarities[creature.Rarity]
+	titleLabel.Text = `{species and species.Name or creature.SpeciesId} — {creature.Rarity}`
+	titleLabel.TextColor3 = if rarity then rarity.Color else TINTS.WHITE
+	stageLabel.Text = `Stade {creature.Stage} — Niveau {creature.Level} — Puissance {math.floor(creature.Power)}`
+
+	local maxLevel = Evolution.MaxLevelFor(creature)
+	if creature.Level >= maxLevel then
+		xpFill.Size = UDim2.fromScale(1, 1)
+		xpLabel.Text = "Niveau maximum"
+	else
+		UiKit.SetBar(xpFill, xpLabel, creature.XP, Evolution.XPToNext(creature.Level))
+	end
+
+	local item = lastState.Items[1]
+	if item then
+		local def = Equipment[item.Type] and Equipment[item.Type].Tiers[item.Tier]
+		equipButton.Visible = true
+		equipButton.Text = if def then `Équiper {def.Name}` else "Équiper"
+	else
+		equipButton.Visible = false
+	end
+
+	local canEvolve, reason = Evolution.CanEvolve(creature, lastState.Essence)
+	evolveButton.Text = if canEvolve
+		then `Évoluer ({Evolution.EvolveCost(creature)} Essence)`
+		else `Évoluer — {reason}`
+	evolveButton.AutoButtonColor = canEvolve
+end
+
+local function Build()
+	screen = UiKit.Create("ScreenGui", {
+		Name = "CreatureHud",
+		ResetOnSpawn = false,
+		IgnoreGuiInset = true,
+		Enabled = false,
+		Parent = playerGui,
+	})
+
+	local overlay = UiKit.Create("TextButton", {
+		Name = "Overlay",
+		BackgroundTransparency = 1,
+		Text = "",
+		Size = UDim2.fromScale(1, 1),
+		Parent = screen,
+	})
+	overlay.Activated:Connect(Close)
+
+	local panel = UiKit.Create("Frame", {
+		Name = "Panel",
+		BackgroundColor3 = TINTS.PANEL,
+		Size = UDim2.fromOffset(320, 250),
+		Position = UDim2.new(0.5, 0, 1, -16),
+		AnchorPoint = Vector2.new(0.5, 1),
+		ZIndex = 50,
+		Parent = screen,
+	})
+	UiKit.Corner(panel)
+	UiKit.Padding(panel, 10)
+
+	titleLabel = UiKit.Create("TextLabel", {
+		Name = "Title",
+		BackgroundTransparency = 1,
+		TextColor3 = TINTS.WHITE,
+		Font = Enum.Font.GothamBold,
+		TextSize = 16,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Size = UDim2.fromScale(1, 0.12),
+		ZIndex = 50,
+		Text = "",
+		Parent = panel,
+	})
+
+	stageLabel = UiKit.Create("TextLabel", {
+		Name = "Stage",
+		BackgroundTransparency = 1,
+		TextColor3 = TINTS.WHITE,
+		Font = Enum.Font.Gotham,
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Position = UDim2.fromScale(0, 0.14),
+		Size = UDim2.fromScale(1, 0.1),
+		ZIndex = 50,
+		Text = "",
+		Parent = panel,
+	})
+
+	xpLabel, xpFill = UiKit.Bar(panel, TINTS.ACCENT)
+	xpLabel.Position = UDim2.fromScale(0, 0.26)
+	xpLabel.Size = UDim2.fromScale(1, 0.1)
+
+	equipButton = UiKit.Button(panel, "Équiper", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.4))
+	equipButton.ZIndex = 50
+	equipButton.Activated:Connect(function()
+		local item = lastState and lastState.Items[1]
+		if item and currentId then
+			Net.EquipItem:FireServer(currentId, item.Id)
+		end
+	end)
+
+	evolveButton = UiKit.Button(panel, "Évoluer", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.55))
+	evolveButton.ZIndex = 50
+	evolveButton.Activated:Connect(function()
+		local creature = CurrentCreature()
+		if creature then
+			local canEvolve = Evolution.CanEvolve(creature, lastState.Essence)
+			if canEvolve then
+				Net.EvolveCreature:FireServer(creature.Id)
+			end
+		end
+	end)
+
+	priceBox = UiKit.Create("TextBox", {
+		Name = "Price",
+		BackgroundColor3 = TINTS.DARK,
+		TextColor3 = TINTS.WHITE,
+		Font = Enum.Font.GothamBold,
+		TextSize = 14,
+		Text = "",
+		ClearTextOnFocus = false,
+		Size = UDim2.fromScale(0.45, 0.13),
+		Position = UDim2.fromScale(0, 0.7),
+		ZIndex = 50,
+		Parent = panel,
+	})
+	UiKit.Corner(priceBox)
+
+	local sellButton = UiKit.Button(panel, "Vendre au marché", UDim2.fromScale(0.53, 0.13), UDim2.fromScale(0.47, 0.7))
+	sellButton.ZIndex = 50
+	sellButton.Activated:Connect(function()
+		local price = tonumber(priceBox.Text)
+		if currentId and price then
+			price = math.clamp(math.floor(price), Config.MARKET_MIN_PRICE, Config.MARKET_MAX_PRICE)
+			Net.MarketList:FireServer(currentId, price)
+			Close()
+		end
+	end)
+
+	UiKit.Create("TextLabel", {
+		Name = "Hint",
+		BackgroundTransparency = 1,
+		TextColor3 = TINTS.WHITE,
+		Font = Enum.Font.Gotham,
+		TextSize = 11,
+		TextTransparency = 0.4,
+		Size = UDim2.fromScale(1, 0.08),
+		Position = UDim2.fromScale(0, 0.86),
+		ZIndex = 50,
+		Text = "Clic ailleurs pour fermer",
+		Parent = panel,
+	})
+end
+
+function CreatureHud.Open(creature, state)
+	lastState = state
+	currentId = creature.Id
+	if not screen or not screen.Parent then
+		Build()
+	end
+	priceBox.Text = tostring(SuggestedPrice(creature.Rarity))
+	screen.Enabled = true
+	Render()
+end
+
+Net.Sync.OnClientEvent:Connect(function(state)
+	lastState = state
+	if screen and screen.Enabled then
+		Render()
+	end
+end)
+
+return CreatureHud

@@ -1,4 +1,4 @@
-﻿{
+{
     "name":  "rift-beasts",
     "tree":  {
                  "$className":  "DataModel",
@@ -57,9 +57,12 @@
                                                            "RiftEnded":  {
                                                                              "$className":  "RemoteEvent"
                                                                          },
-                                                           "RiftWorld":  {
-                                                                             "$className":  "RemoteEvent"
-                                                                         },
+                                                            "RiftWorld":  {
+                                                                              "$className":  "RemoteEvent"
+                                                                          },
+                                                            "RiftRequest":  {
+                                                                               "$className":  "RemoteEvent"
+                                                                           },
                                                            "EvolveCreature":  {
                                                                                   "$className":  "RemoteEvent"
                                                                               },

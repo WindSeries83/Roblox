@@ -53,4 +53,42 @@ function Fx.Confetti(position: Vector3, color: Color3, count: number?)
 	end)
 end
 
+-- Texte flottant qui monte et s'estompe en 1 s
+function Fx.FloatText(worldPos: Vector3, text: string, color: Color3)
+	local part = Instance.new("Part")
+	part.Anchored = true
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	part.Transparency = 1
+	part.Size = Vector3.new(0.1, 0.1, 0.1)
+	part.CFrame = CFrame.new(worldPos)
+	part.Parent = game:GetService("Workspace")
+
+	local gui = Instance.new("BillboardGui")
+	gui.AlwaysOnTop = true
+	gui.Size = UDim2.fromOffset(120, 30)
+	gui.Parent = part
+
+	local label = Instance.new("TextLabel")
+	label.BackgroundTransparency = 1
+	label.TextColor3 = color
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 18
+	label.Size = UDim2.fromScale(1, 1)
+	label.Text = text
+	label.Parent = gui
+
+	local start = os.clock()
+	task.spawn(function()
+		while os.clock() - start < 1 and part.Parent do
+			local elapsed = os.clock() - start
+			part.CFrame = CFrame.new(worldPos + Vector3.new(0, elapsed * 2, 0))
+			label.TextTransparency = math.min(1, elapsed)
+			task.wait()
+		end
+		part:Destroy()
+	end)
+end
+
 return Fx

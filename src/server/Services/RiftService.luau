@@ -20,6 +20,7 @@ local container
 local portal: Model? = nil
 local worldActive = false
 local worldEndsAt = 0
+local nextAt = 0
 
 local Combat = {}
 local nextGuardianTick = 0
@@ -36,31 +37,80 @@ local function TeamPower(player: Player): number
 	return power
 end
 
-local function BuildPortal()
+-- Arche permanente : existe dès le démarrage, s'illumine quand la faille est active.
+local function BuildArch()
 	local model = Instance.new("Model")
-	model.Name = "RiftPortal"
+	model.Name = "RiftArch"
 
-	local ring = Instance.new("Part")
-	ring.Name = "Ring"
-	ring.Shape = Enum.PartType.Cylinder
-	ring.Size = Vector3.new(10, 14, 10)
-	ring.Material = Enum.Material.Neon
-	ring.Color = Color3.fromRGB(140, 60, 255)
-	ring.Transparency = 0.35
-	ring.Anchored = true
-	ring.CanCollide = false
-	ring.Parent = model
+	local gate = Instance.new("Part")
+	gate.Name = "Gate"
+	gate.Shape = Enum.PartType.Cylinder
+	gate.Size = Vector3.new(10, 14, 10)
+	gate.Material = Enum.Material.Neon
+	gate.Color = Color3.fromRGB(140, 60, 255)
+	gate.Transparency = 0.85
+	gate.Anchored = true
+	gate.CanCollide = false
+	gate.Parent = model
+
+	local frame = Instance.new("Part")
+	frame.Name = "Frame"
+	frame.Shape = Enum.PartType.Cylinder
+	frame.Size = Vector3.new(14, 18, 12)
+	frame.Material = Enum.Material.Slate
+	frame.Color = Color3.fromRGB(45, 45, 60)
+	frame.Transparency = 0.25
+	frame.Anchored = true
+	frame.CanCollide = false
+	frame.CanQuery = false
+	frame.CanTouch = false
+	frame.CastShadow = false
+	frame.Parent = model
 
 	local light = Instance.new("PointLight")
+	light.Name = "Veille"
 	light.Color = Color3.fromRGB(160, 90, 255)
-	light.Brightness = 3
-	light.Range = 30
-	light.Parent = ring
+	light.Brightness = 0.4
+	light.Range = 24
+	light.Parent = gate
 
-	model.PrimaryPart = ring
+	model.PrimaryPart = gate
 	model:PivotTo(CFrame.new(Config.RIFT_PORTAL_POSITION))
 	model.Parent = Workspace
 	return model
+end
+
+local function SetArchActive(active: boolean)
+	if not portal then
+		return
+	end
+	local gate = portal.PrimaryPart
+	local light = gate and gate:FindFirstChild("Veille")
+	if light then
+		light.Brightness = if active then 3 else 0.4
+	end
+	if gate then
+		gate.Transparency = if active then 0.35 else 0.85
+	end
+	if active then
+		local emitter = Instance.new("ParticleEmitter")
+		emitter.Name = "RiftSpark"
+		emitter.Lifetime = NumberRange.new(0.8, 1.6)
+		emitter.Speed = NumberRange.new(2, 6)
+		emitter.SpreadAngle = Vector2.new(180, 180)
+		emitter.Rate = 12
+		emitter.Color = ColorSequence.new(Color3.fromRGB(160, 90, 255))
+		emitter.LightEmission = 0.8
+		emitter.LightInfluence = 0
+		emitter.Size = NumberSequence.new(0.5)
+		emitter.Transparency = NumberSequence.new(0.3)
+		emitter.Parent = gate
+		task.delay(Config.RIFT_ACTIVE_SECONDS, function()
+			if emitter and emitter.Parent then
+				emitter:Destroy()
+			end
+		end)
+	end
 end
 
 local function BuildGuardian(owner: Player): Part
@@ -270,10 +320,14 @@ function RiftService:Init(cont)
 end
 
 function RiftService:GetStatePayload()
-	return { Active = worldActive, EndsAt = worldEndsAt }
+	return { Active = worldActive, EndsAt = worldEndsAt, NextAt = nextAt }
 end
 
 function RiftService:Start()
+	Net.RiftRequest.OnServerEvent:Connect(function(player: Player)
+		Net.RiftWorld:FireClient(player, RiftService:GetStatePayload())
+	end)
+
 	Net.RiftAttack.OnServerEvent:Connect(function(player: Player)
 		local combat = Combat[player]
 		if not combat or combat.Phase ~= "Fight" then
@@ -306,29 +360,33 @@ function RiftService:Start()
 		CleanupCombat(player)
 	end)
 
+	-- Arche permanente, construite une seule fois
+	portal = BuildArch()
+	portal.PrimaryPart.Touched:Connect(onPortalTouched)
+	nextAt = os.time() + Config.RIFT_INTERVAL
+
 	task.spawn(function()
 		while true do
 			local attributeInterval = script:GetAttribute("RiftInterval")
 			local interval = if type(attributeInterval) == "number" and attributeInterval > 0
 				then attributeInterval
 				else Config.RIFT_INTERVAL
+			nextAt = os.time() + interval
 			task.wait(interval)
 
 			worldActive = true
 			worldEndsAt = os.clock() + Config.RIFT_ACTIVE_SECONDS
-			portal = BuildPortal()
-			portal.PrimaryPart.Touched:Connect(onPortalTouched)
-			Net.RiftWorld:FireAllClients({ Active = true, EndsAt = worldEndsAt })
+			nextAt = 0
+			SetArchActive(true)
+			Net.RiftWorld:FireAllClients({ Active = true, EndsAt = worldEndsAt, NextAt = 0 })
 			log:Economy("Rift", "Opened", { EndsAt = worldEndsAt })
 
 			task.wait(Config.RIFT_ACTIVE_SECONDS)
 
 			worldActive = false
-			if portal then
-				portal:Destroy()
-				portal = nil
-			end
-			Net.RiftWorld:FireAllClients({ Active = false })
+			SetArchActive(false)
+			nextAt = os.time() + interval
+			Net.RiftWorld:FireAllClients({ Active = false, NextAt = nextAt })
 			log:Economy("Rift", "Closed", {})
 		end
 	end)
