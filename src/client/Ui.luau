@@ -22,6 +22,7 @@ local SeasonPanel = require(script.Parent.Panels.SeasonPanel)
 local LeaderboardPanel = require(script.Parent.Panels.LeaderboardPanel)
 local TutorialBridge = require(ReplicatedStorage.Shared.TutorialBridge)
 local Fx = require(script.Parent.Fx)
+local Cinematic = require(script.Parent.Cinematic)
 local ObjectiveBanner = require(script.Parent.ObjectiveBanner)
 
 local player = Players.LocalPlayer
@@ -686,6 +687,7 @@ Net.BreedResult.OnClientEvent:Connect(function(result)
 end)
 
 Net.RareDrop.OnClientEvent:Connect(function(payload)
+	Cinematic.Play(payload)
 	local mutationText = payload.MutationName and ` {payload.MutationName}` or ""
 	ShowAnnouncement(`{payload.PlayerName} a obtenu {payload.SpeciesName} ({payload.RarityName}{mutationText}) !`)
 end)

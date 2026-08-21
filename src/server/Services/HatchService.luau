@@ -54,6 +54,7 @@ local function Announce(player: Player, roll)
 		PlayerName = player.Name,
 		SpeciesName = Species[roll.SpeciesId].Name,
 		RarityName = Rarities[roll.Rarity].Name,
+		Rarity = roll.Rarity,
 		MutationName = mutationName,
 	}
 
