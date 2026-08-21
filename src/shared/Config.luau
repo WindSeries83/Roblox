@@ -23,7 +23,11 @@ return {
 	MUTATION_WEIGHTS = {
 		None = 88,
 		Shadow = 10,
-		Frost = 2,
+		Frost = 1.7,
+		Golden = 0.2,
+		Prismatic = 0.07,
+		Corrupted = 0.02,
+		Celestial = 0.01,
 	},
 
 	ANNOUNCE_MIN_RARITY = "Rare",

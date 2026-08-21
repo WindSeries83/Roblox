@@ -23,10 +23,13 @@
                                                                 }
                                          },
                  "ServerStorage":  {
-                                       "UnitTest":  {
-                                                        "$path":  "src/tests/unit"
-                                                    }
-                                   },
+                                        "UnitTest":  {
+                                                         "$path":  "src/tests/unit"
+                                                     },
+                                        "Tools":  {
+                                                       "$path":  "src/tools"
+                                                   }
+                                    },
                  "ReplicatedStorage":  {
                                            "Shared":  {
                                                           "$path":  "src/shared"
