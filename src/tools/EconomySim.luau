@@ -160,6 +160,11 @@ local function Simulate(strategy: string, options)
 	while time < MAX_SIM_SECONDS do
 		time += SIM_TICK
 
+		-- ponytail: yield périodique pour ne pas geler le DataModel pendant la sim
+		if time % 60000 == 0 then
+			task.wait()
+		end
+
 		local rate = GetRate(profile)
 		profile.Essence += rate
 		profile.TotalEarned += rate

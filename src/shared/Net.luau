@@ -38,6 +38,7 @@ Net.UpgradeSanctuary = Event("UpgradeSanctuary")
 Net.QuestsSync = Event("QuestsSync")
 Net.QuestClaim = Event("QuestClaim")
 Net.TutorialComplete = Event("TutorialComplete")
+Net.OrbClaimed = Event("OrbClaimed")
 
 Net.MarketList = Event("MarketList")
 Net.MarketListings = Event("MarketListings")
