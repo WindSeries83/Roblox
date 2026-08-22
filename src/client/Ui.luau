@@ -164,7 +164,7 @@ local panelsFrame = UiKit.Create("Frame", {
 })
 
 local panels = {}
-local tabButtons: { [string]: TextButton } = {}
+local tabSelectors: { [string]: () -> () } = {}
 local tabCount = 0
 local function AddTab(name: string, panelModule: any)
 	tabCount += 1
@@ -186,16 +186,18 @@ local function AddTab(name: string, panelModule: any)
 	frame.Name = `Panel{tabCount}`
 	frame.Visible = false
 
-	button.Activated:Connect(function()
+	local function Select()
 		for _, panel in panels do
 			panel.frame.Visible = false
 		end
 		frame.Visible = true
 		TutorialBridge.SetActive(name)
-	end)
+	end
+
+	button.Activated:Connect(Select)
 
 	table.insert(panels, { module = panelModule, frame = frame })
-	tabButtons[name] = button
+	tabSelectors[name] = Select
 end
 
 AddTab("Sanctuaire", SanctuaryPanel)
@@ -654,9 +656,9 @@ local function ShowRiftEnded(result)
 		if not autoOpenedMenu and not tutorialDone then
 			autoOpenedMenu = true
 			SetMenuOpen(true)
-			local eggsTab = tabButtons["Œufs"]
-			if eggsTab then
-				eggsTab:Activate()
+			local selectEggs = tabSelectors["Œufs"]
+			if selectEggs then
+				selectEggs()
 			end
 		end
 	else
