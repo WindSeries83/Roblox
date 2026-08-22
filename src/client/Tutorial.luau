@@ -13,24 +13,16 @@ local TINTS = UiKit.TINTS
 
 local STEPS = {
 	{
-		Text = "Bienvenue dans le refuge ! Suis-moi pour apprendre les bases du jeu.",
-		Need = "Click",
-	},
-	{
-		Text = "Clique sur le bouton Menu pour ouvrir les panneaux du jeu.",
-		Need = "MenuOpen",
-	},
-	{
-		Text = "Ouvre l'onglet Œufs et achète ton premier œuf.",
-		Need = "EggsTab",
-	},
-	{
-		Text = "Clique sur Éclore pour faire apparaître ta première créature !",
+		Text = "Approche-toi de l'œuf du nid et touche-le pour éclore ta première créature.",
 		Need = "Hatch",
 	},
 	{
-		Text = "Ouvre l'onglet Sanctuaire : ta créature s'y promène.",
-		Need = "SanctuaryTab",
+		Text = "Ta créature te suit et farm pour toi. Ouvre le Menu pour en faire plus.",
+		Need = "MenuOpen",
+	},
+	{
+		Text = "La Faille s'est ouverte ! Entre dans l'arche violette.",
+		Need = "RiftEntered",
 	},
 	{
 		Text = "C'est tout ! Une récompense de 50 essence t'attend.",
@@ -165,6 +157,8 @@ local function Check()
 	local advance = false
 	if step.Need == "MenuOpen" then
 		advance = TutorialBridge.state.MenuOpen
+	elseif step.Need == "RiftEntered" then
+		advance = TutorialBridge.state.RiftEntered
 	elseif step.Need == "EggsTab" then
 		advance = TutorialBridge.state.ActiveTab == "Œufs"
 	elseif step.Need == "SanctuaryTab" then
@@ -196,7 +190,7 @@ Net.HatchResult.OnClientEvent:Connect(function()
 end)
 
 TutorialBridge.Changed(function(key)
-	if key == "MenuOpen" or key == "ActiveTab" then
+	if key == "MenuOpen" or key == "ActiveTab" or key == "RiftEntered" then
 		Check()
 	end
 end)

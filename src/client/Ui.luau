@@ -164,6 +164,7 @@ local panelsFrame = UiKit.Create("Frame", {
 })
 
 local panels = {}
+local tabButtons: { [string]: TextButton } = {}
 local tabCount = 0
 local function AddTab(name: string, panelModule: any)
 	tabCount += 1
@@ -194,6 +195,7 @@ local function AddTab(name: string, panelModule: any)
 	end)
 
 	table.insert(panels, { module = panelModule, frame = frame })
+	tabButtons[name] = button
 end
 
 AddTab("Sanctuaire", SanctuaryPanel)
@@ -600,6 +602,8 @@ end
 
 local lastGuardianHP: number? = nil
 local lastPlayerHP: number? = nil
+local autoOpenedMenu = false
+local tutorialDone = false
 
 local function ShowRiftSync(state)
 	if not state.InRift then
@@ -609,6 +613,9 @@ local function ShowRiftSync(state)
 		return
 	end
 	riftHud.Visible = true
+	if not TutorialBridge.state.RiftEntered then
+		TutorialBridge.Set("RiftEntered", true)
+	end
 	UiKit.SetBar(guardianFill, guardianLabel, state.GuardianHP, state.GuardianMaxHP)
 	UiKit.SetBar(playerHpFill, playerHpLabel, state.PlayerHP, state.PlayerMaxHP)
 	if lastGuardianHP and state.GuardianHP < lastGuardianHP then
@@ -644,6 +651,14 @@ local function ShowRiftEnded(result)
 			TINTS.ACCENT,
 			30
 		)
+		if not autoOpenedMenu and not tutorialDone then
+			autoOpenedMenu = true
+			SetMenuOpen(true)
+			local eggsTab = tabButtons["Œufs"]
+			if eggsTab then
+				eggsTab:Activate()
+			end
+		end
 	else
 		ShowAnnouncement("Défaite face au gardien. Tes créatures n'étaient pas prêtes.")
 	end
@@ -663,6 +678,7 @@ local state = nil
 
 local function RefreshAll(newState)
 	state = newState
+	tutorialDone = newState.TutorialDone == true
 	essenceLabel.Text = `Essence : {state.Essence}`
 	rateLabel.Text = `Rendement : {string.format("%.1f", state.Rate)} / s`
 	if state.Stars > 0 then
@@ -801,5 +817,11 @@ require(script.Parent.CreatureDisplay)
 require(script.Parent.CouveusePanel)
 require(script.Parent.FollowController).Start()
 require(script.Parent.FarmBehaviors).Start()
+
+Net.OrbClaimed.OnClientEvent:Connect(function(payload)
+	if payload and payload.Position then
+		Fx.FloatText(payload.Position + Vector3.new(0, 2.5, 0), `+{payload.Amount}`, TINTS.ACCENT)
+	end
+end)
 
 return nil
