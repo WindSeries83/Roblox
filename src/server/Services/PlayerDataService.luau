@@ -54,6 +54,7 @@ local function OnPlayerAdded(player: Player)
 				Id = HttpService:GenerateGUID(false),
 				Tier = "CommonEgg",
 				Timestamp = os.time(),
+				Source = "Nest",
 			})
 			log:Economy("Players", "Starter", { Player = player.Name })
 		end

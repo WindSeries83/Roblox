@@ -99,6 +99,98 @@ function HatchService:Init(cont)
 	sessionLuck = cont:Get("SessionLuck")
 end
 
+function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: boolean?): boolean
+	local profile = saveService:GetProfile(player)
+	if not profile then
+		return false
+	end
+
+	local eggIndex = nil
+	for i, egg in profile.Data.Eggs do
+		if egg.Id == eggId then
+			eggIndex = i
+			break
+		end
+	end
+	if not eggIndex then
+		return false
+	end
+
+	if not profile.Data.Entitlements.AutoHatch then
+		local lastHatch = hatchCooldowns[player] or 0
+		if os.clock() - lastHatch < Config.HATCH_COOLDOWN then
+			return false
+		end
+		hatchCooldowns[player] = os.clock()
+	end
+
+	local bonusSlots = if profile.Data.Entitlements.MoreSlots then 2 else 0
+	local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel, bonusSlots)
+	if #profile.Data.Creatures >= maxCreatures then
+		log:Economy("Hatch", "CapReached", {
+			Player = player.Name,
+			Creatures = #profile.Data.Creatures,
+			MaxCreatures = maxCreatures,
+		})
+		return false
+	end
+
+	local egg = table.remove(profile.Data.Eggs, eggIndex)
+	local luck = sessionLuck.For(player)
+	local rarityWeights = nil
+	if profile.Data.Stats.TotalHatched == 0 and egg.Tier == "CommonEgg" then
+		rarityWeights = Config.FIRST_HATCH_WEIGHTS
+	end
+	local roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile) + luck, rarityWeights)
+	if egg.AscendChance then
+		roll.Rarity = Ascension.RollFrom(roll.Rarity, luck, egg.AscendChance)
+	end
+	if
+		Ascension.SecretTrigger(egg.Tier, Workspace:GetAttribute("EclipseActive") == true, EquippedRelicTier(profile))
+	then
+		roll.Rarity = "Secret"
+	end
+	local creature = Gameplay.CreateCreature(roll.Rarity, roll.SpeciesId, roll.Mutation)
+
+	table.insert(profile.Data.Creatures, creature)
+	profile.Data.Stats.TotalHatched += 1
+	profile.Data.LastPlayed = os.time()
+	indexService:Register(player, roll.SpeciesId, roll.Rarity, roll.Mutation)
+
+	local species = Species[roll.SpeciesId]
+	local mutationName = roll.Mutation ~= false and Mutations[roll.Mutation].Name or nil
+	local announced = Gameplay.RarityRank(roll.Rarity) >= Gameplay.RarityRank(Config.ANNOUNCE_MIN_RARITY)
+	questService:OnHatch(player, roll.Mutation ~= false)
+	local seasonService = container:Get("SeasonService")
+	if seasonService then
+		seasonService:OnHatch(player)
+	end
+
+	Net.HatchResult:FireClient(player, {
+		EggId = eggId,
+		Creature = creature,
+		SpeciesName = species.Name,
+		RarityName = Rarities[roll.Rarity].Name,
+		RarityColor = Rarities[roll.Rarity].Color,
+		MutationName = mutationName,
+		Announced = announced,
+		WorldHatch = worldHatch or nil,
+	})
+
+	log:Economy("Hatch", "Success", {
+		Player = player.Name,
+		Tier = egg.Tier,
+		Species = roll.SpeciesId,
+		Rarity = roll.Rarity,
+		Mutation = tostring(roll.Mutation),
+		CreatureId = creature.Id,
+		WorldHatch = worldHatch or nil,
+	})
+
+	Announce(player, roll)
+	return true
+end
+
 function HatchService:Start()
 	Net.BuyEgg.OnServerEvent:Connect(function(player: Player, tier: string)
 		local price = Config.EGG_PRICES[tier]
@@ -112,96 +204,7 @@ function HatchService:Start()
 	end)
 
 	Net.HatchEgg.OnServerEvent:Connect(function(player: Player, eggId: string)
-		local profile = saveService:GetProfile(player)
-		if not profile then
-			return
-		end
-
-		local eggIndex = nil
-		for i, egg in profile.Data.Eggs do
-			if egg.Id == eggId then
-				eggIndex = i
-				break
-			end
-		end
-		if not eggIndex then
-			return
-		end
-
-		if not profile.Data.Entitlements.AutoHatch then
-			local lastHatch = hatchCooldowns[player] or 0
-			if os.clock() - lastHatch < Config.HATCH_COOLDOWN then
-				return
-			end
-			hatchCooldowns[player] = os.clock()
-		end
-
-		local bonusSlots = if profile.Data.Entitlements.MoreSlots then 2 else 0
-		local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel, bonusSlots)
-		if #profile.Data.Creatures >= maxCreatures then
-			log:Economy("Hatch", "CapReached", {
-				Player = player.Name,
-				Creatures = #profile.Data.Creatures,
-				MaxCreatures = maxCreatures,
-			})
-			return
-		end
-
-		local egg = table.remove(profile.Data.Eggs, eggIndex)
-		local luck = sessionLuck.For(player)
-		local rarityWeights = nil
-		if profile.Data.Stats.TotalHatched == 0 and egg.Tier == "CommonEgg" then
-			rarityWeights = Config.FIRST_HATCH_WEIGHTS
-		end
-		local roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile) + luck, rarityWeights)
-		if egg.AscendChance then
-			roll.Rarity = Ascension.RollFrom(roll.Rarity, luck, egg.AscendChance)
-		end
-		if
-			Ascension.SecretTrigger(
-				egg.Tier,
-				Workspace:GetAttribute("EclipseActive") == true,
-				EquippedRelicTier(profile)
-			)
-		then
-			roll.Rarity = "Secret"
-		end
-		local creature = Gameplay.CreateCreature(roll.Rarity, roll.SpeciesId, roll.Mutation)
-
-		table.insert(profile.Data.Creatures, creature)
-		profile.Data.Stats.TotalHatched += 1
-		profile.Data.LastPlayed = os.time()
-		indexService:Register(player, roll.SpeciesId, roll.Rarity, roll.Mutation)
-
-		local species = Species[roll.SpeciesId]
-		local mutationName = roll.Mutation ~= false and Mutations[roll.Mutation].Name or nil
-		local announced = Gameplay.RarityRank(roll.Rarity) >= Gameplay.RarityRank(Config.ANNOUNCE_MIN_RARITY)
-		questService:OnHatch(player, roll.Mutation ~= false)
-		local seasonService = container:Get("SeasonService")
-		if seasonService then
-			seasonService:OnHatch(player)
-		end
-
-		Net.HatchResult:FireClient(player, {
-			EggId = eggId,
-			Creature = creature,
-			SpeciesName = species.Name,
-			RarityName = Rarities[roll.Rarity].Name,
-			RarityColor = Rarities[roll.Rarity].Color,
-			MutationName = mutationName,
-			Announced = announced,
-		})
-
-		log:Economy("Hatch", "Success", {
-			Player = player.Name,
-			Tier = egg.Tier,
-			Species = roll.SpeciesId,
-			Rarity = roll.Rarity,
-			Mutation = tostring(roll.Mutation),
-			CreatureId = creature.Id,
-		})
-
-		Announce(player, roll)
+		self:HatchEggById(player, eggId)
 	end)
 end
 

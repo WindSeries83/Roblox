@@ -25,6 +25,7 @@ local Fx = require(script.Parent.Fx)
 local Cinematic = require(script.Parent.Cinematic)
 local ObjectiveBanner = require(script.Parent.ObjectiveBanner)
 local RiftFx = require(script.Parent.RiftFx)
+local HatchCinematic = require(script.Parent.HatchCinematic)
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -682,6 +683,12 @@ end
 Net.Sync.OnClientEvent:Connect(RefreshAll)
 
 Net.HatchResult.OnClientEvent:Connect(function(result)
+	if result.WorldHatch then
+		Audio.Play("RareFanfare")
+		HatchCinematic.Play(result)
+		ShowAnnouncement(`{result.SpeciesName} t'accompagne désormais !`)
+		return
+	end
 	Audio.Play("HatchCrack")
 	if result.Announced then
 		Audio.Play("RareFanfare")
