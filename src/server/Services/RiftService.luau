@@ -363,14 +363,17 @@ function RiftService:Start()
 	-- Arche permanente, construite une seule fois
 	portal = BuildArch()
 	portal.PrimaryPart.Touched:Connect(onPortalTouched)
-	nextAt = os.time() + Config.RIFT_INTERVAL
+	nextAt = os.time() + Config.FIRST_RIFT_DELAY
 
 	task.spawn(function()
+		local firstCycle = true
 		while true do
 			local attributeInterval = script:GetAttribute("RiftInterval")
 			local interval = if type(attributeInterval) == "number" and attributeInterval > 0
 				then attributeInterval
+				elseif firstCycle then Config.FIRST_RIFT_DELAY
 				else Config.RIFT_INTERVAL
+			firstCycle = false
 			nextAt = os.time() + interval
 			task.wait(interval)
 
