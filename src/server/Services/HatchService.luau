@@ -197,6 +197,12 @@ function HatchService:Start()
 		if not price then
 			return
 		end
+		local profile = saveService:GetProfile(player)
+		local required = Sanctuary.EggLocked(tier, if profile then profile.Data.SanctuaryLevel else 1)
+		if required then
+			log:Economy("Eggs", "EggLocked", { Player = player.Name, Tier = tier, RequiredRank = required })
+			return
+		end
 		if not essenceService:Spend(player, price, `BuyEgg_{tier}`) then
 			return
 		end

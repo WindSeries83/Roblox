@@ -16,7 +16,7 @@ local function ClaimableQuests(quests): number
 	return ready
 end
 
--- Priorité : faille active (100) > quêtes réclamables (80) > premier œuf (60) > renaissance (40)
+-- Priorité : faille active (100) > quêtes réclamables (80) > premier œuf (60) > renaissance (40) > teasing (20)
 function Objective.Pick(state, world)
 	state = state or {}
 	world = world or {}
@@ -36,6 +36,9 @@ function Objective.Pick(state, world)
 	end
 	if Rebirth.CanRebirth(stats.TotalEssenceEarned or 0, state.Stars or 0) then
 		return { Text = "Renaissance disponible ! Ouvre l'onglet Renaissance.", Priority = 40 }
+	end
+	if (stats.TotalHatched or 0) > 0 then
+		return { Text = "Œuf rare verrouillé — Rang de sanctuaire 3", Priority = 20 }
 	end
 	return nil
 end

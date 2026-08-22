@@ -29,4 +29,20 @@ function Sanctuary.UpgradeCost(sanctuaryLevel: number): number
 	return Sanctuary.NextLevelCost(sanctuaryLevel) or 0
 end
 
+-- Tiers d'œufs verrouillés à ce rang : { tier = rang requis }. Absent = débloqué.
+function Sanctuary.EggGate(sanctuaryLevel: number): { [string]: number }
+	return {
+		UncommonEgg = if sanctuaryLevel >= 2 then nil else 2,
+		RareEgg = if sanctuaryLevel >= 3 then nil else 3,
+	}
+end
+
+function Sanctuary.EggLocked(tier: string, sanctuaryLevel: number): number?
+	local gate = Sanctuary.EggGate(sanctuaryLevel)
+	if gate[tier] then
+		return gate[tier]
+	end
+	return nil
+end
+
 return Sanctuary

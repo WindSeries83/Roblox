@@ -186,12 +186,16 @@ local function Simulate(strategy: string, options)
 
 		local tier = nil
 		if strategy == "progression" then
-			if profile.Essence >= Config.EGG_PRICES.RareEgg then
-				tier = "RareEgg"
-			elseif profile.Essence >= Config.EGG_PRICES.UncommonEgg then
-				tier = "UncommonEgg"
-			elseif profile.Essence >= Config.EGG_PRICES.CommonEgg then
-				tier = "CommonEgg"
+			-- ponytail: respecte le gate sanctuaire (œufs verrouillés par rang)
+			local gate = Sanctuary.EggGate(profile.SanctuaryLevel)
+			for _, candidate in { "RareEgg", "UncommonEgg", "CommonEgg" } do
+				if
+					profile.Essence >= Config.EGG_PRICES[candidate]
+					and not (gate[candidate] and profile.SanctuaryLevel < gate[candidate])
+				then
+					tier = candidate
+					break
+				end
 			end
 		elseif strategy == "common" then
 			tier = "CommonEgg"

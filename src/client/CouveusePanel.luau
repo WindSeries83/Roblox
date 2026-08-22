@@ -4,6 +4,7 @@ local Workspace = game:GetService("Workspace")
 local Net = require(ReplicatedStorage.Shared.Net)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local UiKit = require(script.Parent.UiKit)
 
@@ -39,11 +40,28 @@ end
 local lastState = nil
 local panel: Frame? = nil
 local eggList: ScrollingFrame? = nil
+local buyButtons: { [string]: TextButton } = {}
+local lockedTiers: { [string]: number? } = {}
+
+local function RefreshBuyButtons()
+	for tier, button in buyButtons do
+		local required = lockedTiers[tier]
+		if required then
+			button.Text = `{TIER_NAMES[tier]} 🔒\nRang {required}`
+			button.TextColor3 = Color3.fromRGB(140, 140, 150)
+		else
+			button.Text = `{TIER_NAMES[tier]}\n{Config.EGG_PRICES[tier]}`
+			button.TextColor3 = UiKit.TINTS.WHITE
+		end
+	end
+end
 
 local function Refresh()
 	if not lastState or not eggList or not eggList.Parent then
 		return
 	end
+	lockedTiers = Sanctuary.EggGate(lastState.SanctuaryLevel or 1)
+	RefreshBuyButtons()
 	UiKit.Clear(eggList)
 	for i, egg in lastState.Eggs do
 		local row = UiKit.Cell(eggList)
@@ -136,7 +154,11 @@ function CouveusePanel.Start()
 			UDim2.new((i - 1) / 3, 2, 0, 0)
 		)
 		button.TextSize = 10
+		buyButtons[tier] = button
 		button.Activated:Connect(function()
+			if lockedTiers[tier] then
+				return
+			end
 			Net.BuyEgg:FireServer(tier)
 		end)
 	end

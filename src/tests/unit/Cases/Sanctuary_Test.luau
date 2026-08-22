@@ -25,4 +25,36 @@ return function(t)
 		expect.falsy(Sanctuary.CanUpgrade(cost - 1, 1))
 		expect.truthy(Sanctuary.CanUpgrade(cost, 1))
 	end)
+
+	-- Egg gate locks both purchasable upgrades at rank 1.
+	t.test("egg gate at rank 1 locks uncommon and rare", function()
+		local gate = Sanctuary.EggGate(1)
+		expect.equal(gate.UncommonEgg, 2)
+		expect.equal(gate.RareEgg, 3)
+		expect.equal(Sanctuary.EggLocked("UncommonEgg", 1), 2)
+		expect.equal(Sanctuary.EggLocked("RareEgg", 1), 3)
+	end)
+
+	-- At rank 2 only the rare egg stays locked.
+	t.test("egg gate at rank 2 keeps only rare locked", function()
+		local gate = Sanctuary.EggGate(2)
+		expect.falsy(gate.UncommonEgg)
+		expect.equal(gate.RareEgg, 3)
+		expect.falsy(Sanctuary.EggLocked("UncommonEgg", 2))
+		expect.equal(Sanctuary.EggLocked("RareEgg", 2), 3)
+	end)
+
+	-- Rank 3 and beyond unlocks everything.
+	t.test("egg gate at rank 3 plus unlocks everything", function()
+		local gate = Sanctuary.EggGate(3)
+		expect.falsy(gate.UncommonEgg)
+		expect.falsy(gate.RareEgg)
+		expect.falsy(Sanctuary.EggLocked("UncommonEgg", 3))
+		expect.falsy(Sanctuary.EggLocked("RareEgg", 9))
+	end)
+
+	-- Common egg is never gated.
+	t.test("common egg never locked", function()
+		expect.falsy(Sanctuary.EggLocked("CommonEgg", 1))
+	end)
 end

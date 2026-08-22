@@ -37,7 +37,8 @@ return function(t)
 			Stats = { TotalHatched = 3, TotalEssenceEarned = 10 },
 			Stars = 0,
 		}, nil)
-		expect.falsy(pick)
+		expect.truthy(pick)
+		expect.equal(pick.Priority, 20)
 	end)
 
 	t.test("first egg hint before any hatch", function()
@@ -56,12 +57,22 @@ return function(t)
 		expect.equal(pick.Priority, 40)
 	end)
 
-	t.test("nothing to show", function()
+	t.test("teasing when nothing urgent", function()
 		local pick = Objective.Pick({
 			Quests = { Daily = { { Id = "HatchDaily", Progress = 0, Claimed = false } } },
 			Stats = { TotalHatched = 4, TotalEssenceEarned = 10 },
 			Stars = 0,
 		}, nil)
-		expect.falsy(pick)
+		expect.truthy(pick)
+		expect.equal(pick.Priority, 20)
+	end)
+
+	t.test("no teasing before first hatch", function()
+		local pick = Objective.Pick(
+			{ Quests = { Daily = {} }, Stats = { TotalHatched = 0, TotalEssenceEarned = 10 }, Stars = 0 },
+			nil
+		)
+		expect.truthy(pick)
+		expect.equal(pick.Priority, 60)
 	end)
 end

@@ -6,6 +6,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
+local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 
 local EggPanel = {}
 
@@ -38,6 +39,21 @@ end
 local eggList
 local shopRow
 local itemShopRow
+local buyButtons: { [string]: TextButton } = {}
+local lockedTiers: { [string]: number? } = {}
+
+local function RefreshBuyButtons()
+	for tier, button in buyButtons do
+		local required = lockedTiers[tier]
+		if required then
+			button.Text = `{TIER_NAMES[tier]} 🔒\nRang de sanctuaire {required} requis`
+			button.TextColor3 = Color3.fromRGB(140, 140, 150)
+		else
+			button.Text = `{TIER_NAMES[tier]}\n{Config.EGG_PRICES[tier]} Essence`
+			button.TextColor3 = UiKit.TINTS.WHITE
+		end
+	end
+end
 
 function EggPanel.Create(parent)
 	local frame = UiKit.Create("Frame", {
@@ -125,7 +141,11 @@ function EggPanel.Create(parent)
 			Parent = shopRow,
 		})
 		UiKit.Corner(button)
+		buyButtons[tier] = button
 		button.Activated:Connect(function()
+			if lockedTiers[tier] then
+				return
+			end
 			Net.BuyEgg:FireServer(tier)
 		end)
 	end
@@ -155,6 +175,8 @@ end
 
 function EggPanel.Refresh(state)
 	UiKit.Clear(eggList)
+	lockedTiers = Sanctuary.EggGate(state.SanctuaryLevel or 1)
+	RefreshBuyButtons()
 	local rowWidth = eggList.AbsoluteSize.X - 4
 	for i, egg in state.Eggs do
 		local row = UiKit.Cell(eggList)
