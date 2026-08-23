@@ -1,8 +1,8 @@
 # RIFT BEASTS — Bible de design
 
 > Jeu Roblox de collection de créatures, orienté idle/optimisation, ciblant le public adulte.
-> **Document 1/2.** Le *quoi*. Voir `RIFT_BEASTS_2_plan_production.md` pour le *comment*.
-> Dernière révision : 20/08/2026.
+> **Document unique** — le *quoi* et le *comment*. Dernière révision : 23/08/2026.
+> Consolide les specs antérieures (18–23/08) et remplace le plan de production — source unique du design.
 
 ---
 
@@ -18,6 +18,12 @@
 | Objectif n°1 | **Revenus** — donner envie, jamais forcer |
 | Rythme | Rush fort = mondes + renaissance en quelques heures ; Index = très long |
 | Statut | P4/P5 — social & monétisation implémentés, pré-lancement |
+| Positionnement | **Hybride** — surface « brain rot » virale (dopamine rapide, drops visibles, moments clippables) sur cœur profond (élevage, index, mutations). La cible adulte reste servie par la profondeur |
+| Ton | Humour en surface, data-driven (répliques absurdes) ; fond crépuscule/mystère inchangé |
+| Monétisation | **Aggressive soft** — potions, Server Boost social, offres timées, VIP Pass, FOMO léger informatif. Jamais de paywall, jamais de compteur agressif |
+| FTUE | « Le monde d'abord » — boucle complète vécue en < 5 min sans tutoriel lu |
+| Population | Vivante garantie à toute échelle : jamais de faux joueurs, données globales réelles rendues visibles |
+| Cadence | ~10 h/semaine → hebdo léger data-driven + un gros chantier mensuel |
 
 ---
 
@@ -121,6 +127,7 @@ Ce n'est **pas** une collection cosmétique — c'est la source des bonus perman
 - Conservation : Index, reliques légendaires, objets multiplicateurs, créatures, **arbre de compétence**.
 - Gain : **Étoiles** = multiplicateur permanent + déblocage du monde suivant.
 - **Chaque renaissance débloque un monde** : une zone propre (sanctuaire + faille + quêtes) **et un Mode Rush**.
+- **Mondes = thèmes, pas nouvelles cartes** : Monde N+1 = même île recolorée via `DecorTemplates`, multiplicateurs ×N, espèces exclusives. Mode Rush : objectif chronométré simple par monde (ex. « faille < 90 s »), récompense unique + bonus Index.
 
 **Mode Rush** — le défi chronométré de chaque monde :
 - Objectif propre au monde (ex. « terminer la faille en moins de 2 min », « 3 éclosions d'affilée »).
@@ -133,6 +140,8 @@ Ce n'est **pas** une collection cosmétique — c'est la source des bonus perman
 Version adulte du raid : **consentie et avec mise**.
 
 - Les deux joueurs acceptent, misent quelque chose, le gagnant prend.
+- **Résolution : sim statique serveur** — score attaquant = Σ power de l'équipe déployée, défense = Σ power des créatures non déployées du défenseur, ratio + petit aléa seedé. Zéro combat temps réel, logique pure testable.
+- Mise en escrow ; remboursement sur refus ou timeout 60 s.
 - Les créatures non déployées défendent → arbitrage réel : partir en Faille avec sa meilleure équipe, ou la laisser garder la maison.
 - **Jamais de vol subi par un joueur hors ligne.** Un adulte qui a investi 40 h ne le tolère pas.
 
@@ -141,9 +150,53 @@ Indispensable. C'est ce qui donne de la valeur aux drops rares, donc ce qui just
 Prévoir : place de marché, historique des échanges, protection anti-arnaque (double confirmation, délai).
 Être à un niveau renaissance suffisant avant le trading pour éviter le step up de nouveau joueur.
 
+**Règles marché (actées) :**
+- Listings en **Essence uniquement** — pas de Robux joueur↔joueur (ToS).
+- Frais de vente 5 %, cap de listings par joueur, retrait avec double confirmation + délai 60 s.
+- Transferts atomiques (`EssenceService:Spend/Add` + move créature) ; achat refusé au cap → vendeur intact.
+- Marché cross-serveur visé : listings persistés DataStore + propagation MessagingService → marché crédible même sur serveur vide.
+
+### 3.11 Œufs & chasse haut de gamme
+- Les premiers paliers d'œufs plafonnent à Rare : **Œuf Épique** (~2 000 Essence) et **Œuf Légendaire** (~8 000 Essence) ouvrent la chasse haut de gamme, prix finaux validés par sim.
+- Chaque palier peut dropper au-dessus avec de faibles poids → l'espoir à chaque éclosion.
+- **La Faille = source exclusive des hauts rangs** : Mythique / UltraRare / Secret ne tombent que via faille (+ mutations). Prix indicatifs validés par sim avant code.
+
+### 3.12 Espèces & live ops de contenu
+- Vague 10 → 30 espèces via le pipeline IA low-poly éprouvé, données pures dans `Species.luau` (famille, rôle, taux, puissance).
+- Post-lancement : +3-5 espèces/semaine par le même pipeline — cadence tenable.
+
+### 3.13 Arbre d'Étoiles
+Version pragmatique de l'arbre de compétence (§3.7) : +1 point par renaissance, grille d'environ **12 nœuds permanents**, 3 branches Farm / Faille / Économie. Data-driven (`Shared/SkillTree.luau`). **Rien n'y est vendable.**
+
+### 3.14 FTUE — « Le monde d'abord »
+Problème racine acté : la boucle est complète mais l'abandon se joue dans les 5 premières minutes (monde mort, jeu de menus, pas de direction).
+
+Séquence cible :
+- **T+0 s** — Naissance dans un monde vivant : spawn sans panneau bloquant, œuf dans un nid près du spawn, prompt contextuel unique (« Approche-toi de l'œuf »).
+- **T+10 s** — Première éclosion spectaculaire : cinématique courte (tremblement, lumière, craquement), créature qui suit le joueur. Pity `FIRST_HATCH_WEIGHTS` conservé. Première récompense < 15 s.
+- **T+20 s** — Le farm devient visible sous les yeux (creuse/ramasse/patrouille selon rôle), « +N Essence » flottant. Zéro menu ouvert jusque-là.
+- **T+60-90 s** — Première faille accélérée pour les nouveaux (`FIRST_RIFT_DELAY`), cadence normale ensuite ; combat juteux, victoire → récompenses ×8.
+- **T+2-3 min** — Les menus arrivent en dernier : tutoriel 6 étapes d'UI remplacé par 3 prompts monde + auto-ouverture unique onglet Œufs. L'expert peut tout ignorer.
+
+**Critère d'acceptation :** un nouveau joueur voit sa créature travailler, éclot 1-2 œufs en monde, gagne une faille et sait quoi faire ensuite — sans jamais lire un tutoriel, en moins de 5 minutes.
+
+Pincée active (sans casser le ratio 80/20) :
+- **Orbes d'Essence ambiantes** ~toutes les 45 s, cliquables, plafond serveur strict — jamais obligatoires, toujours rentables.
+- Clics créatures amplifiés : combo visuel + easter egg cosmétique après 10 clics, gain économique nul.
+- Tout gain cliquable attribué côté serveur, rate-limité, plafonné par joueur.
+
+### 3.15 Vivant à toutes les échelles de population
+Principe : **jamais de faux joueurs** (ToS + détection). Des données globales réelles rendues visibles.
+
+- **Densité avant volume** : MaxPlayers 12-16 — Roblox remplit les serveurs existants avant d'en ouvrir ; sanctuaires visibles les uns des autres.
+- **Quand il y a peu de joueurs** : ticker de drops global (Rare+ agrégé MessagingService, pattern LeaderboardService), compteurs mondiaux (« X œufs éclos cette semaine »), créatures sauvages PNJ qui farment visiblement, marché cross-serveur, Éclipse sur horloge serveur.
+- **Quand il y en a beaucoup** : ticker throttlé (~10/min max, priorité hauts rangs), UltraRare+ plein écran, Server Boost en jauge partagée, duels/marché/visites s'activent naturellement.
+- Boucles anti-solitude conservées : streak quotidien, quêtes journalières, pity counter, season pass.
+- Conséquence lancement : peu de serveurs denses (soft launch restreint, amis remplissant les premiers serveurs) avant d'élargir.
+
 ---
 
-## 4. Game feel & lisibilité
+## 4. Game feel, UI & social
 
 **L'écran est vivant.** Le joueur doit ressentir le jeu, pas le lire.
 
@@ -162,6 +215,27 @@ Prévoir : place de marché, historique des échanges, protection anti-arnaque (
   - Le drop Ultra Rare est un moment clippable (ralenti + son + annonce serveur).
   - Options de confort : vitesse d'UI, densité d'info (UI dense par défaut, sans infantilisation).
 
+### 4.A Hubs dans le monde & pouvoir visible
+- **Couveuse** : objet 3D dans l'enclos, ProximityPrompt → BillboardGui (liste œufs + acheter + éclore).
+- **Arche de faille permanente** construite au démarrage serveur : brille quand la faille est active, compte à rebours « Faille dans X:XX ». Rythme inchangé (`RIFT_INTERVAL = 600`, actif 180 s).
+- **Créatures cliquables** : panneau contextuel équiper / évoluer / vendre avec prix suggéré pré-rempli modifiable (passe par `MarketList`).
+- **Feedbacks** : `Fx.FloatText` (+N Essence au tick), saut + burst au clic.
+- **ObjectiveBanner** (bandeau bas d'écran) : priorité faille active > quêtes prêtes > premier œuf > Renaissance, + état « teasing » vers le contenu verrouillé le plus proche.
+- **Pouvoir visible** : taille/aura des créatures étendues au niveau, socles physiques par +2 emplacements de sanctuaire, puissance d'équipe en topbar, renaissance cinématique avec bascule immédiate du thème du nouveau monde.
+
+### 4.B UI mobile-first
+- **Barre d'action permanente en bas** : Œufs · Faille · Sanctuaire — les 3 gestes du jeu, jamais à chercher.
+- Onglets avancés (Marché, Duels, Index, Quêtes, Saison, Renaissance, Boutique) derrière un bouton « Plus ».
+- Fix connu : re-layout dynamique au redimensionnement du viewport ; audit Device Simulator complet (safe areas, TextScaled, cibles tactiles ≥ 44 px).
+- **Boucle visuelle de récompense** : ticker global coin haut-droit, pyramide de célébration (Épic = burst + son · Légendaire+ = slow-mo · UltraRare+ = plein écran + annonce), jauges visibles (pity, Éclipse, Server Boost).
+- **Boutique dédiée** : onglet unique — potions, packs, Pass VIP (avec timer d'expiration), Server Boost, rename, cosmétiques, bundle mensuel, offres à timer — prix clairs, valeur affichée.
+- **Amis** : bouton « Rejoindre un ami » (téléport direct `TeleportService`), toast « X (ami) a rejoint », raccourci visite de sanctuaire depuis la liste d'amis.
+
+### 4.C Social — bonus de groupe et de meute
+- **Groupe Roblox officiel** (check `IsInGroup` serveur mis en cache) : +10 % Essence permanent, tag coloré, 1 œuf commun gratuit/jour. Canal d'annonces updates/événements.
+- **Bonus meute** : +10 % Essence par ami actif dans le serveur, cap ×3 (+30 % max) — anti ferme de comptes, F2P compétitif. Jauge visible près du pseudo (« Meute ×2 »).
+- Garde-fous : bonus jamais achetables, caps affichés, multiplicateurs entrent dans la sim avec **plafond global borné** (groupe + meute + boost + potion + VIP + session luck).
+
 ---
 
 ## 5. Maps
@@ -171,7 +245,7 @@ Prévoir : place de marché, historique des échanges, protection anti-arnaque (
 | **Sanctuaires** (3–4, un par monde débloqué par Renaissance) | AFK, rendement stable, safe |
 | **????** (zone publique, débloquée par Renaissance) | AFK, rendement aléatoire, risqué (mais aucune perte) |
 | **Failles** | Pas de revenu passif dedans, mais ×8 sur les drops → choix actif de sacrifier l'AFK |
-| **Éclipse** | Évènement serveur toutes les 2 h, 10 min, mutation exclusive |
+| **Éclipse** | Évènement serveur toutes les 2 h, 10 min : ciel modifié, annonce serveur, mutation boostée ×10, créature exclusive — horloge serveur, **jamais conditionnée à la population** (réutilise les patterns OrbService/RiftService) |
 | **Zone saisonnière** | 2 semaines, créature exclusive jamais rééditée → pic de revenus et de retours |
 
 ---
@@ -201,13 +275,61 @@ Prévoir : place de marché, historique des échanges, protection anti-arnaque (
 **Principe : vendre du temps, du confort et de la chance. Jamais l'accès au contenu.**
 Le F2P fait 100 % du contenu. Ce qu'on vend, c'est d'aller plus vite, plus confortablement, avec plus de chance — jamais de la progression bloquée.
 
-### Les produits
-- **Starter Pack** — le produit d'entrée. Donne une créature moyenne avec une bonne mutation définie (pas céleste) + un petit boost. *C'est aussi le seuil du classement léger (voir §8) : la majorité des joueurs qui s'engagent le prennent.*
-- **Permanent / confort** : slots, automatisation, gestion en masse, filtres d'inventaire, second sanctuaire.
-- **Gros packs bien valorisés** — un bundle à 2000 Robux qui débloque clairement quelque chose bat dix micro-achats.
-- **Chance** : bonus de chance de session (augmente chaque heure connectée, pendant la session uniquement), multiplicateur de serveur temporaire.
-- **Statut** : cosmétiques visibles, titres, sanctuaire décorable et visitable.
-- **Season pass** (35–45 jours) — format connu et accepté, créature exclusive au sommet.
+### La gamme de produits (23/08 — prix indicatifs, validés par sim avant code)
+
+| Produit | Prix | Rôle |
+|---|---|---|
+| Starter Pack | 149 R$ | Créature Rare mutée + 1 000 Essence + potion ×2 30 min. Seuil du classement léger (§8) |
+| Potion Chance ×1,5 / 10 min | 49 R$ | Consommable vedette des jeux d'éclosion |
+| Potion Chance ×2 / 30 min | 149 R$ | idem |
+| Server Boost | 99 R$ | +50 % chance pour tout le serveur, 15 min, annoncé + jauge visible. Dépense sociale/statut, empilable jusqu'à un cap affiché |
+| VIP Pass (30 j) | ~399 R$ | ×1,25 chance, tag doré, aura, prix soldés −10 % sur les consommables vedettes + Zone VIP de luxe (coffre journalier, œuf VIP, statut) — détail ci-dessous |
+| Auto-Éclosion / +Slots / Rendement | 249 / 199 / 199 R$ | Confort (existants) |
+| Offre 1er achat | −50 % une fois | Déclenchée après le 1er drop Épic+ OU au retour J2 |
+| Offres de retour | J2/J7 | Cadeau + bundle temporaire |
+| Packs Essence | — | Valve de confort |
+| Season Premium | — | Existant : 20 niveaux, 2 pistes, créature exclusive CinderSeraph+Shadow au sommet premium, XP par éclosion/faille/rebirth/quêtes/élevage |
+| Rename ticket | 49 R$ | Renommer une créature — cosmétique pur |
+| Titres rotatifs | 49–99 R$ | Titres cosmétiques en rotation hebdo — statut pur, réutilise le système de titres existant |
+| Cosmétiques purs | 49–199 R$ | Skins/recolors créatures, effets de particules, déco sanctuaire — zéro gameplay, rotation hebdo alignée FOMO léger |
+| Bundle mensuel thématique | ~499 R$ | Rotation mensuelle, valeur réelle affichée vs à l'unité (live ops post-lancement) |
+| Mur des soutiens (tip jar) | 99 / 499 / 999 R$ | Don volontaire unique, nom gravé en permanence sur le vrai mur de la zone d'accueil (plateau de spawn, visible par tous — pas une zone séparée). Pur statut social |
+| Bonus Roblox Premium natifs | gratuit (pour eux) | Petit cadeau quotidien aux membres Premium Roblox (`PlayerMembershipType`, check serveur mis en cache) — reversement Roblox sur leur engagement |
+
+FOMO léger : boutique rotative (1 œuf limité/semaine jamais réédité à l'identique, créature exclusive saisonnière 2 semaines), timers informatifs jamais menaçants, modal d'offre max 1×/session.
+Sinks ajoutés : reroll de mutation (objet Essence), fusion d'œufs (3 communs → 1 supérieur), décor de sanctuaire (Essence ET Robux cosmétique), `MARKET_MAX_PRICE` relevé.
+
+**Validation obligatoire :** extension `tools/EconomySim.luau` — simuler F2P / Starter seul / whale léger sur 14 jours ×3 runs avec le panier complet (multiplicateurs empilés inclus, plafond global borné). **Aucun prix ni multiplicateur codé avant la sim.**
+
+### VIP Pass & Zone VIP
+
+**Modèle — Pass 30 jours (~399 R$, prix validé par sim avant code)** :
+
+- Dev product ; achat → `VipExpiresAt = max(maintenant, expiration actuelle) + 30 j` — les achats s'empilent
+- Timer d'expiration visible en boutique (« encore 12 j ») — FOMO léger informatif, jamais menaçant
+- À l'expiration : perte de l'accès zone/œuf/coffre ; **tout ce qui a été gagné est conservé** (cosmétiques, titres, créatures écloses)
+- Bonus pendant le pass : ×1,25 chance (déjà câblé via `VIP_LUCK_BONUS`), tag doré, aura
+
+**Remise VIP — vrais prix soldés −10 % en Robux** :
+
+- Les prix dev products sont fixes et identiques pour tous (aucune API de prix par joueur) → chaque consommable vedette existe en **deux SKUs** : standard + « VIP » soldé −10 % (potions 49/149 R$ → 44/134 R$, Server Boost 99 → 89 R$, packs Essence −10 %). La boutique affiche les SKUs standards aux non-VIP (badge « −10 % avec le Pass VIP ») et les SKU soldés aux VIP
+- Périmètre strict : ce qui se rachète en boucle uniquement — potions, Server Boost, packs Essence. Jamais les gamepasses permanents (double passe = conflit), jamais le mur des soutiens ni les cosmétiques unitaires
+- Fuite connue et acceptée : `PromptProductPurchase` est appelable côté client (doc officielle) — un non-VIP qui découvre l'ID d'un SKU soldé peut l'acheter lui-même ; il paie des Robux réels pour le même produit, perte marginale bornée aux exploitants
+- Boucle voulue : la remise rend le pass rentable pour qui dépense déjà → le pass multiplie les achats au lieu d'être un achat unique et figé
+
+**Zone VIP — îlot flottant de luxe, contraste volontaire avec l'île crépusculaire sombre : or poli, marbre, néons chauds, tapis doré depuis le portail, statues de créatures légendaires, aura de particules — scintillante et visible depuis le sol ; accès par portail doré, barrière validée serveur (jamais client)** :
+
+1. **Coffre journalier** — le cadeau quotidien devient un coffre physique à ouvrir dans la zone : Essence + potion chance courte + petit drop aléatoire. 1×/jour calendaire (réutilise `VipGiftDate`)
+2. **Œuf VIP** — mêmes espèces que le jeu (pool des meilleurs œufs accessibles), taux ~×1,5 sur Rare+, prix Essence élevé. On vend de la chance, **zéro espèce exclusive** — les exclusives restent l'apanage du Season Premium (règle : F2P fait 100 % du contenu)
+3. **Statut** — piédestal d'aura, déco sanctuaire exclusive, titre « VIP »
+
+Le non-VIP voit la zone depuis le sol (levier « le statut se regarde ») avec panneau listant le contenu.
+
+Code impacté : `Shared/Vip.luau` (pur : `IsActive`, `Extend`, testable), champ `VipExpiresAt` (migration v7), gate téléporteur + coffre dans un `VipService`, SKUs VIP soldés dans `Config.DEV_PRODUCTS` + routage receipts existant étendu.
+
+Garde-fous anti-« prise pour des cons » : taux de drop publiés partout · jamais de faux soldes · timers informatifs jamais menaçants · tout ce qui est gagné est conservé à l'expiration des passes · jamais deux paywalls différents derrière la même exclusive gameplay · micro-prix réservés aux cosmétiques, jamais à la découpe de consommables.
+
+Piste post-lancement : pub récompensée (AdService) → Essence uniquement, cap strict 2-3 vues/jour, jamais de potion ni d'objet premium en récompense (cannibalisation interdite). Décision sur données ARPDAU réelles.
 
 ### Ce qui ne marche pas
 - Micro-consommables à 99 Robux → perçus comme de l'arnaque à la découpe
@@ -237,7 +359,7 @@ Deux classements pour deux ambitions, **un plafond de dépense clairement commun
   - Le plafond est **affiché explicitement** dans l'UI du classement (« Ce classement inclut les joueurs ayant dépensé moins que le Starter Pack ») — cette visibilité est un levier : les gros joueurs prennent au moins le Starter Pack pour rester honnêtes, et les F2P purs ont leur vitrine.
   - Les gros joueurs passent largement devant un joueur au Starter Pack seul : le classement léger récompense le temps et le talent, pas l'argent.
 
-**Règles communes :** refresh périodique, snapshot des sanctuaires visitables, un seul compteur (Essence totale cumulée, jamais remise à 0).
+**Règles communes :** compteur unique `Stats.TotalEssenceEarned` (jamais remis à 0), refresh périodique (5 min) avec sync cross-serveur MessagingService, snapshot des sanctuaires visitables pour l'aperçu (top joueurs : niveau, créatures par rang, espèces phares).
 
 ---
 
@@ -258,12 +380,53 @@ Deux classements pour deux ambitions, **un plafond de dépense clairement commun
 - [ ] Pas de rééditions d'items limités
 - [ ] Le classement plafond léger est affiché avec son plafond explicite
 - [ ] Les Secrets : mur VIP des détenteurs, procédé non documenté, zéro partage in-game
+- [ ] Le pass VIP conserve tout ce qui est gagné à l'expiration
+- [ ] Jamais deux paywalls différents derrière la même exclusive gameplay
+- [ ] Taux publiés avant tout code de prix (validation sim)
 
 ---
 
 ## 10. En suspens
 
 - Nom définitif (RIFT BEASTS = provisoire, vérifier la disponibilité sur Roblox)
-- Répartition fine des points d'arbre de compétence (valeurs chiffrées, dans le plan de production)
-- Contenu exact des Modes Rush par monde (objectifs et récompenses, à boucler avec la carte des mondes)
+- Prix finaux œufs Épique/Légendaire, potions, bundles, Pass VIP 30 j, bundle mensuel (validation sim obligatoire)
+- Valeurs chiffrées des 12 nœuds d'Arbre d'Étoiles (sim) ; répartition fine des points d'arbre de compétence
+- Objectifs Mode Rush précis par monde (à boucler avec la carte des mondes)
+- Activation pub récompensée (AdService) : décision post-lancement sur ARPDAU réel
+- Chemin d'obtention du Secret (décidé tard, jamais documenté)
 - Détail du seuil Starter Pack (prix final du pack → plafond du classement léger)
+
+**Instrumentation analytics (dès le Lot 2 « moteur »)** : `AnalyticsService`, events custom — `hatch(rarity, mutation, source)` · `rift_complete(win, duration)` · `purchase(productId, price)` · `market_sale(price)` ; funnel temps jusqu'au 1er œuf / 1er drop Rare+ / 1er achat ; cohortes D1/D7/D30, ARPDAU, temps avant premier achat — revue hebdomadaire, décisions data.
+
+---
+
+## 11. Exécution — lots pré-lancement & suivi
+
+| Lot | Semaines | Contenu | Sortie |
+|---|---|---|---|
+| **1 · La chasse** | S1-2 | Œufs Épique/Légendaire + tables Mythic→Secret, potions chance + Server Boost + boutique v1, ticker global, marché cross-serveur | Jeu vendable, testable |
+| **2 · Le moteur** | S3-4 | Arbre d'Étoiles, Éclipse, offres 1er achat/retour, VIP complet (Pass + Zone), instrumentation analytics | Rétention + mesure |
+| **3 · L'écran** | S5 | Pass mobile-first complet, barre d'action, boutique dédiée, amis (rejoindre/toast/bonus meute), célébrations, fix resize | Jouable partout |
+| **4 · Le monde** | S6-8 | Espèces 10→30 (pipeline IA), Monde 2 thématique + Mode Rush, mur VIP Secrets, mur des soutiens (accueil), cosmétiques + rename + titres, PNJ sauvages, bonus groupe Roblox | Profondeur |
+| **5 · Lancement** | S9-10 | Icône/thumbnails A/B, IDs produits réels, playtest fermé 20-30 joueurs, publication | Revenus |
+
+Process transversal à chaque lot : extension EconomySim avant tout prix/courbe · tests unitaires étendus · playtest MCP bout en bout · commit.
+
+Live ops post-lancement : hebdo = œuf rotatif + wave espèces + balance (data-driven) · bi-hebdo = mini-événement (variante Éclipse) · mensuel = monde ou grosse feature · revue métriques chaque semaine.
+
+### Risques techniques suivis
+
+| Risque | Mitigation |
+|---|---|
+| Marché cross-serveur : cohérence DataStore/MessagingService (ordering, rate limits) | Listings propriétaire = DataStore unique source de vérité, Messaging = notification only, throttling ticker |
+| Multiplicateurs empilés (groupe+meute+boost+potion+VIP+luck) inflation | Plafond global borné, validé en sim avant code, caps affichés |
+| Cache require Rojo après sync module requis en Edit | Tests en VM fraîche (play) ou run fantôme (procédure connue) |
+| Cadence live ops intenable | Tout data-driven : œufs rotatifs/répliques/tables = fichiers de config, pas de code |
+
+### Tâches humaines
+
+- Créer le groupe Roblox officiel
+- Créer les gamepasses/dev products (liste exacte noms + prix fournie au Lot 1, incluant les SKUs VIP soldés) et renseigner les IDs dans `Config.luau`
+- Icône + thumbnails A/B (Lot 5)
+- Discord ouvert avant sortie
+- Recrutement playtest fermé 20-30 adultes (Discord/Reddit)
