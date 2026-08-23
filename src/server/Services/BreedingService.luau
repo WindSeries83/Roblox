@@ -15,6 +15,7 @@ local indexService
 local dataSync
 local questService
 local sessionLuck
+local skillService
 
 local container
 
@@ -29,6 +30,7 @@ function BreedingService:Init(cont)
 	dataSync = cont:Get("DataSync")
 	questService = cont:Get("QuestService")
 	sessionLuck = cont:Get("SessionLuck")
+	skillService = cont:Get("SkillService")
 end
 
 function BreedingService:Start()
@@ -62,7 +64,9 @@ function BreedingService:Start()
 			return
 		end
 
-		if not essenceService:Spend(player, Config.BREED_COST, `Breed_{father.SpeciesId}`) then
+		local eff = skillService:EffectsOf(profile)
+		local breedCost = math.max(1, math.floor(Config.BREED_COST * (1 - eff.BreedCostReduction)))
+		if not essenceService:Spend(player, breedCost, `Breed_{father.SpeciesId}`) then
 			return
 		end
 		cooldowns[player] = os.clock()

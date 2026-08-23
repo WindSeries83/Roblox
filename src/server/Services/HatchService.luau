@@ -23,6 +23,7 @@ local questService
 local sessionLuck
 local luckService
 local boostService
+local skillService
 local tickerService
 
 local container
@@ -106,6 +107,7 @@ function HatchService:Init(cont)
 	sessionLuck = cont:Get("SessionLuck")
 	luckService = cont:Get("LuckService")
 	boostService = cont:Get("BoostService")
+	skillService = cont:Get("SkillService")
 end
 
 function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: boolean?): boolean
@@ -145,12 +147,18 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 	end
 
 	local egg = table.remove(profile.Data.Eggs, eggIndex)
-	local luck = Luck.Combine(sessionLuck.For(player), luckService:PotionBonus(player), boostService:CurrentBonus())
+	local eff = skillService:EffectsOf(profile)
+	local luck = Luck.Combine(
+		sessionLuck.For(player),
+		luckService:PotionBonus(player),
+		boostService:CurrentBonus(),
+		eff.HatchLuck
+	)
 	local rarityWeights = nil
 	if profile.Data.Stats.TotalHatched == 0 and egg.Tier == "CommonEgg" then
 		rarityWeights = Config.FIRST_HATCH_WEIGHTS
 	end
-	local roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile) + luck, rarityWeights)
+	local roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile) + luck + eff.MutationBonus, rarityWeights)
 	if egg.AscendChance then
 		roll.Rarity = Ascension.RollFrom(roll.Rarity, luck, egg.AscendChance)
 	end
@@ -224,6 +232,8 @@ function HatchService:Start()
 			log:Economy("Eggs", "EggLocked", { Player = player.Name, Tier = tier, RequiredRank = required })
 			return
 		end
+		local eff = if profile then skillService:EffectsOf(profile) else {}
+		price = math.max(1, math.floor(price * (1 - (eff.EggPriceReduction or 0))))
 		if not essenceService:Spend(player, price, `BuyEgg_{tier}`) then
 			return
 		end

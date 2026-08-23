@@ -55,6 +55,7 @@ function Rebirth.ApplyReset(data: any)
 	data.Items = Rebirth.KeepItems(data.Items)
 	data.Stars += 1
 	data.Rebirths += 1
+	data.SkillPoints = (data.SkillPoints or 0) + 1
 	data.Essence = Config.STARTER_ESSENCE
 end
 

@@ -13,6 +13,7 @@ local saveService
 local essenceService
 local riftService
 local dataSync
+local skillService
 
 local function OnPlayerAdded(player: Player)
 	task.spawn(function()
@@ -32,9 +33,10 @@ local function OnPlayerAdded(player: Player)
 
 		local elapsed = os.time() - profile.Data.LastPlayed
 		if profile.Data.LastPlayed > 0 and elapsed > 60 then
+			local eff = skillService:EffectsOf(profile)
 			local rate = essenceService.GetRate(player)
 			local capped = math.min(elapsed, Config.OFFLINE_CAP_SECONDS)
-			local offline = math.floor(rate * capped * Config.OFFLINE_RATE)
+			local offline = math.floor(rate * capped * (Config.OFFLINE_RATE + eff.OfflineRate))
 			if offline > 0 then
 				profile.Data.Essence += offline
 				profile.Data.Stats.TotalEssenceEarned += offline
@@ -100,6 +102,7 @@ function PlayerDataService:Init(container)
 	essenceService = container:Get("EssenceService")
 	riftService = container:Get("RiftService")
 	dataSync = container:Get("DataSync")
+	skillService = container:Get("SkillService")
 end
 
 function PlayerDataService:Start()

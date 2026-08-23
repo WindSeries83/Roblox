@@ -39,6 +39,7 @@ Net.QuestsSync = Event("QuestsSync")
 Net.QuestClaim = Event("QuestClaim")
 Net.TutorialComplete = Event("TutorialComplete")
 Net.OrbClaimed = Event("OrbClaimed")
+Net.SkillBuy = Event("SkillBuy")
 
 Net.LuckSync = Event("LuckSync")
 Net.BoostState = Event("BoostState")

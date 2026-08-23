@@ -15,6 +15,7 @@ local essenceService
 local hatchService
 local itemService
 local questService
+local skillService
 
 local container
 
@@ -211,16 +212,19 @@ local function WinRift(player: Player)
 	end
 
 	local profile = saveService:GetProfile(player)
+	local eff = skillService:EffectsOf(profile)
 	local rate = essenceService.GetRate(player)
-	local essence =
-		math.max(Config.RIFT_MIN_REWARD, math.floor(rate * Config.RIFT_REWARD_SECONDS * Config.RIFT_ESSENCE_MULT))
+	local essence = math.max(
+		Config.RIFT_MIN_REWARD,
+		math.floor(rate * Config.RIFT_REWARD_SECONDS * (Config.RIFT_ESSENCE_MULT + eff.RiftRewardMult))
+	)
 	essenceService:Add(player, essence, "RiftCrystal")
 
 	local eggTier = Sanctuary.ResolveEggTier(
 		Gameplay.WeightedRoll(Config.RIFT_EGG_WEIGHTS),
 		profile.Data.SanctuaryLevel
 	)
-	hatchService:GrantEgg(player, eggTier, "Rift", Config.RIFT_ASCEND_CHANCE)
+	hatchService:GrantEgg(player, eggTier, "Rift", Config.RIFT_ASCEND_CHANCE + eff.AscendChanceAdd)
 
 	local relicRoll = Gameplay.WeightedRoll(Config.RIFT_RELIC_WEIGHTS)
 	local relicTier = nil
@@ -303,6 +307,7 @@ function RiftService:Init(cont)
 	hatchService = cont:Get("HatchService")
 	itemService = cont:Get("ItemService")
 	questService = cont:Get("QuestService")
+	skillService = cont:Get("SkillService")
 end
 
 function RiftService:GetStatePayload()

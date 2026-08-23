@@ -12,6 +12,7 @@ local log
 local saveService
 local dataSync
 local questService
+local skillService
 local container
 
 function EssenceService.GetRate(player: Player): number
@@ -23,7 +24,8 @@ function EssenceService.GetRate(player: Player): number
 	local indexMult = Index.ComputeMult(profile.Data.Index)
 	local starMult = Rebirth.StarEssenceMult(profile.Data.Stars)
 	local passMult = if profile.Data.Entitlements.PassiveBoost then 1.5 else 1
-	return Gameplay.ComputeRate(profile.Data.Creatures) * sanctuaryMult * indexMult * starMult * passMult
+	local skillMult = 1 + skillService:EffectsOf(profile).EssenceRate
+	return Gameplay.ComputeRate(profile.Data.Creatures) * sanctuaryMult * indexMult * starMult * passMult * skillMult
 end
 
 function EssenceService:Add(player: Player, amount: number, source: string)
@@ -71,6 +73,7 @@ function EssenceService:Init(cont)
 	log = cont:Get("Log")
 	saveService = cont:Get("SaveService")
 	dataSync = cont:Get("DataSync")
+	skillService = cont:Get("SkillService")
 	-- QuestService s'initialise après celui-ci (dépendance circulaire) :
 	-- la référence est résolue au Start, quand toutes les Init sont passées.
 	container = cont

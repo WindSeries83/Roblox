@@ -35,6 +35,8 @@ function DataSync:Send(player: Player)
 		Entitlements = profile.Data.Entitlements,
 		Luck = sessionLuck.For(player),
 		LuckPotion = profile.Data.LuckPotion,
+		SkillPoints = profile.Data.SkillPoints,
+		SkillRanks = profile.Data.SkillRanks,
 	})
 end
 

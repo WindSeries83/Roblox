@@ -9,12 +9,14 @@ local log
 local saveService
 local essenceService
 local dataSync
+local skillService
 
 function SanctuaryService:Init(container)
 	log = container:Get("Log")
 	saveService = container:Get("SaveService")
 	essenceService = container:Get("EssenceService")
 	dataSync = container:Get("DataSync")
+	skillService = container:Get("SkillService")
 end
 
 function SanctuaryService:Start()
@@ -25,13 +27,13 @@ function SanctuaryService:Start()
 		end
 
 		local level = profile.Data.SanctuaryLevel
-		local ok, reason = Sanctuary.CanUpgrade(profile.Data.Essence, level)
-		if not ok then
-			log:Economy("Sanctuary", "Reject", { Player = player.Name, Reason = reason })
+		local eff = skillService:EffectsOf(profile)
+		local cost = math.max(1, math.floor(Sanctuary.UpgradeCost(level) * (1 - eff.UpgradeCostReduction)))
+		if profile.Data.Essence < cost then
+			log:Economy("Sanctuary", "Reject", { Player = player.Name, Reason = "Essence insuffisante" })
 			return
 		end
 
-		local cost = Sanctuary.UpgradeCost(level)
 		if not essenceService:Spend(player, cost, "SanctuaryUpgrade") then
 			return
 		end

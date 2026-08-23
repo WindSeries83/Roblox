@@ -5,6 +5,7 @@ Bootstrap.Services = {}
 local ORDER = {
 	"Log",
 	"SaveService",
+	"SkillService",
 	"SessionLuck",
 	"LuckService",
 	"BoostService",

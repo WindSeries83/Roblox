@@ -82,4 +82,19 @@ return function(t)
 		Rebirth.ApplyReset(data)
 		expect.equal(#data.Creatures, 0)
 	end)
+
+	-- Each rebirth grants one skill point.
+	t.test("rebirth grants one skill point", function()
+		local data = {
+			Creatures = {},
+			Eggs = {},
+			Items = {},
+			Stars = 0,
+			Rebirths = 0,
+			Essence = 0,
+			SkillPoints = 0,
+		}
+		Rebirth.ApplyReset(data)
+		expect.equal(data.SkillPoints, 1)
+	end)
 end
