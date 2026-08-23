@@ -725,6 +725,9 @@ local function RefreshAll(newState)
 	if state.Luck and state.Luck > 0 then
 		rateLabel.Text ..= ` — Chance +{math.floor(state.Luck * 100 + 0.5)} %`
 	end
+	if state.Meute and state.Meute > 0 then
+		rateLabel.Text ..= ` — Meute ×{state.Meute}`
+	end
 	UpdateQuestBadge(state.Quests)
 	ObjectiveBanner.Refresh(state)
 	for _, panel in panels do
@@ -873,6 +876,8 @@ Net.QuestsSync.OnClientEvent:Connect(function(payload)
 			ShowAnnouncement(`{notice.Name} {notice.Desc}`)
 			Audio.Play("CoinReward")
 			Flash(0.35)
+		elseif notice.Type == "FriendJoined" then
+			ShowAnnouncement(`{notice.Name} (ami) a rejoint ! Meute +10 %`)
 		end
 	end
 end)

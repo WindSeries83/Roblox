@@ -5,6 +5,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Index = require(ReplicatedStorage.Shared.Index)
 local Rebirth = require(ReplicatedStorage.Shared.Rebirth)
+local Pack = require(ReplicatedStorage.Shared.Pack)
 
 local EssenceService = {}
 
@@ -13,6 +14,7 @@ local saveService
 local dataSync
 local questService
 local skillService
+local packService
 local container
 
 function EssenceService.GetRate(player: Player): number
@@ -25,7 +27,14 @@ function EssenceService.GetRate(player: Player): number
 	local starMult = Rebirth.StarEssenceMult(profile.Data.Stars)
 	local passMult = if profile.Data.Entitlements.PassiveBoost then 1.5 else 1
 	local skillMult = 1 + skillService:EffectsOf(profile).EssenceRate
-	return Gameplay.ComputeRate(profile.Data.Creatures) * sanctuaryMult * indexMult * starMult * passMult * skillMult
+	local packMult = Pack.Mult(packService and packService:Count(player) or 0)
+	return Gameplay.ComputeRate(profile.Data.Creatures)
+		* sanctuaryMult
+		* indexMult
+		* starMult
+		* passMult
+		* skillMult
+		* packMult
 end
 
 function EssenceService:Add(player: Player, amount: number, source: string)
@@ -81,6 +90,7 @@ end
 
 function EssenceService:Start()
 	questService = container:Get("QuestService")
+	packService = container:Get("PackService")
 
 	local accumulator = 0
 	local lastLog = 0

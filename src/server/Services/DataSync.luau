@@ -6,10 +6,12 @@ local DataSync = {}
 
 local container
 local sessionLuck
+local packService
 
 function DataSync:Init(cont)
 	container = cont
 	sessionLuck = cont:Get("SessionLuck")
+	packService = cont:Get("PackService")
 end
 
 function DataSync:Send(player: Player)
@@ -38,6 +40,7 @@ function DataSync:Send(player: Player)
 		LuckPotion = profile.Data.LuckPotion,
 		SkillPoints = profile.Data.SkillPoints,
 		SkillRanks = profile.Data.SkillRanks,
+		Meute = packService and packService:Count(player) or 0,
 	})
 end
 

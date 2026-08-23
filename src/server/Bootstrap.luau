@@ -6,6 +6,7 @@ local ORDER = {
 	"Log",
 	"AnalyticsService",
 	"SaveService",
+	"PackService",
 	"SkillService",
 	"SessionLuck",
 	"LuckService",
