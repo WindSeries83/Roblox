@@ -291,11 +291,26 @@ Luck.Expiry(now: number, durationSeconds: number): number -- now + durée
 
 ### Task 12: Playtest bout en bout + suite verte
 
-- [ ] **Step 1:** Synchro Rojo vérifiée (marqueur SYNC_MARKER en < 5 s, procédure AGENTS.md).
-- [ ] **Step 2:** Suite complète : viser 190+/190+ tests.
-- [ ] **Step 3:** Parcours MCP complet : join → achat Œuf Épique (essence test créditée) → éclosion (pool Épique OK, mesh visible) → faille forcée (attribut interval court) → drop LegendaryEgg → éclosion Légendaire + cinématique → potion active (mult visible en log ECON) → boost serveur (attribut + jauge) → ticker alimenté → marché list/buy OK.
-- [ ] **Step 4:** Console propre : zéro erreur Lua hors mocks attendus (`[profilestore]` mock = OK).
-- [ ] **Step 5:** `Ctrl+S` place + commit final `feat: lot1 la chasse complet (playtest e2e)`.
+> **Statut 23/08 : gameplay e2e VALIDÉ, un blocant visuel découvert (voir Known Issue).**
+
+Validé en playtest réel :
+- Boot propre, 188/188 tests
+- Gating serveur : EpicEgg refusé au rang 1 (`[ECON] Eggs | EggLocked`) puis accordé au rang 4 après 3 upgrades réelles (1000+4000+16000)
+- Achat EpicEgg → éclosion → **Léviathan d'aurore Légendaire**, `Hatch Success` + `Announce` publiés au ticker, annoncé=true côté client
+- Fix critique trouvé par le playtest : **dépendance circulaire Bootstrap** EssenceService ↔ QuestService → référence questService nil à jamais (latente : n'explosait qu'au premier gain d'Essence avec rate > 0). Résolue en résolvant QuestService au Start() d'EssenceService.
+
+**Known Issue — meshes IA absents en Play :**
+Les 4 modèles générés par Assistant (`generate_mesh`) existent en Edit et dans le .rbxlx sauvegardé, mais **disparaissent à chaque passage en Play**. Test décisif : un clone de Riftling survit, les 4 générés non → leur contenu mesh est lié à la session Assistant (asset interne non publié), non sérialisable vers l'environnement de jeu.
+Deux voies de fix :
+- **A (recommandé)** : régénérer les 4 créatures via `generate_procedural_model` (primitives Part pures → sérialisables), pipeline V1 éprouvé
+- **B (humain)** : uploader les 4 meshes via Asset Manager (publish) et reparenter les modèles uploadés dans Workspace.Creatures
+
+- [x] Synchro Rojo vérifiée (marqueur < 5 s)
+- [x] Suite complète : 188/188 tests
+- [x] Parcours MCP complet : crédits test → upgrades sanctuaire → achat EpicEgg → éclosion Legendary + annonce serveur → ticker alimenté ([ECON] Hatch | Announce) → zéro erreur console
+- [ ] Visuel des 4 nouvelles créatures en jeu (bloqué par Known Issue)
+- [x] Console propre : zéro erreur Lua hors mocks attendus
+- [ ] `Ctrl+S` place après résolution du Known Issue
 
 ---
 

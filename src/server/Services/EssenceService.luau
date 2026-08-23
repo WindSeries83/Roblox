@@ -12,6 +12,7 @@ local log
 local saveService
 local dataSync
 local questService
+local container
 
 function EssenceService.GetRate(player: Player): number
 	local profile = saveService:GetProfile(player)
@@ -66,14 +67,18 @@ function EssenceService:Spend(player: Player, amount: number, source: string): b
 	return true
 end
 
-function EssenceService:Init(container)
-	log = container:Get("Log")
-	saveService = container:Get("SaveService")
-	dataSync = container:Get("DataSync")
-	questService = container:Get("QuestService")
+function EssenceService:Init(cont)
+	log = cont:Get("Log")
+	saveService = cont:Get("SaveService")
+	dataSync = cont:Get("DataSync")
+	-- QuestService s'initialise après celui-ci (dépendance circulaire) :
+	-- la référence est résolue au Start, quand toutes les Init sont passées.
+	container = cont
 end
 
 function EssenceService:Start()
+	questService = container:Get("QuestService")
+
 	local accumulator = 0
 	local lastLog = 0
 
