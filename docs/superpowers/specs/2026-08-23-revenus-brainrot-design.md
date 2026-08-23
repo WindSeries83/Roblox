@@ -67,12 +67,17 @@ Constat : les œufs plafonnent à `Rare` alors que 8 raretés sont définies (`R
 | Potion Chance ×1,5 / 10 min | 49 R$ | Consommable vedette des jeux d'éclosion |
 | Potion Chance ×2 / 30 min | 149 R$ | idem |
 | Server Boost | 99 R$ | +50 % chance pour tout le serveur, 15 min, annoncé + jauge visible. Dépense sociale/statut, empilable jusqu'à un cap affiché |
-| VIP (gamepass) | 399 R$ | ×1,25 chance permanent, tag doré, cadeau quotidien, aura |
+| VIP Pass (30 j) | ~249 R$ | ×1,25 chance, tag doré, aura + accès Zone VIP (coffre journalier, œuf VIP, statut) — détail §2.5 |
 | Auto-Éclosion / +Slots / Rendement | 249 / 199 / 199 R$ | Confort (existants, repricing) |
 | Offre 1er achat | −50 % une fois | Déclenchée après le 1er drop Épic+ OU au retour J2 |
 | Offres de retour | J2/J7 | Cadeau + bundle temporaire |
 | Packs Essence (existants) | — | Valve de confort conservée |
 | Season Premium (existant) | — | Conservé |
+| Rename ticket | 49 R$ | Renommer une créature — cosmétique pur (§2.6) |
+| Cosmétiques purs | 49–199 R$ | Skins/recolors créatures, effets de particules, déco sanctuaire — zéro gameplay (§2.6) |
+| Bundle mensuel thématique | ~499 R$ | Rotation mensuelle, valeur réelle affichée vs à l'unité (§2.6) |
+| Mur des soutiens (tip jar) | 99 / 499 / 999 R$ | Don volontaire unique, nom gravé sur le mur d'accueil (§2.6) |
+| Bonus Roblox Premium natifs | gratuit (pour eux) | Cadeau quotidien membres Premium Roblox — reversement Roblox (§2.6) |
 
 ### 2.2 FOMO léger
 
@@ -88,6 +93,35 @@ Constat : les œufs plafonnent à `Rare` alors que 8 raretés sont définies (`R
 
 - Extension `tools/EconomySim.luau` : simuler F2P / Starter seul / whale léger sur 14 jours ×3 runs avec le panier complet (multiplicateurs empilés §5 inclus, plafond global borné)
 - **Aucun prix ni multiplicateur codé avant la sim.**
+
+### 2.5 VIP Pass & Zone VIP
+
+**Modèle — Pass 30 jours (~249 R$, prix validé par sim avant code)** :
+
+- Dev product ; achat → `VipExpiresAt = max(maintenant, expiration actuelle) + 30 j` — les achats s'empilent
+- Timer d'expiration visible en boutique (« encore 12 j ») — FOMO léger informatif, jamais menaçant
+- À l'expiration : perte de l'accès zone/œuf/coffre ; **tout ce qui a été gagné est conservé** (cosmétiques, titres, créatures écloses)
+- Bonus pendant le pass : ×1,25 chance (déjà câblé via `VIP_LUCK_BONUS`), tag doré, aura
+
+**Zone VIP — îlot flottant accessible par portail doré, barrière validée serveur (jamais client)** :
+
+1. **Coffre journalier** — le cadeau quotidien devient un coffre physique à ouvrir dans la zone : Essence + potion chance courte + petit drop aléatoire. 1×/jour calendaire (réutilise `VipGiftDate`)
+2. **Œuf VIP** — mêmes espèces que le jeu (pool des meilleurs œufs accessibles), taux ~×1,5 sur Rare+, prix Essence élevé. On vend de la chance, **zéro espèce exclusive** — les exclusives restent l'apanage du Season Premium (règle bible : F2P fait 100 % du contenu)
+3. **Statut** — piédestal d'aura, déco sanctuaire exclusive, titre « VIP »
+
+Le non-VIP voit la zone depuis le sol (levier bible §7 « le statut se regarde ») avec panneau listant le contenu.
+
+Code impacté : `Shared/Vip.luau` (pur : `IsActive`, `Extend`, testable), champ `VipExpiresAt` (migration v7), gate téléporteur + coffre dans un `VipService`, entrées Config.
+
+### 2.6 Monétisation honnête — ajouts
+
+- **Cosmétiques purs** : skins/recolors de créatures, effets de particules, déco sanctuaire. Zéro impact gameplay — pipeline `DecorTemplates`. Rotation hebdo alignée FOMO léger (§2.2)
+- **Rename ticket** : renommer une créature, 49 R$ — micro-achat cosmétique, attachement émotionnel à la bête
+- **Bundle mensuel thématique** : ~499 R$, valeur réelle affichée vs à l'unité, rotation mensuelle (live ops post-lancement)
+- **Bonus Roblox Premium natifs** : petit cadeau quotidien aux membres Premium Roblox (`PlayerMembershipType`, check serveur mis en cache) — Roblox reverse sur leur engagement, le joueur ne paie pas deux fois
+- **Mur des soutiens** : 3 paliers de don uniques (99 / 499 / 999 R$), nom gravé en permanence sur le vrai mur de la zone d'accueil (plateau de spawn existant, visible par tous — pas une zone séparée). Pur statut social, honnêteté totale
+
+Garde-fous anti-« prise pour des cons » : taux de drop publiés partout · jamais de faux soldes · timers informatifs jamais menaçants · tout ce qui est gagné est conservé à l'expiration des passes · jamais deux paywalls différents derrière la même exclusive gameplay · micro-prix réservés aux cosmétiques, jamais à la découpe de consommables (bible §7).
 
 ---
 
@@ -139,7 +173,7 @@ Conséquence lancement : **peu de serveurs denses** (soft launch restreint, amis
 
 ### 4.C Boutique dédiée
 
-- Onglet unique : potions, packs, VIP, Server Boost, offres à timer — prix clairs, valeur affichée
+- Onglet unique : potions, packs, Pass VIP (avec timer d'expiration), Server Boost, rename, cosmétiques, bundle mensuel, offres à timer — prix clairs, valeur affichée
 
 ### 4.D Amis
 
@@ -175,7 +209,7 @@ Garde-fous : bonus jamais achetables, caps affichés, multiplicateurs entrent da
 | **1 · La chasse** | S1-2 | Œufs Épique/Légendaire + tables Mythic→Secret, potions chance + Server Boost + boutique v1, ticker global, marché cross-serveur | Jeu vendable, testable |
 | **2 · Le moteur** | S3-4 | Arbre d'Étoiles, Éclipse, offres 1er achat/retour, VIP complet, instrumentation analytics | Rétention + mesure |
 | **3 · L'écran** | S5 | Pass mobile-first complet, barre d'action, boutique dédiée, amis (rejoindre/toast/bonus meute), célébrations, fix resize | Jouable partout |
-| **4 · Le monde** | S6-8 | Espèces 10→30 (pipeline IA), Monde 2 thématique + Mode Rush, mur VIP Secrets, PNJ sauvages, bonus groupe Roblox | Profondeur |
+| **4 · Le monde** | S6-8 | Espèces 10→30 (pipeline IA), Monde 2 thématique + Mode Rush, mur VIP Secrets, mur des soutiens (accueil), cosmétiques + rename, PNJ sauvages, bonus groupe Roblox | Profondeur |
 | **5 · Lancement** | S9-10 | Icône/thumbnails A/B, IDs produits réels, playtest fermé 20-30 joueurs, publication | Revenus |
 
 Process transversal à chaque lot : extension EconomySim avant tout prix/courbe · tests unitaires étendus · playtest MCP bout en bout · commit.
@@ -217,7 +251,7 @@ Checklist plan P4 « métriques instrumentées dès P1 » : rattrapée ici.
 
 ## 10. En suspens (validés par sim/décision ultérieure)
 
-- Prix finaux œufs Épique/Légendaire, potions, bundles (sim §2.4)
+- Prix finaux œufs Épique/Légendaire, potions, bundles, Pass VIP 30 j, bundle mensuel (sim §2.4)
 - Valeurs chiffrées des 12 nœuds d'Arbre d'Étoiles (sim)
 - Objectifs Mode Rush précis par monde (avec la carte des mondes, Lot 4)
 - Nom définitif du jeu (RIFT BEASTS provisoire)
