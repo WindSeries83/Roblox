@@ -17,6 +17,7 @@ local saveService
 local essenceService
 local dataSync
 local skillService
+local analyticsService
 
 local ListingsKey = "Listings"
 
@@ -184,6 +185,7 @@ local function CreditSeller(listing: any)
 	local sellerProfile = if seller then saveService:GetProfile(seller) else nil
 	local eff = if sellerProfile then skillService:EffectsOf(sellerProfile) else {}
 	local payout = MarketService.Payout(listing.Price, math.max(0, Config.MARKET_FEE - (eff.MarketFeeReduction or 0)))
+	analyticsService:Event("market_sale", { Price = listing.Price })
 	if seller then
 		essenceService:Add(seller, payout, `MarketSale_{listing.Id}`)
 		if sellerProfile then
@@ -361,6 +363,7 @@ function MarketService:Init(container)
 	essenceService = container:Get("EssenceService")
 	dataSync = container:Get("DataSync")
 	skillService = container:Get("SkillService")
+	analyticsService = container:Get("AnalyticsService")
 end
 
 function MarketService:Start()

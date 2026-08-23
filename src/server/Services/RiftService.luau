@@ -16,6 +16,7 @@ local hatchService
 local itemService
 local questService
 local skillService
+local analyticsService
 
 local container
 
@@ -247,6 +248,7 @@ local function WinRift(player: Player)
 		RelicTier = relicTier,
 		Total = profile.Data.Stats.RiftsCompleted,
 	})
+	analyticsService:Event("rift_complete", { Win = true, Duration = 0 })
 
 	CleanupCombat(player)
 end
@@ -254,6 +256,7 @@ end
 local function LoseRift(player: Player)
 	Net.RiftEnded:FireClient(player, { Win = false })
 	log:Economy("Rift", "Defeat", { Player = player.Name })
+	analyticsService:Event("rift_complete", { Win = false, Duration = 0 })
 	CleanupCombat(player)
 end
 
@@ -308,6 +311,7 @@ function RiftService:Init(cont)
 	itemService = cont:Get("ItemService")
 	questService = cont:Get("QuestService")
 	skillService = cont:Get("SkillService")
+	analyticsService = cont:Get("AnalyticsService")
 end
 
 function RiftService:GetStatePayload()

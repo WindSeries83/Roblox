@@ -16,6 +16,7 @@ local essenceService
 local dataSync
 local luckService
 local boostService
+local analyticsService
 
 local ReceiptsStore
 local receiptsOk = pcall(function()
@@ -111,6 +112,8 @@ function PurchaseService.GrantPass(player: Player, passKey: string): boolean
 	end
 	profile.Data.LastPlayed = os.time()
 	LogPurchase("Gamepass", { Player = player.Name, Pass = passKey })
+	analyticsService:Event("purchase", { Pass = passKey })
+	analyticsService:Funnel(profile, "FirstPurchaseAt")
 	dataSync:Send(player)
 	return true
 end
@@ -121,6 +124,7 @@ function PurchaseService:Init(container)
 	dataSync = container:Get("DataSync")
 	luckService = container:Get("LuckService")
 	boostService = container:Get("BoostService")
+	analyticsService = container:Get("AnalyticsService")
 end
 
 function PurchaseService:Start()
@@ -197,6 +201,8 @@ function PurchaseService:Start()
 			Amount = product.Amount,
 			PurchaseId = receiptInfo.PurchaseId,
 		})
+		analyticsService:Event("purchase", { ProductId = productId, Kind = product.Kind or "Essence" })
+		analyticsService:Funnel(saveService:GetProfile(player), "FirstPurchaseAt")
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end
 end

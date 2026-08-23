@@ -23,6 +23,7 @@ local questService
 local sessionLuck
 local luckService
 local boostService
+local analyticsService
 local skillService
 local tickerService
 
@@ -108,6 +109,7 @@ function HatchService:Init(cont)
 	luckService = cont:Get("LuckService")
 	boostService = cont:Get("BoostService")
 	skillService = cont:Get("SkillService")
+	analyticsService = cont:Get("AnalyticsService")
 end
 
 function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: boolean?): boolean
@@ -214,6 +216,16 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 		CreatureId = creature.Id,
 		WorldHatch = worldHatch or nil,
 	})
+	local rank = Gameplay.RarityRank(roll.Rarity)
+	analyticsService:Event("hatch", { Rarity = roll.Rarity, Mutation = tostring(roll.Mutation), Source = egg.Tier })
+	analyticsService:Funnel(profile, "FirstHatchAt")
+	if rank >= rareRank then
+		analyticsService:Funnel(profile, "FirstRarePlusAt")
+	end
+	if rank >= Gameplay.RarityRank("Epic") then
+		analyticsService:Funnel(profile, "FirstEpicPlusAt")
+		profile.Data.Offers.FirstPurchaseEligible = true
+	end
 
 	Announce(player, roll)
 	return true
