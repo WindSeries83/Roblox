@@ -196,7 +196,10 @@ return {
 		LuckPotionSmall = { Id = 0, Name = "Potion de chance +15 % (10 min)", Kind = "LuckPotion", PotionKind = "Small" },
 		LuckPotionBig = { Id = 0, Name = "Potion de chance +35 % (30 min)", Kind = "LuckPotion", PotionKind = "Big" },
 		ServerBoostProduct = { Id = 0, Name = "Boost de serveur +25 % (15 min)", Kind = "ServerBoost" },
+		FirstPurchaseOffer = { Id = 0, Name = "Offre 1re fois — Pack de départ -50 %", Kind = "FirstOffer" },
 	},
+
+	RETURN_GIFTS = { D2 = 500, D7 = 2000 },
 
 	TUTORIAL_REWARD = 50,
 

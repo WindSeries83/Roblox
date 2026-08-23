@@ -13,6 +13,7 @@ local player = Players.LocalPlayer
 local potionLabel
 local boostLabel
 local eclipseLabel
+local offerBanner
 local buyButtons: { [string]: TextButton } = {}
 local luckPotion
 local boostUntil = 0
@@ -180,6 +181,48 @@ function ShopPanel.Create(parent)
 		end
 	end
 
+	-- Bannière informative 1er achat : affichée tant que non claimée, pas de popup auto.
+	offerBanner = UiKit.Create("Frame", {
+		Name = "FirstOfferBanner",
+		BackgroundColor3 = UiKit.TINTS.ACCENT,
+		BackgroundTransparency = 0.7,
+		Size = UDim2.fromScale(1, 0.08),
+		Position = UDim2.fromScale(0, 0.58),
+		Visible = false,
+		Parent = frame,
+	})
+	UiKit.Corner(offerBanner)
+	UiKit.Padding(offerBanner, 4)
+	UiKit.Create("TextLabel", {
+		Name = "OfferText",
+		BackgroundTransparency = 1,
+		TextColor3 = UiKit.TINTS.WHITE,
+		Font = Enum.Font.GothamBold,
+		TextSize = 12,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Size = UDim2.fromScale(0.72, 1),
+		Text = "Offre 1re fois : pack de départ −50 %",
+		Parent = offerBanner,
+	})
+	local offerButton = UiKit.Create("TextButton", {
+		Name = "OfferBuy",
+		BackgroundColor3 = UiKit.TINTS.ACCENT,
+		TextColor3 = UiKit.TINTS.WHITE,
+		Font = Enum.Font.GothamBold,
+		TextSize = 11,
+		Size = UDim2.fromScale(0.26, 1),
+		Position = UDim2.fromScale(0.73, 0),
+		Text = "Profiter de l'offre",
+		Parent = offerBanner,
+	})
+	UiKit.Corner(offerButton)
+	offerButton.Activated:Connect(function()
+		local def = Config.DEV_PRODUCTS.FirstPurchaseOffer
+		if def then
+			Prompt(def.Id)
+		end
+	end)
+
 	task.spawn(function()
 		while frame.Parent do
 			RefreshTimers()
@@ -192,6 +235,9 @@ end
 
 function ShopPanel.Refresh(state)
 	luckPotion = state.LuckPotion
+	offerBanner.Visible = state.Offers ~= nil
+		and state.Offers.FirstPurchaseEligible == true
+		and state.Offers.FirstPurchaseClaimed == false
 end
 
 Net.BoostState.OnClientEvent:Connect(function(state)

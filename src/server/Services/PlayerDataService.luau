@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Offers = require(ReplicatedStorage.Shared.Offers)
 local Streak = require(ReplicatedStorage.Shared.Streak)
 local Vip = require(ReplicatedStorage.Shared.Vip)
 
@@ -145,6 +146,24 @@ local function OnPlayerAdded(player: Player)
 				ApplyVipCosmetics(player)
 			end
 		end)
+
+		-- Retours J2/J7 : cadeau d'essence une seule fois par palier.
+		-- Garde LastPlayed > 0 : sinon un nouveau joueur (0) aurait un elapsed énorme.
+		local returnDay = if profile.Data.LastPlayed > 0 then Offers.ReturnDay(elapsed) else nil
+		if returnDay and Offers.ReturnGiftDue(profile.Data, returnDay) then
+			local amount = Config.RETURN_GIFTS[returnDay]
+			essenceService:Add(player, amount, `ReturnGift_{returnDay}`)
+			profile.Data.Offers.ReturnGifts[returnDay] = true
+			task.delay(5, function()
+				if not player:IsDescendantOf(game) then
+					return
+				end
+				Net.QuestsSync:FireClient(player, {
+					Quests = profile.Data.Quests,
+					Notice = { Type = "ReturnGift", Name = returnDay, Amount = amount },
+				})
+			end)
+		end
 
 		dataSync:Send(player)
 		Net.RiftWorld:FireClient(player, riftService:GetStatePayload())

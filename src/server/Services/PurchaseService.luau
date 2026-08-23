@@ -35,6 +35,29 @@ local function LogPurchase(source: string, data: { [string]: any })
 	Log:Economy("Purchase", source, data)
 end
 
+-- Effet d'un produit sur le profil. Retourne false = refus propre
+-- (NotProcessedYet -> remboursement automatique par Roblox).
+function PurchaseService.GrantProduct(player: Player, product: any, productId: number): boolean
+	if product.Kind == "LuckPotion" then
+		luckService:GrantPotion(player, product.PotionKind)
+	elseif product.Kind == "ServerBoost" then
+		boostService:Activate(player)
+	elseif product.Kind == "FirstOffer" then
+		local profile = saveService:GetProfile(player)
+		if not profile or profile.Data.Offers.FirstPurchaseClaimed then
+			LogPurchase("FirstOfferReject", { PlayerId = player.UserId })
+			return false
+		end
+		if not PurchaseService.GrantPass(player, "StarterBundle") then
+			return false
+		end
+		profile.Data.Offers.FirstPurchaseClaimed = true
+	else
+		essenceService:Add(player, product.Amount, `DevProduct_{productId}`)
+	end
+	return true
+end
+
 function PurchaseService.ResolveProduct(productId: number)
 	if productId == 0 then
 		return nil
@@ -174,18 +197,16 @@ function PurchaseService:Start()
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		end
 
-		-- Grant-then-ack (SE-3) : persistance du receipt AVANT PurchaseGranted
-		local okGrant = pcall(function()
-			if product.Kind == "LuckPotion" then
-				luckService:GrantPotion(player, product.PotionKind)
-			elseif product.Kind == "ServerBoost" then
-				boostService:Activate(player)
-			else
-				essenceService:Add(player, product.Amount, `DevProduct_{productId}`)
-			end
+		-- Grant-then-ack (SE-3) : persistance du receipt AVANT PurchaseGranted.
+		-- GrantProduct false = refus propre -> NotProcessedYet (remboursement auto).
+		local okGrant, grantedOk = pcall(function()
+			return PurchaseService.GrantProduct(player, product, productId)
 		end)
 		if not okGrant then
 			LogPurchase("ReceiptGrantFailed", { PlayerId = playerId, ProductId = productId })
+			return Enum.ProductPurchaseDecision.NotProcessedYet
+		end
+		if not grantedOk then
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		end
 
