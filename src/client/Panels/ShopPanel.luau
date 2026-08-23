@@ -12,9 +12,13 @@ local player = Players.LocalPlayer
 
 local potionLabel
 local boostLabel
+local eclipseLabel
 local buyButtons: { [string]: TextButton } = {}
 local luckPotion
 local boostUntil = 0
+local eclipseActive = false
+local eclipseUntil = 0
+local eclipseBonus = 0
 
 local function Prompt(productId)
 	if productId and productId ~= 0 then
@@ -47,6 +51,12 @@ local function RefreshTimers()
 		)
 	else
 		boostLabel.Text = "Pas de boost serveur — achetez-en un, tout le serveur en profite !"
+	end
+
+	local eclipseLeft = if eclipseActive then RemainingText(eclipseUntil) else nil
+	eclipseLabel.Visible = eclipseLeft ~= nil
+	if eclipseLeft then
+		eclipseLabel.Text = string.format("Éclipse ! Mutations ×%d — %s restant", 1 + eclipseBonus, eclipseLeft)
 	end
 end
 
@@ -105,10 +115,24 @@ function ShopPanel.Create(parent)
 		Parent = frame,
 	})
 
+	eclipseLabel = UiKit.Create("TextLabel", {
+		Name = "EclipseState",
+		RichText = false,
+		BackgroundTransparency = 1,
+		TextColor3 = Color3.fromRGB(178, 132, 255),
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Position = UDim2.fromScale(0, 0.16),
+		Size = UDim2.fromScale(1, 0.04),
+		Text = "",
+		Visible = false,
+		Parent = frame,
+	})
+
 	local chanceRow = UiKit.Create("Frame", {
 		Name = "ChanceRow",
 		BackgroundTransparency = 1,
-		Position = UDim2.fromScale(0, 0.18),
+		Position = UDim2.fromScale(0, 0.21),
 		Size = UDim2.fromScale(1, 0.14),
 		Parent = frame,
 	})
@@ -172,6 +196,12 @@ end
 
 Net.BoostState.OnClientEvent:Connect(function(state)
 	boostUntil = state.Until or 0
+end)
+
+Net.EclipseState.OnClientEvent:Connect(function(state)
+	eclipseActive = state.Active == true
+	eclipseUntil = state.Until or 0
+	eclipseBonus = state.Bonus or 0
 end)
 
 return ShopPanel

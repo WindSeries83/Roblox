@@ -17,8 +17,15 @@ function Ascension.RollFrom(baseRarity: string, luck: number?, chanceOverride: n
 	return baseRarity
 end
 
-function Ascension.SecretTrigger(eggTier: string, eclipseActive: boolean, relicTier: string?): boolean
-	return eggTier == "RareEgg" and eclipseActive == true and relicTier == "T3"
+-- Déclenche le Secret : RareEgg pendant l'Éclipse avec relique T3 ; l'omen (arbre d'Étoiles) élargit aux œufs Épiques et Légendaires.
+function Ascension.SecretTrigger(eggTier: string, eclipseActive: boolean, relicTier: string?, omen: boolean?): boolean
+	if eclipseActive ~= true or relicTier ~= "T3" then
+		return false
+	end
+	if eggTier == "RareEgg" then
+		return true
+	end
+	return omen == true and (eggTier == "EpicEgg" or eggTier == "LegendaryEgg")
 end
 
 return Ascension

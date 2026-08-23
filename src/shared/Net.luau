@@ -43,6 +43,7 @@ Net.SkillBuy = Event("SkillBuy")
 
 Net.LuckSync = Event("LuckSync")
 Net.BoostState = Event("BoostState")
+Net.EclipseState = Event("EclipseState")
 
 Net.GlobalDrop = Event("GlobalDrop")
 Net.GlobalStats = Event("GlobalStats")

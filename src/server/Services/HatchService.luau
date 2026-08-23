@@ -26,6 +26,7 @@ local boostService
 local analyticsService
 local skillService
 local tickerService
+local eclipseService
 
 local container
 
@@ -160,12 +161,22 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 	if profile.Data.Stats.TotalHatched == 0 and egg.Tier == "CommonEgg" then
 		rarityWeights = Config.FIRST_HATCH_WEIGHTS
 	end
-	local roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile) + luck + eff.MutationBonus, rarityWeights)
+	-- Bonus mutation de l'Éclipse ajouté APRÈS Luck.Combine : événement serveur, hors cap de chance achetable.
+	local roll = Gameplay.RollEgg(
+		egg.Tier,
+		CollarBonus(profile) + luck + eff.MutationBonus + eclipseService:MutationBonus(),
+		rarityWeights
+	)
 	if egg.AscendChance then
 		roll.Rarity = Ascension.RollFrom(roll.Rarity, luck, egg.AscendChance)
 	end
 	if
-		Ascension.SecretTrigger(egg.Tier, Workspace:GetAttribute("EclipseActive") == true, EquippedRelicTier(profile))
+		Ascension.SecretTrigger(
+			egg.Tier,
+			Workspace:GetAttribute("EclipseActive") == true,
+			EquippedRelicTier(profile),
+			eff.SecretOmen == true
+		)
 	then
 		roll.Rarity = "Secret"
 	end
@@ -233,6 +244,7 @@ end
 
 function HatchService:Start()
 	tickerService = container:Get("TickerService")
+	eclipseService = container:Get("EclipseService")
 	Net.BuyEgg.OnServerEvent:Connect(function(player: Player, tier: string)
 		local price = Config.EGG_PRICES[tier]
 		if not price then

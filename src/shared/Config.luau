@@ -156,6 +156,12 @@ return {
 	GLOBAL_STATS_STORE = "RiftBeastsGlobalStats_v1",
 	GLOBAL_STATS_FLUSH = 60,
 
+	-- Éclipse : rendez-vous serveur toutes les 2 h, 10 min (spec §1.5).
+	ECLIPSE_INTERVAL = 7200,
+	ECLIPSE_DURATION = 600,
+	ECLIPSE_MUTATION_BONUS = 9,
+	ECLIPSE_CLOCKTIME = 18,
+
 	-- Arbre d'Étoiles : +1 point par renaissance, rien n'est vendable (bible §7).
 	-- Valeurs provisionnelles — à valider par EconomySim (spec §2.4) avant live.
 	SKILL_TREE = {
