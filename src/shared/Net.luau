@@ -41,6 +41,9 @@ Net.TutorialComplete = Event("TutorialComplete")
 Net.OrbClaimed = Event("OrbClaimed")
 Net.SkillBuy = Event("SkillBuy")
 
+Net.FriendsSync = Event("FriendsSync")
+Net.JoinFriend = Event("JoinFriend")
+
 Net.LuckSync = Event("LuckSync")
 Net.BoostState = Event("BoostState")
 Net.EclipseState = Event("EclipseState")

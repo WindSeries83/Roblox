@@ -22,6 +22,7 @@ local DuelPanel = require(script.Parent.Panels.DuelPanel)
 local SeasonPanel = require(script.Parent.Panels.SeasonPanel)
 local LeaderboardPanel = require(script.Parent.Panels.LeaderboardPanel)
 local ShopPanel = require(script.Parent.Panels.ShopPanel)
+local FriendsPanel = require(script.Parent.Panels.FriendsPanel)
 local CreaturePortrait = require(script.Parent.CreaturePortrait)
 local TutorialBridge = require(ReplicatedStorage.Shared.TutorialBridge)
 local Fx = require(script.Parent.Fx)
@@ -207,6 +208,7 @@ AddTab("Arbre", SkillPanel)
 AddTab("Objectifs", QuestsPanel)
 AddTab("Marché", MarketPanel)
 AddTab("Boutique", ShopPanel)
+AddTab("Amis", FriendsPanel)
 
 -- Tab "Duels & Classements" : wrapper avec sous-onglets Duels / Saison / Classements
 do
