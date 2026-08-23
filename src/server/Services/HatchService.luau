@@ -23,6 +23,7 @@ local questService
 local sessionLuck
 local luckService
 local boostService
+local tickerService
 
 local container
 
@@ -62,6 +63,9 @@ local function Announce(player: Player, roll)
 	}
 
 	Net.RareDrop:FireAllClients(payload)
+	if tickerService then
+		tickerService:Publish(payload)
+	end
 	log:Economy("Hatch", "Announce", payload)
 end
 
@@ -208,6 +212,7 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 end
 
 function HatchService:Start()
+	tickerService = container:Get("TickerService")
 	Net.BuyEgg.OnServerEvent:Connect(function(player: Player, tier: string)
 		local price = Config.EGG_PRICES[tier]
 		if not price then

@@ -43,6 +43,9 @@ Net.OrbClaimed = Event("OrbClaimed")
 Net.LuckSync = Event("LuckSync")
 Net.BoostState = Event("BoostState")
 
+Net.GlobalDrop = Event("GlobalDrop")
+Net.GlobalStats = Event("GlobalStats")
+
 Net.MarketList = Event("MarketList")
 Net.MarketListings = Event("MarketListings")
 Net.MarketBuy = Event("MarketBuy")

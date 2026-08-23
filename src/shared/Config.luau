@@ -149,6 +149,12 @@ return {
 	LEADERBOARD_REFRESH = 300,
 	LEADERBOARD_QUERY_COOLDOWN = 5,
 
+	TICKER_MIN_INTERVAL = 6,
+	TICKER_BYPASS_RANK = 5,
+	TICKER_TOPIC = "RBXTicker_v1",
+	GLOBAL_STATS_STORE = "RiftBeastsGlobalStats_v1",
+	GLOBAL_STATS_FLUSH = 60,
+
 	-- Placeholders: IDs réels à renseigner lors de la création des assets (P5 humain)
 	GAMEPASSES = {
 		MoreSlots = { Id = 0, Name = "Sanctuaire +2 places" },
