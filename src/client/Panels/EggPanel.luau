@@ -8,6 +8,15 @@ local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 
 local EggPanel = {}
 
+local TIER_ORDER = { "CommonEgg", "UncommonEgg", "RareEgg", "EpicEgg", "LegendaryEgg" }
+local TIER_BUTTON_NAMES = {
+	CommonEgg = "BuyCommon",
+	UncommonEgg = "BuyUncommon",
+	RareEgg = "BuyRare",
+	EpicEgg = "BuyEpic",
+	LegendaryEgg = "BuyLegendary",
+}
+
 local eggList
 local shopRow
 local itemShopRow
@@ -85,15 +94,15 @@ function EggPanel.Create(parent)
 		Padding = UDim.new(0, 6),
 		Parent = ratesRow,
 	})
-	for _, tier in { "CommonEgg", "UncommonEgg", "RareEgg" } do
+	for _, tier in TIER_ORDER do
 		UiKit.Create("TextLabel", {
 			Name = `Rates{tier}`,
 			RichText = true,
 			BackgroundTransparency = 1,
 			TextColor3 = UiKit.TINTS.WHITE,
-			TextSize = 10,
+			TextSize = 9,
 			TextWrapped = true,
-			Size = UDim2.fromScale(1 / 3, 1),
+			Size = UDim2.fromScale(1 / #TIER_ORDER, 1),
 			Text = UiKit.DropRatesText(Config.EGG_RARITY_WEIGHTS[tier]),
 			Parent = ratesRow,
 		})
@@ -115,17 +124,15 @@ function EggPanel.Create(parent)
 	eggList = UiKit.Scroller(frame, UDim2.fromScale(0, 0.3), UDim2.fromScale(1, 0.7))
 	eggList.Name = "EggList"
 
-	local tierOrder = { "CommonEgg", "UncommonEgg", "RareEgg" }
-	local tierNames = { CommonEgg = "BuyCommon", UncommonEgg = "BuyUncommon", RareEgg = "BuyRare" }
-	for _, tier in tierOrder do
+	for _, tier in TIER_ORDER do
 		local price = Config.EGG_PRICES[tier]
 		local button = UiKit.Create("TextButton", {
-			Name = tierNames[tier],
+			Name = TIER_BUTTON_NAMES[tier],
 			BackgroundColor3 = UiKit.TINTS.DARK,
 			TextColor3 = UiKit.TINTS.WHITE,
 			Font = Enum.Font.GothamBold,
-			TextSize = 13,
-			Size = UDim2.fromScale(1 / 3, 1),
+			TextSize = 12,
+			Size = UDim2.fromScale(1 / #TIER_ORDER, 1),
 			Text = `{UiKit.EGG_TIER_NAMES[tier]}\n{price} Essence`,
 			TextWrapped = true,
 			Parent = shopRow,

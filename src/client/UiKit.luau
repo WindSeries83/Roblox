@@ -17,6 +17,8 @@ UiKit.EGG_TIER_NAMES = {
 	CommonEgg = "Œuf commun",
 	UncommonEgg = "Œuf peu commun",
 	RareEgg = "Œuf rare",
+	EpicEgg = "Œuf épique",
+	LegendaryEgg = "Œuf légendaire",
 }
 
 function UiKit.Hex(color: Color3): string

@@ -89,6 +89,13 @@ return {
 	SESSION_LUCK_PER_HOUR = 0.05,
 	SESSION_LUCK_MAX = 0.25,
 
+	-- Bonus de chance achetables (semantique multiplicative : poids x(1+bonus)).
+	LUCK_POTION_SMALL = { Bonus = 0.15, Duration = 600 },
+	LUCK_POTION_BIG = { Bonus = 0.35, Duration = 1800 },
+	SERVER_BOOST = { Bonus = 0.25, Duration = 900 },
+	VIP_LUCK_BONUS = 0.1,
+	LUCK_HARD_CAP = 1,
+
 	INDEX_ENTRY_BONUS = 0.01,
 	INDEX_FAMILY_BONUS = 0.10,
 
@@ -101,6 +108,8 @@ return {
 	SANCTUARY_UPGRADE_COST_MULT = 4,
 
 	COLLAR_MUTATION_CAP = 0.25,
+
+	PASSIVE_BOOST_MULT = 1.5,
 
 	MARKET_FEE = 0.05,
 	MARKET_MAX_LISTINGS = 5,
