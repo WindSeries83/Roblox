@@ -105,6 +105,7 @@ local function OnPlayerAdded(player: Player)
 			})
 			log:Economy("Players", "Starter", { Player = player.Name })
 		end
+		local lastSeen = profile.Data.LastPlayed
 		profile.Data.LastPlayed = os.time()
 
 		local today = os.date("%Y-%m-%d")
@@ -148,21 +149,25 @@ local function OnPlayerAdded(player: Player)
 		end)
 
 		-- Retours J2/J7 : cadeau d'essence une seule fois par palier.
-		-- Garde LastPlayed > 0 : sinon un nouveau joueur (0) aurait un elapsed énorme.
-		local returnDay = if profile.Data.LastPlayed > 0 then Offers.ReturnDay(elapsed) else nil
-		if returnDay and Offers.ReturnGiftDue(profile.Data, returnDay) then
-			local amount = Config.RETURN_GIFTS[returnDay]
-			essenceService:Add(player, amount, `ReturnGift_{returnDay}`)
-			profile.Data.Offers.ReturnGifts[returnDay] = true
-			task.delay(5, function()
-				if not player:IsDescendantOf(game) then
-					return
-				end
-				Net.QuestsSync:FireClient(player, {
-					Quests = profile.Data.Quests,
-					Notice = { Type = "ReturnGift", Name = returnDay, Amount = amount },
-				})
-			end)
+		-- Garde lastSeen > 0 : sinon un nouveau joueur (0) aurait un elapsed énorme.
+		local returnDay = if lastSeen > 0 then Offers.ReturnDay(elapsed) else nil
+		if returnDay then
+			if Offers.ReturnGiftDue(profile.Data, returnDay) then
+				local amount = Config.RETURN_GIFTS[returnDay]
+				essenceService:Add(player, amount, `ReturnGift_{returnDay}`)
+				profile.Data.Offers.ReturnGifts[returnDay] = true
+				task.delay(5, function()
+					if not player:IsDescendantOf(game) then
+						return
+					end
+					Net.QuestsSync:FireClient(player, {
+						Quests = profile.Data.Quests,
+						Notice = { Type = "ReturnGift", Name = returnDay, Amount = amount },
+					})
+				end)
+			end
+			-- Déclencheur offre 1er achat : retour après ≥ 1 jour d'absence.
+			profile.Data.Offers.FirstPurchaseEligible = true
 		end
 
 		dataSync:Send(player)

@@ -16,9 +16,4 @@ function Offers.ReturnGiftDue(data: any, day: string): boolean
 	return data.Offers.ReturnGifts[day] ~= true
 end
 
-function Offers.FirstPurchaseEligible(data: any): boolean
-	return not data.Offers.FirstPurchaseClaimed
-		and (data.Offers.FirstPurchaseEligible == true or (data.LastPlayed > 0 and os.time() - data.LastPlayed >= DAY))
-end
-
 return Offers

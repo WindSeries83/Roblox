@@ -18,18 +18,4 @@ return function(t)
 		expect.falsy(Offers.ReturnGiftDue(data, "D2"))
 		expect.truthy(Offers.ReturnGiftDue(data, "D7"))
 	end)
-
-	t.test("first purchase eligibility", function()
-		local fresh = { LastPlayed = 0, Offers = {} }
-		expect.falsy(Offers.FirstPurchaseEligible(fresh))
-
-		local flagged = { LastPlayed = os.time(), Offers = { FirstPurchaseEligible = true } }
-		expect.truthy(Offers.FirstPurchaseEligible(flagged))
-
-		local returning = { LastPlayed = os.time() - 2 * DAY, Offers = {} }
-		expect.truthy(Offers.FirstPurchaseEligible(returning))
-
-		flagged.Offers.FirstPurchaseClaimed = true
-		expect.falsy(Offers.FirstPurchaseEligible(flagged))
-	end)
 end
