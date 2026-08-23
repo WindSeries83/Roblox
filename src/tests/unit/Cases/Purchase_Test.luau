@@ -37,6 +37,12 @@ return function(t)
 		expect.truthy(PurchaseService.PassEffect("StarterBundle").Essence > 0)
 	end)
 
+	t.test("PassEffect maps VIP to its flag", function()
+		local effect = PurchaseService.PassEffect("VIP")
+		expect.equal(effect.Flag, "VIP")
+		expect.equal(effect.Essence, 0)
+	end)
+
 	t.test("StarterBundle bundles a mutated Rare creature", function()
 		local effect = PurchaseService.PassEffect("StarterBundle")
 		expect.equal(effect.Creature.Rarity, "Rare")

@@ -94,6 +94,7 @@ return {
 	LUCK_POTION_BIG = { Bonus = 0.35, Duration = 1800 },
 	SERVER_BOOST = { Bonus = 0.25, Duration = 900 },
 	VIP_LUCK_BONUS = 0.1,
+	VIP_DAILY_GIFT = 300,
 	LUCK_HARD_CAP = 1,
 
 	INDEX_ENTRY_BONUS = 0.01,
@@ -186,6 +187,7 @@ return {
 		AutoHatch = { Id = 0, Name = "Éclosion automatique" },
 		StarterBundle = { Id = 0, Name = "Pack de départ" },
 		SeasonPremium = { Id = 0, Name = "Piste premium de la saison" },
+		VIP = { Id = 0, Name = "VIP — chance permanente, tag doré, cadeau quotidien" },
 	},
 	DEV_PRODUCTS = {
 		EssencePackSmall = { Id = 0, Name = "500 Essence", Amount = 500 },

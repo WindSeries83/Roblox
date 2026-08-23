@@ -155,7 +155,8 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 		sessionLuck.For(player),
 		luckService:PotionBonus(player),
 		boostService:CurrentBonus(),
-		eff.HatchLuck
+		eff.HatchLuck,
+		if profile.Data.Entitlements.VIP then Config.VIP_LUCK_BONUS else 0
 	)
 	local rarityWeights = nil
 	if profile.Data.Stats.TotalHatched == 0 and egg.Tier == "CommonEgg" then

@@ -787,6 +787,10 @@ Net.QuestsSync.OnClientEvent:Connect(function(payload)
 			ShowAnnouncement(`Série de connexion jour {notice.Day} : +{notice.Amount} essence !`)
 			Audio.Play("CoinReward")
 			Flash(0.3)
+		elseif notice.Type == "VipGift" then
+			ShowAnnouncement(`Cadeau VIP quotidien : +{notice.Amount} essence !`)
+			Audio.Play("CoinReward")
+			Flash(0.3)
 		elseif notice.Type == "Eclipse" then
 			ShowAnnouncement(`{notice.Name} {notice.Desc}`)
 			Audio.Play("CoinReward")

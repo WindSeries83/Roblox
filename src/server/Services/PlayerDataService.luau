@@ -5,8 +5,51 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Streak = require(ReplicatedStorage.Shared.Streak)
+local Vip = require(ReplicatedStorage.Shared.Vip)
 
 local PlayerDataService = {}
+
+-- Cosmétiques VIP : tag doré au-dessus de la tête + particules dorées.
+local function ApplyVipCosmetics(player: Player)
+	local function Decorate(character: Model)
+		local head = character:WaitForChild("Head", 10)
+		if not head then
+			return
+		end
+		local billboard = Instance.new("BillboardGui")
+		billboard.Adornee = head
+		billboard.Size = UDim2.fromOffset(140, 32)
+		billboard.StudsOffsetWorldSpace = Vector3.new(0, 2, 0)
+		billboard.AlwaysOnTop = true
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.fromScale(1, 1)
+		label.BackgroundTransparency = 1
+		label.Font = Enum.Font.GothamBold
+		label.TextScaled = true
+		label.Text = "★ VIP"
+		label.TextColor3 = Color3.fromRGB(255, 215, 0)
+		label.TextStrokeTransparency = 0.4
+		label.Parent = billboard
+		billboard.Parent = head
+
+		local root = character:WaitForChild("HumanoidRootPart", 10)
+		if not root then
+			return
+		end
+		local emitter = Instance.new("ParticleEmitter")
+		emitter.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+		emitter.Color = ColorSequence.new(Color3.fromRGB(255, 215, 0))
+		emitter.Rate = 4
+		emitter.Lifetime = NumberRange.new(1, 1.5)
+		emitter.Speed = NumberRange.new(0.5)
+		emitter.Parent = root
+	end
+
+	player.CharacterAdded:Connect(Decorate)
+	if player.Character then
+		Decorate(player.Character)
+	end
+end
 
 local log
 local saveService
@@ -83,6 +126,25 @@ local function OnPlayerAdded(player: Player)
 				})
 			end)
 		end
+
+		-- VIP : le re-grant des passes (PurchaseService:Start) tourne en parallele,
+		-- ordre non garanti -> delai de 5 s avant le check cadeau + cosmétiques.
+		task.delay(5, function()
+			if not player:IsDescendantOf(game) then
+				return
+			end
+			if profile.Data.Entitlements.VIP then
+				if Vip.GiftDue(profile.Data.VipGiftDate or "", today) then
+					essenceService:Add(player, Config.VIP_DAILY_GIFT, "VipDailyGift")
+					profile.Data.VipGiftDate = today
+					Net.QuestsSync:FireClient(player, {
+						Quests = profile.Data.Quests,
+						Notice = { Type = "VipGift", Name = "VIP", Amount = Config.VIP_DAILY_GIFT },
+					})
+				end
+				ApplyVipCosmetics(player)
+			end
+		end)
 
 		dataSync:Send(player)
 		Net.RiftWorld:FireClient(player, riftService:GetStatePayload())
