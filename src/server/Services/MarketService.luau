@@ -1,7 +1,9 @@
 local DataStoreService = game:GetService("DataStoreService")
 local HttpService = game:GetService("HttpService")
+local MessagingService = game:GetService("MessagingService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
@@ -33,6 +35,7 @@ end
 local listings: { [string]: any } = {}
 local pendingCredits: { [number]: number } = {}
 local cooldowns: { [Player]: { [string]: number } } = {}
+local lastAppliedAt = 0
 
 local function ListedCount(player: Player): number
 	local count = 0
@@ -115,13 +118,22 @@ local function PersistListings()
 	pcall(function()
 		Store:SetAsync(ListingsKey, snapshot)
 	end)
+	-- propagation live aux autres serveurs (guard Studio : PublishAsync bloque non publié)
+	if not RunService:IsStudio() then
+		pcall(function()
+			MessagingService:PublishAsync(Config.MARKET_TOPIC, { UpdatedAt = os.time() })
+		end)
+	end
 end
 
-local function LoadListings()
+local function LoadListings(replace: boolean?)
 	local ok, data = pcall(function()
 		return Store:GetAsync(ListingsKey)
 	end)
 	if ok and type(data) == "table" then
+		if replace then
+			table.clear(listings)
+		end
 		for _, listing in data do
 			if type(listing.Id) == "string" then
 				listings[listing.Id] = listing
@@ -350,6 +362,31 @@ end
 
 function MarketService:Start()
 	LoadListings()
+
+	-- sync live : les autres serveurs notifient chaque mutation
+	if not RunService:IsStudio() then
+		pcall(function()
+			MessagingService:SubscribeAsync(Config.MARKET_TOPIC, function(message)
+				local data = message.Data
+				if type(data) == "table" and type(data.UpdatedAt) == "number" and data.UpdatedAt > lastAppliedAt then
+					lastAppliedAt = data.UpdatedAt
+					LoadListings(true)
+					BroadcastListings()
+				end
+			end)
+		end)
+	end
+
+	-- ponytail: filet de sécurité 60 s + race double-vente cross-serveur acceptée
+	-- en v1 (trading coopératif, faible incitation à la fraude). Fix dur si
+	-- exploité : claim par listing via UpdateAsync.
+	task.spawn(function()
+		while true do
+			task.wait(60)
+			LoadListings(true)
+			BroadcastListings()
+		end
+	end)
 
 	for _, player in Players:GetPlayers() do
 		LoadPending(player.UserId)

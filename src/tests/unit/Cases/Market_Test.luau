@@ -1,6 +1,7 @@
 return function(t)
 	local expect = t.expect
 	local MarketService = require(game.ServerScriptService.Services.MarketService)
+	local Config = require(game.ReplicatedStorage.Shared.Config)
 
 	local function Creature(id: string, power: number)
 		return { Id = id, Power = power, SpeciesId = "Riftling", Rarity = "Common", Mutation = false, Level = 1 }
@@ -25,9 +26,9 @@ return function(t)
 		expect.falsy(MarketService.ValidatePrice(5.5))
 		expect.falsy(MarketService.ValidatePrice("100"))
 		expect.falsy(MarketService.ValidatePrice(0))
-		expect.falsy(MarketService.ValidatePrice(50001))
+		expect.falsy(MarketService.ValidatePrice(Config.MARKET_MAX_PRICE + 1))
 		expect.truthy(MarketService.ValidatePrice(10))
-		expect.truthy(MarketService.ValidatePrice(50000))
+		expect.truthy(MarketService.ValidatePrice(Config.MARKET_MAX_PRICE))
 	end)
 
 	t.test("Payout applies fee with floor", function()
