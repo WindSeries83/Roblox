@@ -19,16 +19,26 @@ return function(t)
 		expect.deepEqual(Gameplay.MutationWeights(0), Config.MUTATION_WEIGHTS)
 	end)
 
-	-- Bonus points go to every non-None mutation, None stays untouched.
-	t.test("MutationWeights(0.1) adds ten points to each non-None mutation", function()
+	-- Bonus scales every non-None mutation multiplicatively, None stays untouched.
+	t.test("MutationWeights(0.1) multiplies each non-None mutation by 1.1", function()
 		local weights = Gameplay.MutationWeights(0.1)
 		for mutation, weight in Config.MUTATION_WEIGHTS do
 			if mutation == "None" then
 				expect.equal(weights[mutation], weight)
 			else
-				expect.equal(weights[mutation], weight + 10)
+				expect.near(weights[mutation], weight * 1.1)
 			end
 		end
+	end)
+
+	-- Even a large luck bonus keeps top mutations rare (no jackpot inflation).
+	t.test("large luck bonus keeps Celestial share under two percent", function()
+		local weights = Gameplay.MutationWeights(0.75)
+		local total = 0
+		for _, weight in weights do
+			total += weight
+		end
+		expect.truthy(weights.Celestial / total < 0.02)
 	end)
 
 	-- Long-run distribution stays near config odds and never leaves the table.

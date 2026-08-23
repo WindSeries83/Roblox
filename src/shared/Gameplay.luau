@@ -51,13 +51,13 @@ function Gameplay.DropRates(weights: { [string]: number }): { { Id: string, Perc
 end
 
 function Gameplay.MutationWeights(bonus: number?): { [string]: number }
-	local bonusPoints = (bonus or 0) * 100
+	local boost = 1 + (bonus or 0)
 	local weights = {
 		None = Config.MUTATION_WEIGHTS.None,
 	}
 	for mutation, weight in Config.MUTATION_WEIGHTS do
 		if mutation ~= "None" then
-			weights[mutation] = weight + bonusPoints
+			weights[mutation] = weight * boost
 		end
 	end
 	return weights

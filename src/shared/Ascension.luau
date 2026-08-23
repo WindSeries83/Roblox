@@ -11,7 +11,7 @@ function Ascension.RollFrom(baseRarity: string, luck: number?, chanceOverride: n
 	if rank <= 0 or rank >= Ascension.MAX_RANK then
 		return baseRarity
 	end
-	if Random.new():NextNumber() < (chanceOverride or Config.ASCEND_CHANCE) + (luck or 0) then
+	if Random.new():NextNumber() < (chanceOverride or Config.ASCEND_CHANCE) * (1 + (luck or 0)) then
 		return Rarities.ORDER[rank + 1]
 	end
 	return baseRarity
