@@ -114,3 +114,10 @@ end
 
 Net.GlobalStats.OnClientEvent:Connect(RefreshStats)
 Net.GlobalStats:FireServer()
+
+task.spawn(function()
+	while true do
+		task.wait(60)
+		Net.GlobalStats:FireServer()
+	end
+end)

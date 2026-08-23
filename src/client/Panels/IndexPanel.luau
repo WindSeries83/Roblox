@@ -4,6 +4,7 @@ local UiKit = require(script.Parent.Parent.UiKit)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Index = require(ReplicatedStorage.Shared.Index)
 local HoverCard = require(script.Parent.Parent.HoverCard)
+local CreaturePortrait = require(script.Parent.Parent.CreaturePortrait)
 
 local IndexPanel = {}
 
@@ -62,13 +63,15 @@ function IndexPanel.Refresh(state)
 		local name = species and species.Name or speciesId
 		local mutationName = mutation ~= "false" and mutation or "sans mutation"
 		local row = UiKit.Cell(entryList)
+		local portrait = CreaturePortrait.Create(row, UDim2.new(0, 2, 0, 2), UDim2.new(0, 52, 1, -4))
+		CreaturePortrait.Show(portrait, speciesId, rarity, if mutation ~= "false" then mutation else false)
 		UiKit.Create("TextLabel", {
 			BackgroundTransparency = 1,
 			TextColor3 = UiKit.TINTS.WHITE,
 			TextSize = 14,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.fromScale(1, 0),
-			AutomaticSize = Enum.AutomaticSize.Y,
+			Position = UDim2.fromScale(0.13, 0),
+			Size = UDim2.fromScale(0.87, 1),
 			Text = `{name} — {rarity} — {mutationName}`,
 			Parent = row,
 		})

@@ -21,6 +21,7 @@ local DuelPanel = require(script.Parent.Panels.DuelPanel)
 local SeasonPanel = require(script.Parent.Panels.SeasonPanel)
 local LeaderboardPanel = require(script.Parent.Panels.LeaderboardPanel)
 local ShopPanel = require(script.Parent.Panels.ShopPanel)
+local CreaturePortrait = require(script.Parent.CreaturePortrait)
 local TutorialBridge = require(ReplicatedStorage.Shared.TutorialBridge)
 local Fx = require(script.Parent.Fx)
 local Cinematic = require(script.Parent.Cinematic)
@@ -490,12 +491,16 @@ local reveal = UiKit.Create("Frame", {
 })
 UiKit.Corner(reveal)
 
+local revealPortrait = CreaturePortrait.Create(reveal, UDim2.new(0, 6, 0, 6), UDim2.new(0.3, -6, 1, -12))
+revealPortrait.vp.ZIndex = 20
+
 local revealLabel = UiKit.Create("TextLabel", {
 	BackgroundTransparency = 1,
 	TextColor3 = TINTS.WHITE,
 	Font = Enum.Font.GothamBold,
 	TextSize = 20,
-	Size = UDim2.fromScale(1, 0.7),
+	Position = UDim2.fromScale(0.32, 0),
+	Size = UDim2.fromScale(0.68, 0.7),
 	Text = "",
 	TextWrapped = true,
 	ZIndex = 20,
@@ -679,17 +684,21 @@ Net.HatchResult.OnClientEvent:Connect(function(result)
 	local mutationText = result.MutationName and ` {result.MutationName}` or ""
 	revealLabel.Text = `Tu as obtenu {result.SpeciesName} !\n{result.RarityName}{mutationText}`
 	revealLabel.TextColor3 = result.RarityColor
+	if result.Creature then
+		CreaturePortrait.Show(revealPortrait, result.Creature.SpeciesId, result.Creature.Rarity, result.Creature.Mutation)
+	end
 	reveal.Visible = true
 	if result.Announced then
 		Flash(0.7)
 	end
 end)
 
-Net.BreedResult.OnClientEvent:Connect(function(result)
+	Net.BreedResult.OnClientEvent:Connect(function(result)
 	local species = Species[result.Creature.SpeciesId]
 	local name = species and species.Name or result.Creature.SpeciesId
 	revealLabel.Text = `Élevage réussi !\n{name} — Génération {result.Creature.Generation}`
 	revealLabel.TextColor3 = TINTS.ACCENT
+	CreaturePortrait.Show(revealPortrait, result.Creature.SpeciesId, result.Creature.Rarity, result.Creature.Mutation)
 	reveal.Visible = true
 end)
 

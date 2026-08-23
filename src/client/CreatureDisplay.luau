@@ -37,6 +37,27 @@ end
 local RARITY_SIZE = { 1, 1.12, 1.25, 1.38, 1.5, 1.62, 1.75, 1.9 }
 local RARITY_PARTICLES = { 0, 4, 10, 16, 24, 32, 44, 60 }
 
+-- Nouveau-né > juvénile > adolescent > adulte : silhouette clairement distincte.
+local STAGE_SCALE = { 0.55, 0.8, 1.05, 1.3 }
+local STAGE_INFO = {
+	{ Name = "Nouveau-né", Color = Color3.fromRGB(255, 236, 210) },
+	{ Name = "Juvénile", Color = Color3.fromRGB(140, 220, 150) },
+	{ Name = "Adolescent", Color = Color3.fromRGB(255, 178, 92) },
+	{ Name = "Adulte", Color = Color3.fromRGB(255, 215, 94) },
+}
+
+-- FX par mutation : matériau + teinte particules + intensité lumière.
+local MUTATION_FX = {
+	Shadow = { Material = Enum.Material.SmoothPlastic, Particle = Color3.fromRGB(45, 45, 65), Light = 0.4 },
+	Frost = { Material = Enum.Material.Ice, Particle = Color3.fromRGB(200, 240, 255), Light = 0.8 },
+	Golden = { Material = Enum.Material.Metal, Particle = Color3.fromRGB(255, 220, 120), Light = 1.2 },
+	Prismatic = { Material = Enum.Material.Neon, Rainbow = true, Light = 1.4 },
+	Corrupted = { Material = Enum.Material.Slate, Particle = Color3.fromRGB(120, 40, 160), Light = 0.7 },
+	Celestial = { Material = Enum.Material.ForceField, Particle = Color3.fromRGB(255, 255, 255), Light = 2 },
+}
+
+local mutations: { [string]: string? } = {}
+
 local function RarityRank(rarity: string): number
 	return math.max(1, Gameplay.RarityRank(rarity))
 end
@@ -135,6 +156,26 @@ function CreatureDisplay.Refresh(state)
 			if model.PrimaryPart then
 				click.Parent = model.PrimaryPart
 			end
+			local stage = STAGE_INFO[creature.Stage or 1]
+			if stage then
+				local billboard = Instance.new("BillboardGui")
+				billboard.Name = "StageTag"
+				billboard.Size = UDim2.fromOffset(90, 20)
+				billboard.StudsOffsetWorldSpace = Vector3.new(0, 2.2, 0)
+				billboard.AlwaysOnTop = false
+				billboard.MaxDistance = 60
+				billboard.Adornee = model.PrimaryPart
+				local tag = Instance.new("TextLabel")
+				tag.Size = UDim2.fromScale(1, 1)
+				tag.BackgroundTransparency = 0.35
+				tag.BackgroundColor3 = Color3.fromRGB(15, 12, 24)
+				tag.TextColor3 = stage.Color
+				tag.Font = Enum.Font.GothamBold
+				tag.TextSize = 11
+				tag.Text = stage.Name
+				tag.Parent = billboard
+				billboard.Parent = model
+			end
 			local primary = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true)
 			if primary then
 				Fx.Burst(primary, displayColor, 26)
@@ -178,7 +219,7 @@ function CreatureDisplay.Refresh(state)
 			end
 		end
 
-		local scale = (1 + (creature.Stage - 1) * 0.25) * (RARITY_SIZE[rank] or 1) * MutationScale(creature.Mutation)
+		local scale = (STAGE_SCALE[creature.Stage or 1] or 1) * (RARITY_SIZE[rank] or 1) * MutationScale(creature.Mutation)
 		if model.PrimaryPart then
 			bases[creature.Id] = GridPosition(index)
 			if not CreatureDisplay.Motion[creature.Id] then
@@ -200,6 +241,27 @@ function CreatureDisplay.Refresh(state)
 			if part:IsA("BasePart") then
 				if part.Name ~= "Aura" then
 					part.Color = displayColor
+				end
+			end
+		end
+		local mutated = creature.Mutation ~= false and creature.Mutation or nil
+		mutations[creature.Id] = mutated
+		local fx = mutated and MUTATION_FX[mutated] or nil
+		if fx then
+			for _, part in model:GetDescendants() do
+				if part:IsA("BasePart") and part.Name ~= "Aura" and not part.Name:find("Eye", 1, true) then
+					part.Material = fx.Material
+				end
+			end
+			local aura = model:FindFirstChild("Aura")
+			if aura then
+				local glow = aura:FindFirstChildOfClass("PointLight")
+				if glow then
+					glow.Brightness = math.max(glow.Brightness, fx.Light or 0)
+				end
+				local emitter = model.PrimaryPart and model.PrimaryPart:FindFirstChild("Ambient")
+				if emitter and fx.Particle then
+					emitter.Color = ColorSequence.new(fx.Particle)
 				end
 			end
 		end
@@ -226,8 +288,11 @@ RunService.Heartbeat:Connect(function(t)
 		local base = bases[id]
 		local idx = order[id] or 0
 		local rank = ranks[id] or 1
+		local stage = stages[id] or 1
 		if base and model.PrimaryPart then
-			local bob = math.sin(t * 2 + idx * 0.8) * (0.15 + (rank - 1) * 0.06)
+			local bobAmp = 0.15 + (rank - 1) * 0.06 + (stage == 1 and 0.08 or 0)
+			local bobSpeed = stage <= 2 and 3.2 or 2
+			local bob = math.sin(t * bobSpeed + idx * 0.8) * bobAmp
 			local tilt = math.sin(t * 1.3 + idx * 0.8) * 0.02
 			local popUntil = pops[id] or 0
 			local pop = 0
@@ -235,6 +300,17 @@ RunService.Heartbeat:Connect(function(t)
 				pop = math.sin((popUntil - t) * 8) * 1.2
 			end
 			model:PivotTo(base * CFrame.new(0, bob + pop, 0) * CFrame.Angles(0, 0, tilt))
+		end
+		if mutations[id] == "Prismatic" then
+			local aura = model:FindFirstChild("Aura")
+			if aura then
+				local hue = (t * 0.18 + idx * 0.13) % 1
+				aura.Color = Color3.fromHSV(hue, 0.75, 1)
+				local glow = aura:FindFirstChildOfClass("PointLight")
+				if glow then
+					glow.Color = aura.Color
+				end
+			end
 		end
 	end
 end)
