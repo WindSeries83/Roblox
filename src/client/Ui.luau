@@ -29,6 +29,7 @@ local Cinematic = require(script.Parent.Cinematic)
 local ObjectiveBanner = require(script.Parent.ObjectiveBanner)
 local RiftFx = require(script.Parent.RiftFx)
 local HatchCinematic = require(script.Parent.HatchCinematic)
+local Celebration = require(script.Parent.Celebration)
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -743,9 +744,6 @@ Net.HatchResult.OnClientEvent:Connect(function(result)
 		return
 	end
 	Audio.Play("HatchCrack")
-	if result.Announced then
-		Audio.Play("RareFanfare")
-	end
 	local mutationText = result.MutationName and ` {result.MutationName}` or ""
 	revealLabel.Text = `Tu as obtenu {result.SpeciesName} !\n{result.RarityName}{mutationText}`
 	revealLabel.TextColor3 = result.RarityColor
@@ -758,7 +756,10 @@ Net.HatchResult.OnClientEvent:Connect(function(result)
 		)
 	end
 	reveal.Visible = true
-	if result.Announced then
+
+	local rank = Gameplay.RarityRank(result.Rarity or "")
+	Celebration.Hatch(rank)
+	if Celebration.Tier(rank) == "ultra" then
 		Flash(0.7)
 	end
 end)

@@ -6,7 +6,7 @@ local TweenService = game:GetService("TweenService")
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 
-local MIN_RANK = 6
+local MIN_RANK = 5 -- Légendaire+ (pyramide de célébration, bible §4.B)
 local GOLDEN_TINT = Color3.fromRGB(255, 238, 190)
 
 local Cinematic = {}
@@ -23,8 +23,8 @@ local cadreGui: ScreenGui? = nil
 local cadreStroke: UIStroke? = nil
 
 function Cinematic.Play(payload)
-	local rarity = payload and payload.Rarity
-	if not Cinematic.ShouldPlay(rarity) then
+	local rank = if payload.Rank then payload.Rank else Gameplay.RarityRank(payload and payload.Rarity or "")
+	if rank < MIN_RANK then
 		return
 	end
 	if busy then

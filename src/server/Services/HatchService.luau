@@ -210,6 +210,7 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 		EggId = eggId,
 		Creature = creature,
 		SpeciesName = species.Name,
+		Rarity = roll.Rarity,
 		RarityName = Rarities[roll.Rarity].Name,
 		RarityColor = Rarities[roll.Rarity].Color,
 		MutationName = mutationName,
