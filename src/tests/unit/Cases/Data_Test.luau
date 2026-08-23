@@ -5,13 +5,13 @@ return function(t)
 	local Mutations = require(game.ReplicatedStorage.Shared.Data.Mutations)
 	local Config = require(game.ReplicatedStorage.Shared.Config)
 
-	-- The P1 roster has exactly ten species.
-	t.test("species list has exactly the P1 count", function()
+	-- The roster count after Lot 1 species wave.
+	t.test("species list has exactly the Lot1 count", function()
 		local count = 0
 		for _ in Species do
 			count += 1
 		end
-		expect.equal(count, 10)
+		expect.equal(count, 14)
 	end)
 
 	-- Every species references a known rarity with positive stats.
@@ -24,17 +24,17 @@ return function(t)
 		end
 	end)
 
-	-- Each of the three P1 rarities has at least one species.
-	t.test("every P1 rarity has at least one species", function()
-		local present = { Common = 0, Uncommon = 0, Rare = 0 }
+	-- Every hatchable rarity has at least one species (UltraRare/Secret come from ascension, not species).
+	t.test("every hatchable rarity has at least one species", function()
+		local present = {}
 		for _, def in Species do
-			if present[def.Rarity] ~= nil then
-				present[def.Rarity] += 1
+			present[def.Rarity] = (present[def.Rarity] or 0) + 1
+		end
+		for rarity in Rarities do
+			if type(rarity) == "string" and rarity ~= "ORDER" and rarity ~= "UltraRare" and rarity ~= "Secret" then
+				expect.truthy((present[rarity] or 0) > 0)
 			end
 		end
-		expect.truthy(present.Common > 0)
-		expect.truthy(present.Uncommon > 0)
-		expect.truthy(present.Rare > 0)
 	end)
 
 	-- Rarity order lists every rarity exactly once.

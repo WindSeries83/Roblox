@@ -33,13 +33,23 @@ return function(t)
 	-- Completing a family grants the family bonus on top of entries.
 	t.test("completing a family grants the family bonus", function()
 		local entries = {}
-		Index.Register(entries, "Moonhowl", "Rare", false)
-		Index.Register(entries, "CinderSeraph", "Rare", false)
+		local species = require(game.ReplicatedStorage.Shared.Data.Species)
+		for id, def in species do
+			if def.Family == "Mystic" then
+				Index.Register(entries, id, "Rare", false)
+			end
+		end
 		local completions = Index.FamilyCompletions(entries)
 		expect.truthy(completions.Mystic)
 		expect.falsy(completions.Feral)
 
-		local expected = (1 + 2 * Config.INDEX_ENTRY_BONUS) * (1 + Config.INDEX_FAMILY_BONUS)
+		local mysticCount = 0
+		for _, def in species do
+			if def.Family == "Mystic" then
+				mysticCount += 1
+			end
+		end
+		local expected = (1 + mysticCount * Config.INDEX_ENTRY_BONUS) * (1 + Config.INDEX_FAMILY_BONUS)
 		expect.near(Index.ComputeMult(entries), expected)
 	end)
 
