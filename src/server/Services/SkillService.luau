@@ -8,19 +8,24 @@ local SkillService = {}
 local log
 local saveService
 local dataSync
+local container
 
 -- Effets agrégés d'un joueur ; source unique pour tous les hooks serveur.
 function SkillService:EffectsOf(profile)
 	return SkillTree.Effects(profile.Data.SkillRanks or {})
 end
 
-function SkillService:Init(container)
-	log = container:Get("Log")
-	saveService = container:Get("SaveService")
-	dataSync = container:Get("DataSync")
+function SkillService:Init(cont)
+	log = cont:Get("Log")
+	saveService = cont:Get("SaveService")
+	-- DataSync s'initialise après celui-ci (ORDER) :
+	-- la référence est résolue au Start, quand toutes les Init sont passées.
+	container = cont
 end
 
 function SkillService:Start()
+	dataSync = container:Get("DataSync")
+
 	Net.SkillBuy.OnServerEvent:Connect(function(player: Player, nodeId: unknown)
 		if type(nodeId) ~= "string" then
 			return
