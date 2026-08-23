@@ -44,13 +44,31 @@ return function(t)
 		expect.equal(Sanctuary.EggLocked("RareEgg", 2), 3)
 	end)
 
-	-- Rank 3 and beyond unlocks everything.
-	t.test("egg gate at rank 3 plus unlocks everything", function()
+	-- Rank 3 keeps epic and legendary locked.
+	t.test("egg gate at rank 3 keeps epic and legendary locked", function()
 		local gate = Sanctuary.EggGate(3)
 		expect.falsy(gate.UncommonEgg)
 		expect.falsy(gate.RareEgg)
+		expect.equal(gate.EpicEgg, 4)
+		expect.equal(gate.LegendaryEgg, 5)
 		expect.falsy(Sanctuary.EggLocked("UncommonEgg", 3))
 		expect.falsy(Sanctuary.EggLocked("RareEgg", 9))
+		expect.equal(Sanctuary.EggLocked("EpicEgg", 3), 4)
+	end)
+
+	-- Rank 4 unlocks epic, not legendary.
+	t.test("egg gate at rank 4 unlocks epic only", function()
+		local gate = Sanctuary.EggGate(4)
+		expect.falsy(gate.EpicEgg)
+		expect.equal(gate.LegendaryEgg, 5)
+	end)
+
+	-- Rank 5 and beyond unlocks everything.
+	t.test("egg gate at rank 5 plus unlocks everything", function()
+		local gate = Sanctuary.EggGate(5)
+		expect.falsy(gate.EpicEgg)
+		expect.falsy(gate.LegendaryEgg)
+		expect.falsy(Sanctuary.EggLocked("LegendaryEgg", 9))
 	end)
 
 	-- Common egg is never gated.

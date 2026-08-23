@@ -80,6 +80,25 @@ return function(t)
 		end
 	end)
 
+	-- Egg rarity tables sum to 100 and only roll hatchable rarities.
+	t.test("egg rarity tables sum to 100 and roll hatchable rarities", function()
+		for _, weights in Config.EGG_RARITY_WEIGHTS do
+			local total = 0
+			for rarity, weight in weights do
+				total += weight
+				local found = false
+				for _, def in Species do
+					if def.Rarity == rarity then
+						found = true
+						break
+					end
+				end
+				expect.truthy(found)
+			end
+			expect.near(total, 100, 0.01)
+		end
+	end)
+
 	-- Mutation weights use known mutations or None.
 	t.test("mutation weights use known mutations or None", function()
 		for mutation, weight in Config.MUTATION_WEIGHTS do

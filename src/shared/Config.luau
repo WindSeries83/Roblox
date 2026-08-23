@@ -8,6 +8,8 @@ return {
 		CommonEgg = 50,
 		UncommonEgg = 200,
 		RareEgg = 800,
+		EpicEgg = 2000,
+		LegendaryEgg = 8000,
 	},
 
 	HATCH_COOLDOWN = 5,
@@ -16,6 +18,8 @@ return {
 		CommonEgg = { Common = 75, Uncommon = 20, Rare = 5 },
 		UncommonEgg = { Uncommon = 80, Rare = 20 },
 		RareEgg = { Rare = 100 },
+		EpicEgg = { Epic = 78, Legendary = 20, Mythic = 2 },
+		LegendaryEgg = { Legendary = 76, Mythic = 24 },
 	},
 
 	FIRST_HATCH_WEIGHTS = { Common = 40, Uncommon = 40, Rare = 20 },
@@ -41,7 +45,7 @@ return {
 	RIFT_ESSENCE_MULT = 8,
 	RIFT_REWARD_SECONDS = 60,
 	RIFT_MIN_REWARD = 50,
-	RIFT_EGG_WEIGHTS = { CommonEgg = 60, UncommonEgg = 35, RareEgg = 5 },
+	RIFT_EGG_WEIGHTS = { CommonEgg = 50, UncommonEgg = 30, RareEgg = 15, EpicEgg = 4.7, LegendaryEgg = 0.3 },
 	RIFT_PORTAL_POSITION = Vector3.new(40, 3, 40),
 
 	RIFT_PLAYER_MAX_HP = 100,

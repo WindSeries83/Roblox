@@ -26,6 +26,8 @@ function Sanctuary.EggGate(sanctuaryLevel: number): { [string]: number }
 	return {
 		UncommonEgg = if sanctuaryLevel >= 2 then nil else 2,
 		RareEgg = if sanctuaryLevel >= 3 then nil else 3,
+		EpicEgg = if sanctuaryLevel >= 4 then nil else 4,
+		LegendaryEgg = if sanctuaryLevel >= 5 then nil else 5,
 	}
 end
 
