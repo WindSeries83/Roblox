@@ -16,7 +16,7 @@ return function(t)
 			Version = 1,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 5)
+		expect.equal(data.Version, 6)
 		expect.truthy(data.Index ~= nil)
 		expect.truthy(data.Items ~= nil)
 		expect.equal(data.Stars, 0)
@@ -61,7 +61,7 @@ return function(t)
 			Version = 2,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 5)
+		expect.equal(data.Version, 6)
 		expect.equal(data.Stars, 3)
 		expect.equal(data.Rebirths, 2)
 		expect.equal(#data.Items, 1)
@@ -88,7 +88,7 @@ return function(t)
 			Version = 3,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 5)
+		expect.equal(data.Version, 6)
 		expect.equal(data.Stats.TotalBred, 1)
 		expect.equal(data.Quests.Day, "2026-01-01")
 		expect.truthy(data.Quests.Achievements.FirstHatch)
@@ -131,7 +131,7 @@ return function(t)
 			Version = 4,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 5)
+		expect.equal(data.Version, 6)
 		expect.equal(data.LoginStreak, 0)
 		expect.equal(data.LastLoginDate, "")
 		expect.equal(data.Stats.HatchesSinceRare, 0)
@@ -139,5 +139,35 @@ return function(t)
 		expect.equal(data.Season.Level, 7)
 		expect.equal(#data.Titles, 1)
 		expect.equal(#data.MarketHistory, 1)
+	end)
+
+	-- A v5 profile gains the lot2 fields through migration.
+	t.test("migration v5 to v6 adds lot2 fields", function()
+		local data = { Version = 5 }
+		SaveService.Migrate(data)
+		expect.equal(data.Version, 6)
+		expect.equal(data.SkillPoints, 0)
+		expect.truthy(data.SkillRanks ~= nil)
+		expect.equal(data.Offers.FirstPurchaseEligible, false)
+		expect.equal(data.Offers.FirstPurchaseClaimed, false)
+		expect.equal(data.Stats.Funnel.FirstHatchAt, 0)
+		expect.equal(data.Stats.Funnel.FirstPurchaseAt, 0)
+		expect.equal(data.VipGiftDate, "")
+	end)
+
+	-- A v5 profile keeps its funnels and ranks through migration.
+	t.test("migration preserves existing funnels and ranks", function()
+		local data = {
+			Version = 5,
+			Stats = { TotalHatched = 12 },
+			SkillRanks = { FarmRate1 = 2 },
+			Offers = { FirstPurchaseClaimed = true },
+		}
+		SaveService.Migrate(data)
+		expect.equal(data.Version, 6)
+		expect.equal(data.Stats.TotalHatched, 12)
+		expect.equal(data.SkillRanks.FarmRate1, 2)
+		expect.equal(data.Offers.FirstPurchaseClaimed, true)
+		expect.equal(data.Stats.Funnel.FirstHatchAt, 0)
 	end)
 end
