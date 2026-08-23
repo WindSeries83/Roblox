@@ -74,6 +74,7 @@ Constat : les œufs plafonnent à `Rare` alors que 8 raretés sont définies (`R
 | Packs Essence (existants) | — | Valve de confort conservée |
 | Season Premium (existant) | — | Conservé |
 | Rename ticket | 49 R$ | Renommer une créature — cosmétique pur (§2.6) |
+| Titres rotatifs | 49–99 R$ | Titres cosmétiques en rotation hebdo — statut pur (§2.6) |
 | Cosmétiques purs | 49–199 R$ | Skins/recolors créatures, effets de particules, déco sanctuaire — zéro gameplay (§2.6) |
 | Bundle mensuel thématique | ~499 R$ | Rotation mensuelle, valeur réelle affichée vs à l'unité (§2.6) |
 | Mur des soutiens (tip jar) | 99 / 499 / 999 R$ | Don volontaire unique, nom gravé sur le mur d'accueil (§2.6) |
@@ -124,6 +125,8 @@ Code impacté : `Shared/Vip.luau` (pur : `IsActive`, `Extend`, testable), champ 
 
 - **Cosmétiques purs** : skins/recolors de créatures, effets de particules, déco sanctuaire. Zéro impact gameplay — pipeline `DecorTemplates`. Rotation hebdo alignée FOMO léger (§2.2)
 - **Rename ticket** : renommer une créature, 49 R$ — micro-achat cosmétique, attachement émotionnel à la bête
+- **Boutique de titres rotative** : titres cosmétiques 49–99 R$, rotation hebdo alignée FOMO léger (§2.2) — réutilise le système de titres existant (`Season.luau`), coût de dev quasi nul
+- **Pub récompensée — piste post-lancement** : pub volontaire (AdService) → Essence uniquement, cap strict 2-3 vues/jour, jamais de potion ni d'objet premium en récompense (cannibalisation interdite). Décision sur données ARPDAU réelles après lancement
 - **Bundle mensuel thématique** : ~499 R$, valeur réelle affichée vs à l'unité, rotation mensuelle (live ops post-lancement)
 - **Bonus Roblox Premium natifs** : petit cadeau quotidien aux membres Premium Roblox (`PlayerMembershipType`, check serveur mis en cache) — Roblox reverse sur leur engagement, le joueur ne paie pas deux fois
 - **Mur des soutiens** : 3 paliers de don uniques (99 / 499 / 999 R$), nom gravé en permanence sur le vrai mur de la zone d'accueil (plateau de spawn existant, visible par tous — pas une zone séparée). Pur statut social, honnêteté totale
@@ -259,6 +262,7 @@ Checklist plan P4 « métriques instrumentées dès P1 » : rattrapée ici.
 ## 10. En suspens (validés par sim/décision ultérieure)
 
 - Prix finaux œufs Épique/Légendaire, potions, bundles, Pass VIP 30 j, bundle mensuel (sim §2.4)
+- Activation pub récompensée (AdService) : décision post-lancement sur ARPDAU réel
 - Valeurs chiffrées des 12 nœuds d'Arbre d'Étoiles (sim)
 - Objectifs Mode Rush précis par monde (avec la carte des mondes, Lot 4)
 - Nom définitif du jeu (RIFT BEASTS provisoire)
