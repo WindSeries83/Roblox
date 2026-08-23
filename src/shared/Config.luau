@@ -156,6 +156,23 @@ return {
 	GLOBAL_STATS_STORE = "RiftBeastsGlobalStats_v1",
 	GLOBAL_STATS_FLUSH = 60,
 
+	-- Arbre d'Étoiles : +1 point par renaissance, rien n'est vendable (bible §7).
+	-- Valeurs provisionnelles — à valider par EconomySim (spec §2.4) avant live.
+	SKILL_TREE = {
+		{ Id = "FarmRate1", Branch = "Ferme", Name = "Sève lente", Desc = "+5 % Essence/s par rang", MaxRank = 3, Effect = "EssenceRate", Value = 0.05 },
+		{ Id = "FarmRate2", Branch = "Ferme", Name = "Marée d'étoiles", Desc = "+10 % Essence/s par rang", MaxRank = 1, Effect = "EssenceRate", Value = 0.10 },
+		{ Id = "FarmLuck", Branch = "Ferme", Name = "Œil lucide", Desc = "+4 % chance d'éclosion par rang", MaxRank = 3, Effect = "HatchLuck", Value = 0.04 },
+		{ Id = "FarmOffline", Branch = "Ferme", Name = "Sommeil fertile", Desc = "+5 % rendement hors-ligne par rang", MaxRank = 2, Effect = "OfflineRate", Value = 0.05 },
+		{ Id = "RiftReward", Branch = "Faille", Name = "Butin crépusculaire", Desc = "+10 % récompense de faille par rang", MaxRank = 3, Effect = "RiftRewardMult", Value = 0.10 },
+		{ Id = "RiftAscend", Branch = "Faille", Name = "Portée d'ascension", Desc = "+1 % chance d'ascension en faille par rang", MaxRank = 3, Effect = "AscendChanceAdd", Value = 0.01 },
+		{ Id = "MutOmen", Branch = "Faille", Name = "Présage mutatif", Desc = "+6 % chance de mutation par rang", MaxRank = 3, Effect = "MutationBonus", Value = 0.06 },
+		{ Id = "SecretOmen", Branch = "Faille", Name = "Chuchotement", Desc = "Pendant une Éclipse, l'œuf Épique peut aussi déclencher le Secret (relique T3)", MaxRank = 1, Effect = "SecretOmen", Value = 1 },
+		{ Id = "MarketFeeCut", Branch = "Économie", Name = "Langue argentée", Desc = "-1 pt de commission marché par rang", MaxRank = 3, Effect = "MarketFeeReduction", Value = 0.01 },
+		{ Id = "BreedCut", Branch = "Économie", Name = "Nids partagés", Desc = "-10 % coût d'élevage par rang", MaxRank = 2, Effect = "BreedCostReduction", Value = 0.10 },
+		{ Id = "UpgradeCut", Branch = "Économie", Name = "Maçon étoilé", Desc = "-10 % coût d'extension du sanctuaire par rang", MaxRank = 2, Effect = "UpgradeCostReduction", Value = 0.10 },
+		{ Id = "EggDiscount", Branch = "Économie", Name = "Marché aux œufs", Desc = "-5 % prix des œufs par rang", MaxRank = 2, Effect = "EggPriceReduction", Value = 0.05 },
+	},
+
 	-- Placeholders: IDs réels à renseigner lors de la création des assets (P5 humain)
 	GAMEPASSES = {
 		MoreSlots = { Id = 0, Name = "Sanctuaire +2 places" },
