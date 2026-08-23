@@ -6,7 +6,7 @@ local SaveService = {}
 
 SaveService.Profiles = {}
 
-local DATA_VERSION = 4
+local DATA_VERSION = 5
 
 local Store = ProfileStore.New("RiftBeastsData_v1", {
 	Essence = 0,
@@ -21,12 +21,15 @@ local Store = ProfileStore.New("RiftBeastsData_v1", {
 		DuelsWon = 0,
 		DuelsLost = 0,
 		MarketSales = 0,
+		HatchesSinceRare = 0,
 	},
 	Index = {},
 	Items = {},
 	Stars = 0,
 	Rebirths = 0,
 	LastPlayed = 0,
+	LoginStreak = 0,
+	LastLoginDate = "",
 	Quests = {
 		Day = "",
 		Daily = {},
@@ -102,6 +105,13 @@ local MIGRATIONS = {
 			}
 		data.Entitlements.SeasonPremium = data.Entitlements.SeasonPremium or false
 		data.Version = 4
+	end,
+	[4] = function(data)
+		data.LoginStreak = data.LoginStreak or 0
+		data.LastLoginDate = data.LastLoginDate or ""
+		data.Stats = data.Stats or {}
+		data.Stats.HatchesSinceRare = data.Stats.HatchesSinceRare or 0
+		data.Version = 5
 	end,
 }
 

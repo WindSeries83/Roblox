@@ -809,6 +809,10 @@ Net.QuestsSync.OnClientEvent:Connect(function(payload)
 		elseif notice.Type == "Achievement" then
 			ShowAnnouncement(`Succès débloqué : {notice.Name} !`)
 			Flash(0.25)
+		elseif notice.Type == "Streak" then
+			ShowAnnouncement(`Série de connexion jour {notice.Day} : +{notice.Amount} essence !`)
+			Audio.Play("CoinReward")
+			Flash(0.3)
 		end
 	end
 end)

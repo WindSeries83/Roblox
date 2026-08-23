@@ -150,6 +150,18 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 	then
 		roll.Rarity = "Secret"
 	end
+
+	local rareRank = Gameplay.RarityRank("Rare")
+	local hatchesSinceRare = profile.Data.Stats.HatchesSinceRare or 0
+	if hatchesSinceRare >= Config.PITY_THRESHOLD - 1 and Gameplay.RarityRank(roll.Rarity) < rareRank then
+		roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile) + luck, { Rare = 100 })
+		log:Economy("Hatch", "PityTriggered", { Player = player.Name, SinceRare = hatchesSinceRare })
+	end
+	if Gameplay.RarityRank(roll.Rarity) >= rareRank then
+		profile.Data.Stats.HatchesSinceRare = 0
+	else
+		profile.Data.Stats.HatchesSinceRare = hatchesSinceRare + 1
+	end
 	local creature = Gameplay.CreateCreature(roll.Rarity, roll.SpeciesId, roll.Mutation)
 
 	table.insert(profile.Data.Creatures, creature)
@@ -175,6 +187,8 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 		MutationName = mutationName,
 		Announced = announced,
 		WorldHatch = worldHatch or nil,
+		PityProgress = profile.Data.Stats.HatchesSinceRare,
+		PityMax = Config.PITY_THRESHOLD,
 	})
 
 	log:Economy("Hatch", "Success", {

@@ -39,8 +39,18 @@ end
 local eggList
 local shopRow
 local itemShopRow
+local pityLabel
 local buyButtons: { [string]: TextButton } = {}
 local lockedTiers: { [string]: number? } = {}
+
+local function RefreshPity(hatchesSinceRare: number)
+	local remaining = Config.PITY_THRESHOLD - hatchesSinceRare
+	if remaining <= 5 then
+		pityLabel.Text = `<font color="#FFD75E">Rare garanti dans {remaining} éclosion(s) !</font>`
+	else
+		pityLabel.Text = `Garantie Rare : {hatchesSinceRare}/{Config.PITY_THRESHOLD} éclosions`
+	end
+end
 
 local function RefreshBuyButtons()
 	for tier, button in buyButtons do
@@ -117,6 +127,19 @@ function EggPanel.Create(parent)
 		})
 	end
 
+	pityLabel = UiKit.Create("TextLabel", {
+		Name = "PityLabel",
+		RichText = true,
+		BackgroundTransparency = 1,
+		TextColor3 = UiKit.TINTS.WHITE,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Position = UDim2.fromScale(0, 0.205),
+		Size = UDim2.fromScale(1, 0.04),
+		Text = "",
+		Parent = frame,
+	})
+
 	eggList = UiKit.Scroller(frame, UDim2.fromScale(0, 0.3), UDim2.fromScale(1, 0.7))
 	eggList.Name = "EggList"
 	for _, child in eggList:GetChildren() do
@@ -177,6 +200,8 @@ function EggPanel.Refresh(state)
 	UiKit.Clear(eggList)
 	lockedTiers = Sanctuary.EggGate(state.SanctuaryLevel or 1)
 	RefreshBuyButtons()
+	local stats = state.Stats or {}
+	RefreshPity(stats.HatchesSinceRare or 0)
 	local rowWidth = eggList.AbsoluteSize.X - 4
 	for i, egg in state.Eggs do
 		local row = UiKit.Cell(eggList)
@@ -205,5 +230,11 @@ function EggPanel.Refresh(state)
 		eggList.CanvasSize = UDim2.fromOffset(0, #state.Eggs * 58)
 	end
 end
+
+Net.HatchResult.OnClientEvent:Connect(function(payload)
+	if payload and payload.PityProgress ~= nil then
+		RefreshPity(payload.PityProgress)
+	end
+end)
 
 return EggPanel

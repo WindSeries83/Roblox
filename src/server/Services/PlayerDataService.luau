@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Streak = require(ReplicatedStorage.Shared.Streak)
 
 local PlayerDataService = {}
 
@@ -59,6 +60,27 @@ local function OnPlayerAdded(player: Player)
 			log:Economy("Players", "Starter", { Player = player.Name })
 		end
 		profile.Data.LastPlayed = os.time()
+
+		local today = os.date("%Y-%m-%d")
+		local streak, dayIndex = Streak.Evaluate(today, profile.Data.LastLoginDate, profile.Data.LoginStreak or 0)
+		if dayIndex then
+			profile.Data.LoginStreak = streak
+			profile.Data.LastLoginDate = today
+			local amount = Config.STREAK_REWARDS[dayIndex]
+			profile.Data.Essence += amount
+			profile.Data.Stats.TotalEssenceEarned += amount
+			log:Economy("Essence", "Streak", { Player = player.Name, Day = streak, Amount = amount })
+			-- delai : laisse l'UI client finir de monter avant d'afficher le toast
+			task.delay(5, function()
+				if not player:IsDescendantOf(game) then
+					return
+				end
+				Net.QuestsSync:FireClient(player, {
+					Quests = profile.Data.Quests,
+					Notice = { Type = "Streak", Name = `jour {streak}`, Day = streak, Amount = amount },
+				})
+			end)
+		end
 
 		dataSync:Send(player)
 		Net.RiftWorld:FireClient(player, riftService:GetStatePayload())
