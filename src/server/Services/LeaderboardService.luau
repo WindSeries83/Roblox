@@ -74,6 +74,20 @@ local function PersistSnapshot(entry: any)
 	end)
 end
 
+local function TopPayload(): { any }
+	local payload = {}
+	for i, entry in LeaderboardService.TopEntries(entries, Config.LEADERBOARD_TOP) do
+		payload[i] = {
+			UserId = entry.UserId,
+			Name = entry.Name,
+			Essence = math.floor(entry.Essence),
+			SanctuaryLevel = entry.SanctuaryLevel,
+			Rank = i,
+		}
+	end
+	return payload
+end
+
 local function RefreshLocal()
 	local now = os.clock()
 	if now - lastRefresh < Config.LEADERBOARD_REFRESH then
@@ -86,20 +100,10 @@ local function RefreshLocal()
 		PersistSnapshot(entry)
 	end
 
-	local top = LeaderboardService.TopEntries(entries, Config.LEADERBOARD_TOP)
-	local payload = {}
-	for i, entry in top do
-		table.insert(payload, {
-			UserId = entry.UserId,
-			Name = entry.Name,
-			Essence = entry.Essence,
-			SanctuaryLevel = entry.SanctuaryLevel,
-			Rank = i,
-		})
-	end
+	local top = TopPayload()
 	if not game:GetService("RunService"):IsStudio() then
 		pcall(function()
-			MessagingService:PublishAsync(MESSAGE_TOPIC, payload)
+			MessagingService:PublishAsync(MESSAGE_TOPIC, top)
 		end)
 	end
 end
@@ -145,18 +149,7 @@ function LeaderboardService:Start()
 		end
 		cooldowns[player] = now
 		RefreshLocal()
-		local top = LeaderboardService.TopEntries(entries, Config.LEADERBOARD_TOP)
-		local payload = {}
-		for i, entry in top do
-			table.insert(payload, {
-				UserId = entry.UserId,
-				Name = entry.Name,
-				Essence = math.floor(entry.Essence),
-				SanctuaryLevel = entry.SanctuaryLevel,
-				Rank = i,
-			})
-		end
-		Net.LeaderboardSync:FireClient(player, { Entries = payload })
+		Net.LeaderboardSync:FireClient(player, { Entries = TopPayload() })
 	end)
 
 	Net.LeaderboardVisit.OnServerEvent:Connect(function(player: Player, userId: any)

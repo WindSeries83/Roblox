@@ -229,10 +229,7 @@ local function WinRift(player: Player)
 
 	profile.Data.Stats.RiftsCompleted += 1
 	questService:OnRiftWon(player)
-	local seasonService = container:Get("SeasonService")
-	if seasonService then
-		seasonService:OnRiftWon(player)
-	end
+	container:Get("SeasonService"):OnRiftWon(player)
 
 	Net.RiftEnded:FireClient(player, { Win = true, Essence = essence, EggTier = eggTier, RelicTier = relicTier })
 	log:Economy("Rift", "Complete", {
@@ -294,21 +291,6 @@ local function onPortalTouched(part: BasePart)
 	end
 end
 
-local function onCrystalTouched(part: BasePart)
-	local character = part.Parent
-	if not character then
-		return
-	end
-	local player = Players:GetPlayerFromCharacter(character)
-	if not player then
-		return
-	end
-	local combat = Combat[player]
-	if combat and combat.Phase == "Crystal" and combat.CrystalPart == part then
-		WinRift(player)
-	end
-end
-
 function RiftService:Init(cont)
 	container = cont
 	log = cont:Get("Log")
@@ -349,7 +331,6 @@ function RiftService:Start()
 				combat.GuardianPart = nil
 			end
 			local crystal = BuildCrystal(player)
-			crystal.Touched:Connect(onCrystalTouched)
 			combat.CrystalPart = crystal
 			log:Economy("Rift", "GuardianDown", { Player = player.Name })
 		end

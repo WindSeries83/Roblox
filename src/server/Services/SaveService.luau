@@ -171,11 +171,4 @@ function SaveService:ReleaseProfile(player: Player)
 	end
 end
 
-function SaveService:SaveProfile(player: Player)
-	local profile = self.Profiles[player]
-	if profile then
-		profile:Save()
-	end
-end
-
 return SaveService

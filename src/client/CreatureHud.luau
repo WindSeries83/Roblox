@@ -7,6 +7,7 @@ local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
 local Evolution = require(ReplicatedStorage.Shared.Evolution)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local UiKit = require(script.Parent.UiKit)
 
 local CreatureHud = {}
@@ -28,12 +29,7 @@ local currentId: string? = nil
 local lastState = nil
 
 local function RarityRank(rarity: string): number
-	for i, name in Rarities.ORDER do
-		if name == rarity then
-			return i
-		end
-	end
-	return 1
+	return math.max(1, Gameplay.RarityRank(rarity))
 end
 
 function CreatureHud.SuggestedPrice(rarity: string): number

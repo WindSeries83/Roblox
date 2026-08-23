@@ -7,7 +7,7 @@ local log
 local hatchService
 local saveService
 
-local used: { [Player]: boolean } = nil
+local used: { [Player]: boolean } = {}
 
 -- Nid du spawn : socle de pierre + paille + oeuf + prompt « Éclore ».
 -- Le premier oeuf (Source="Nest") s'éclore ici, dans le monde — pas dans un menu.
@@ -79,7 +79,6 @@ function NestService:Init(cont)
 	log = cont:Get("Log")
 	hatchService = cont:Get("HatchService")
 	saveService = cont:Get("SaveService")
-	used = {}
 end
 
 function NestService:Start()

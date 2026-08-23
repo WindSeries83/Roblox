@@ -3,16 +3,6 @@ return function(t)
 	local Objective = require(game.ReplicatedStorage.Shared.Objective)
 	local Config = require(game.ReplicatedStorage.Shared.Config)
 
-	t.test("format countdown as m:ss", function()
-		expect.equal(Objective.FormatCountdown(572), "9:32")
-		expect.equal(Objective.FormatCountdown(60), "1:00")
-		expect.equal(Objective.FormatCountdown(5), "0:05")
-	end)
-
-	t.test("format countdown clamps negatives", function()
-		expect.equal(Objective.FormatCountdown(-3), "0:00")
-	end)
-
 	t.test("active rift wins over everything", function()
 		local pick = Objective.Pick({ Quests = { Daily = {} }, Stats = { TotalHatched = 0 } }, { Active = true })
 		expect.truthy(pick)

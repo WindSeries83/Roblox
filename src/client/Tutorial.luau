@@ -126,15 +126,7 @@ local function ShowStep(index: number)
 	UiKit.Corner(closeButton)
 	closeButton.Activated:Connect(SkipTutorial)
 
-	if step.Need == "Click" then
-		local nextButton = UiKit.Button(banner, "Continuer", UDim2.fromOffset(120, 34), UDim2.new(1, -132, 0, 4))
-		nextButton.Name = "NextButton"
-		nextButton.TextSize = 14
-		nextButton.ZIndex = 50
-		nextButton.Activated:Connect(function()
-			ShowStep(index + 1)
-		end)
-	elseif step.Need == "Claim" then
+	if step.Need == "Claim" then
 		local claimButton = UiKit.Button(banner, "Réclamer", UDim2.fromOffset(120, 34), UDim2.new(1, -132, 0, 4))
 		claimButton.Name = "ClaimTutorialButton"
 		claimButton.TextSize = 14
@@ -159,10 +151,6 @@ local function Check()
 		advance = TutorialBridge.state.MenuOpen
 	elseif step.Need == "RiftEntered" then
 		advance = TutorialBridge.state.RiftEntered
-	elseif step.Need == "EggsTab" then
-		advance = TutorialBridge.state.ActiveTab == "Œufs"
-	elseif step.Need == "SanctuaryTab" then
-		advance = TutorialBridge.state.ActiveTab == "Sanctuaire"
 	end
 	if advance then
 		ShowStep(stepIndex + 1)
@@ -190,7 +178,7 @@ Net.HatchResult.OnClientEvent:Connect(function()
 end)
 
 TutorialBridge.Changed(function(key)
-	if key == "MenuOpen" or key == "ActiveTab" or key == "RiftEntered" then
+	if key == "MenuOpen" or key == "RiftEntered" then
 		Check()
 	end
 end)

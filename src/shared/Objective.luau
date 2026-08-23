@@ -43,9 +43,4 @@ function Objective.Pick(state, world)
 	return nil
 end
 
-function Objective.FormatCountdown(seconds: number): string
-	seconds = math.max(0, math.floor(seconds))
-	return string.format("%d:%02d", math.floor(seconds / 60), seconds % 60)
-end
-
 return Objective

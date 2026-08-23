@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local DuelSim = require(ReplicatedStorage.Shared.DuelSim)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Net = require(ReplicatedStorage.Shared.Net)
 
 local DuelService = {}
@@ -15,21 +16,6 @@ local dataSync
 
 local challenges: { [string]: any } = {}
 local cooldowns: { [Player]: { [string]: number } } = {}
-
-local function CheckCooldown(player: Player, action: string, seconds: number): boolean
-	local now = os.clock()
-	local playerCooldowns = cooldowns[player]
-	if not playerCooldowns then
-		playerCooldowns = {}
-		cooldowns[player] = playerCooldowns
-	end
-	local last = playerCooldowns[action] or 0
-	if now - last < seconds then
-		return false
-	end
-	playerCooldowns[action] = now
-	return true
-end
 
 local function Refund(challenge: any)
 	essenceService:Add(Players:GetPlayerByUserId(challenge.ChallengerUserId), challenge.Wager, "DuelRefund")
@@ -43,13 +29,7 @@ local function TeamCreatures(player: Player, teamIds: { string }): { any }
 	end
 	local team = {}
 	for _, creatureId in teamIds do
-		local found = nil
-		for _, creature in profile.Data.Creatures do
-			if creature.Id == creatureId then
-				found = creature
-				break
-			end
-		end
+		local found = Gameplay.FindCreature(profile.Data.Creatures, creatureId)
 		if not found then
 			return nil
 		end
@@ -67,7 +47,7 @@ end
 
 function DuelService:Start()
 	Net.DuelChallenge.OnServerEvent:Connect(function(player: Player, targetName: any, wager: any, teamIds: any)
-		if not CheckCooldown(player, "Challenge", Config.DUEL_COOLDOWN) then
+		if not Gameplay.CheckCooldown(cooldowns, player, "Challenge", Config.DUEL_COOLDOWN) then
 			return
 		end
 		if typeof(targetName) ~= "string" or typeof(teamIds) ~= "table" then
@@ -202,8 +182,7 @@ function DuelService:Start()
 		if not challenge or challenge.TargetUserId ~= player.UserId then
 			return
 		end
-		challenges[challenge.Id] = nil
-		essenceService:Add(Players:GetPlayerByUserId(challenge.ChallengerUserId), challenge.Wager, "DuelRefund")
+		Refund(challenge)
 		local attacker = Players:GetPlayerByUserId(challenge.ChallengerUserId)
 		if attacker then
 			Net.DuelResult:FireClient(attacker, {

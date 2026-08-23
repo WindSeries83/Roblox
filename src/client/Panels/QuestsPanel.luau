@@ -154,37 +154,6 @@ function QuestsPanel.Create(parent: Instance): Frame
 		Parent = parent,
 	})
 
-	local subBar = UiKit.Create("Frame", {
-		Name = "SubBar",
-		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 0, 34),
-		Parent = panel,
-	})
-	local subTabs = {}
-	local function AddSubTab(index: number, name: string, page: Instance)
-		local button = UiKit.Create("TextButton", {
-			Name = `SubTab{index}`,
-			BackgroundColor3 = TINTS.DARK,
-			TextColor3 = TINTS.WHITE,
-			Font = Enum.Font.GothamBold,
-			TextSize = 13,
-			Size = UDim2.new(0.33, -4, 1, 0),
-			Position = UDim2.new(0.33 * (index - 1), 2, 0, 0),
-			Text = name,
-			Parent = subBar,
-		})
-		UiKit.Corner(button)
-		button.Activated:Connect(function()
-			for _, tab in subTabs do
-				tab.button.BackgroundColor3 = TINTS.DARK
-				tab.page.Visible = false
-			end
-			button.BackgroundColor3 = TINTS.PANEL
-			page.Visible = true
-		end)
-		table.insert(subTabs, { button = button, page = page })
-	end
-
 	local dailyPage = UiKit.Scroller(panel, UDim2.fromScale(0, 0.08), UDim2.new(1, 0, 0.92, -6))
 	dailyPage.Name = "DailyPage"
 	local achievementPage = UiKit.Scroller(panel, UDim2.fromScale(0, 0.08), UDim2.new(1, 0, 0.92, -6))
@@ -192,13 +161,11 @@ function QuestsPanel.Create(parent: Instance): Frame
 	local guidePage = UiKit.Scroller(panel, UDim2.fromScale(0, 0.08), UDim2.new(1, 0, 0.92, -6))
 	guidePage.Name = "GuidePage"
 
-	AddSubTab(1, "Quotidiennes", dailyPage)
-	AddSubTab(2, "Succès", achievementPage)
-	AddSubTab(3, "Guide", guidePage)
-	dailyPage.Visible = true
-	achievementPage.Visible = false
-	guidePage.Visible = false
-	subTabs[1].button.BackgroundColor3 = TINTS.PANEL
+	UiKit.SubTabs(panel, 34, {
+		{ Name = "Quotidiennes", Page = dailyPage },
+		{ Name = "Succès", Page = achievementPage },
+		{ Name = "Guide", Page = guidePage },
+	})
 
 	local function BuildGuide()
 		UiKit.Clear(guidePage)

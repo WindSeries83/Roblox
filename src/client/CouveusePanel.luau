@@ -3,39 +3,12 @@ local Workspace = game:GetService("Workspace")
 
 local Net = require(ReplicatedStorage.Shared.Net)
 local Config = require(ReplicatedStorage.Shared.Config)
-local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
-local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local UiKit = require(script.Parent.UiKit)
 
 local CouveusePanel = {}
 
-local TIER_NAMES = {
-	CommonEgg = "Œuf commun",
-	UncommonEgg = "Œuf peu commun",
-	RareEgg = "Œuf rare",
-}
 local TIER_ORDER = { "CommonEgg", "UncommonEgg", "RareEgg" }
-
-local function Hex(color: Color3): string
-	return string.format(
-		"#%02X%02X%02X",
-		math.floor(color.R * 255 + 0.5),
-		math.floor(color.G * 255 + 0.5),
-		math.floor(color.B * 255 + 0.5)
-	)
-end
-
-local function EggRatesText(weights: { [string]: number }): string
-	local parts = {}
-	for _, rate in Gameplay.DropRates(weights) do
-		local rarity = Rarities[rate.Id]
-		local name = rarity and rarity.Name or rate.Id
-		local color = rarity and rarity.Color or UiKit.TINTS.WHITE
-		table.insert(parts, `<font color="{Hex(color)}">{name} {string.format("%g", rate.Percent)} %</font>`)
-	end
-	return table.concat(parts, " · ")
-end
 
 local lastState = nil
 local panel: Frame? = nil
@@ -47,10 +20,10 @@ local function RefreshBuyButtons()
 	for tier, button in buyButtons do
 		local required = lockedTiers[tier]
 		if required then
-			button.Text = `{TIER_NAMES[tier]} 🔒\nRang {required}`
+			button.Text = `{UiKit.EGG_TIER_NAMES[tier]} 🔒\nRang {required}`
 			button.TextColor3 = Color3.fromRGB(140, 140, 150)
 		else
-			button.Text = `{TIER_NAMES[tier]}\n{Config.EGG_PRICES[tier]}`
+			button.Text = `{UiKit.EGG_TIER_NAMES[tier]}\n{Config.EGG_PRICES[tier]}`
 			button.TextColor3 = UiKit.TINTS.WHITE
 		end
 	end
@@ -74,7 +47,7 @@ local function Refresh()
 			TextSize = 11,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Size = UDim2.fromScale(0.55, 1),
-			Text = TIER_NAMES[egg.Tier] or egg.Tier,
+			Text = UiKit.EGG_TIER_NAMES[egg.Tier] or egg.Tier,
 			Parent = row,
 		})
 		local hatch = UiKit.Button(row, "Éclore", UDim2.fromScale(0.42, 1), UDim2.fromScale(0.56, 0))
@@ -133,7 +106,7 @@ function CouveusePanel.Start()
 			TextWrapped = true,
 			Position = UDim2.fromScale((i - 1) / 3, 0),
 			Size = UDim2.fromScale(1 / 3, 1),
-			Text = EggRatesText(Config.EGG_RARITY_WEIGHTS[tier]),
+			Text = UiKit.DropRatesText(Config.EGG_RARITY_WEIGHTS[tier]),
 			Parent = ratesRow,
 		})
 	end
@@ -149,7 +122,7 @@ function CouveusePanel.Start()
 	for i, tier in TIER_ORDER do
 		local button = UiKit.Button(
 			buyRow,
-			`{TIER_NAMES[tier]}\n{Config.EGG_PRICES[tier]}`,
+			`{UiKit.EGG_TIER_NAMES[tier]}\n{Config.EGG_PRICES[tier]}`,
 			UDim2.new(1 / 3, -4, 1, 0),
 			UDim2.new((i - 1) / 3, 2, 0, 0)
 		)

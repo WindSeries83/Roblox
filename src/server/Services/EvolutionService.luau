@@ -4,6 +4,7 @@ local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Evolution = require(ReplicatedStorage.Shared.Evolution)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Net = require(ReplicatedStorage.Shared.Net)
 
 local EvolutionService = {}
@@ -12,15 +13,6 @@ local log
 local saveService
 local essenceService
 local dataSync
-
-local function FindCreature(creatures: { any }, creatureId: string)
-	for i, creature in creatures do
-		if creature.Id == creatureId then
-			return creature, i
-		end
-	end
-	return nil, nil
-end
 
 function EvolutionService:Init(container)
 	log = container:Get("Log")
@@ -35,7 +27,7 @@ function EvolutionService:Start()
 		if not profile then
 			return
 		end
-		local creature = FindCreature(profile.Data.Creatures, creatureId)
+		local creature = Gameplay.FindCreature(profile.Data.Creatures, creatureId)
 		if not creature then
 			return
 		end

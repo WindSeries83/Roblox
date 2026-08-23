@@ -13,10 +13,6 @@ local saveService
 local dataSync
 local questService
 
-function EssenceService.ComputeRate(creatures: { any }): number
-	return Gameplay.ComputeRate(creatures)
-end
-
 function EssenceService.GetRate(player: Player): number
 	local profile = saveService:GetProfile(player)
 	if not profile then
@@ -26,7 +22,7 @@ function EssenceService.GetRate(player: Player): number
 	local indexMult = Index.ComputeMult(profile.Data.Index)
 	local starMult = Rebirth.StarEssenceMult(profile.Data.Stars)
 	local passMult = if profile.Data.Entitlements.PassiveBoost then 1.5 else 1
-	return EssenceService.ComputeRate(profile.Data.Creatures) * sanctuaryMult * indexMult * starMult * passMult
+	return Gameplay.ComputeRate(profile.Data.Creatures) * sanctuaryMult * indexMult * starMult * passMult
 end
 
 function EssenceService:Add(player: Player, amount: number, source: string)
@@ -47,9 +43,7 @@ function EssenceService:Add(player: Player, amount: number, source: string)
 		Source = source,
 		Total = profile.Data.Essence,
 	})
-	if questService then
-		questService:OnEssenceGained(player, gained, source)
-	end
+	questService:OnEssenceGained(player, gained, source)
 	return gained
 end
 
@@ -70,11 +64,6 @@ function EssenceService:Spend(player: Player, amount: number, source: string): b
 		Total = profile.Data.Essence,
 	})
 	return true
-end
-
-function EssenceService:GetEssence(player: Player): number
-	local profile = saveService:GetProfile(player)
-	return profile and profile.Data.Essence or 0
 end
 
 function EssenceService:Init(container)
@@ -101,9 +90,7 @@ function EssenceService:Start()
 				profile.Data.Essence += rate
 				profile.Data.Stats.TotalEssenceEarned += rate
 				profile.Data.LastPlayed = os.time()
-				if questService then
-					questService:OnEssenceGained(player, rate, "Passive")
-				end
+				questService:OnEssenceGained(player, rate, "Passive")
 			end
 			dataSync:Send(player)
 		end

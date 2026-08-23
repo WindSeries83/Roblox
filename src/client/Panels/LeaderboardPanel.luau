@@ -119,6 +119,4 @@ function LeaderboardPanel.Create(parent: Instance): Frame
 	return panel
 end
 
-function LeaderboardPanel.Refresh(_state) end
-
 return LeaderboardPanel

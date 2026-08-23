@@ -1,4 +1,6 @@
 local Audio = require(script.Parent.Audio)
+local Gameplay = require(game:GetService("ReplicatedStorage").Shared.Gameplay)
+local Rarities = require(game:GetService("ReplicatedStorage").Shared.Data.Rarities)
 
 local UiKit = {}
 
@@ -10,6 +12,36 @@ UiKit.TINTS = {
 	RED = Color3.fromRGB(220, 60, 60),
 	GREEN = Color3.fromRGB(70, 190, 100),
 }
+
+UiKit.EGG_TIER_NAMES = {
+	CommonEgg = "Œuf commun",
+	UncommonEgg = "Œuf peu commun",
+	RareEgg = "Œuf rare",
+}
+
+function UiKit.Hex(color: Color3): string
+	return string.format(
+		"#%02X%02X%02X",
+		math.floor(color.R * 255 + 0.5),
+		math.floor(color.G * 255 + 0.5),
+		math.floor(color.B * 255 + 0.5)
+	)
+end
+
+function UiKit.DropRatesText(weights: { [string]: number }, formatEntry: ((any) -> string)?): string
+	local parts = {}
+	for _, rate in Gameplay.DropRates(weights) do
+		if formatEntry then
+			table.insert(parts, formatEntry(rate))
+		else
+			local rarity = Rarities[rate.Id]
+			local name = rarity and rarity.Name or rate.Id
+			local color = rarity and rarity.Color or UiKit.TINTS.WHITE
+			table.insert(parts, `<font color="{UiKit.Hex(color)}">{name} {string.format("%g", rate.Percent)} %</font>`)
+		end
+	end
+	return table.concat(parts, " · ")
+end
 
 local TweenService = game:GetService("TweenService")
 
@@ -153,6 +185,42 @@ function UiKit.Clear(frame: Instance)
 			child:Destroy()
 		end
 	end
+end
+
+function UiKit.SubTabs(parent: Instance, height: number, pages: { any }): Frame
+	local bar = UiKit.Create("Frame", {
+		Name = "SubBar",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, height),
+		Parent = parent,
+	})
+	local buttons = {}
+	for i, page in pages do
+		page.Page.Visible = i == 1
+		local button = UiKit.Create("TextButton", {
+			Name = `SubTab{i}`,
+			BackgroundColor3 = UiKit.TINTS.DARK,
+			TextColor3 = UiKit.TINTS.WHITE,
+			Font = Enum.Font.GothamBold,
+			TextSize = 13,
+			Size = UDim2.new(1 / #pages, -4, 1, 0),
+			Position = UDim2.new(1 / #pages * (i - 1), 2, 0, 0),
+			Text = page.Name,
+			Parent = bar,
+		})
+		UiKit.Corner(button)
+		button.Activated:Connect(function()
+			for j, other in buttons do
+				other.BackgroundColor3 = UiKit.TINTS.DARK
+				pages[j].Page.Visible = false
+			end
+			button.BackgroundColor3 = UiKit.TINTS.PANEL
+			page.Page.Visible = true
+		end)
+		buttons[i] = button
+	end
+	buttons[1].BackgroundColor3 = UiKit.TINTS.PANEL
+	return bar
 end
 
 return UiKit

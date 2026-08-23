@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
 local Evolution = require(ReplicatedStorage.Shared.Evolution)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Net = require(ReplicatedStorage.Shared.Net)
 
 local ItemService = {}
@@ -11,15 +12,6 @@ local log
 local saveService
 local essenceService
 local dataSync
-
-local function FindCreature(creatures: { any }, creatureId: string)
-	for i, creature in creatures do
-		if creature.Id == creatureId then
-			return creature, i
-		end
-	end
-	return nil, nil
-end
 
 local function FindItem(items: { any }, itemId: string)
 	for i, item in items do
@@ -89,12 +81,12 @@ function ItemService:Start()
 		if not profile then
 			return
 		end
-		local creature = FindCreature(profile.Data.Creatures, creatureId)
+		local creature = Gameplay.FindCreature(profile.Data.Creatures, creatureId)
 		local item, itemIndex = FindItem(profile.Data.Items, itemId)
 		if not creature or not item or not itemIndex then
 			return
 		end
-		if #creature.Equipment >= Evolution.SlotsForStage(creature.Stage) then
+		if #creature.Equipment >= creature.Stage then
 			return
 		end
 		table.remove(profile.Data.Items, itemIndex)
@@ -114,7 +106,7 @@ function ItemService:Start()
 		if not profile then
 			return
 		end
-		local creature = FindCreature(profile.Data.Creatures, creatureId)
+		local creature = Gameplay.FindCreature(profile.Data.Creatures, creatureId)
 		if not creature then
 			return
 		end

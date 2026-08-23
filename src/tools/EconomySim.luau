@@ -6,9 +6,6 @@ local Evolution = require(ReplicatedStorage.Shared.Evolution)
 local Index = require(ReplicatedStorage.Shared.Index)
 local Rebirth = require(ReplicatedStorage.Shared.Rebirth)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
-local Species = require(ReplicatedStorage.Shared.Data.Species)
-local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
-local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
 local Stages = require(ReplicatedStorage.Shared.Data.Stages)
 
 local EconomySim = {}
@@ -31,17 +28,7 @@ local function NewProfile(thresholds)
 end
 
 local function GetRate(profile)
-	local rate = 0
-	for _, creature in profile.Creatures do
-		local species = Species[creature.SpeciesId]
-		local rarity = Rarities[creature.Rarity]
-		local mutation = creature.Mutation ~= false and Mutations[creature.Mutation] or nil
-		if species and rarity then
-			rate += species.BaseRate * Config.ESSENCE_BASE_RATE * rarity.EssenceMult * (mutation and mutation.Multiplier or 1) * Evolution.RateMultFor(
-				creature.Stage
-			)
-		end
-	end
+	local rate = Gameplay.ComputeRate(profile.Creatures)
 	local sanctuaryMult = 1 + Config.SANCTUARY_LEVEL_BONUS * (profile.SanctuaryLevel - 1)
 	local indexMult = Index.ComputeMult(profile.Index)
 	local starMult = Rebirth.StarEssenceMult(profile.Stars)
@@ -79,20 +66,7 @@ local function BuyAndHatch(profile, tier)
 	end
 	profile.Essence -= price
 	local roll = Gameplay.RollEgg(tier)
-	local creature = {
-		Id = tostring(os.clock()),
-		SpeciesId = roll.SpeciesId,
-		Rarity = roll.Rarity,
-		Mutation = roll.Mutation,
-		Level = 1,
-		XP = 0,
-		Stage = 1,
-		Power = 0,
-		Equipment = {},
-		Parents = {},
-		Generation = 1,
-	}
-	creature.Power = Evolution.ComputePower(creature)
+	local creature = Gameplay.CreateCreature(roll.Rarity, roll.SpeciesId, roll.Mutation)
 	table.insert(profile.Creatures, creature)
 	Index.Register(profile.Index, roll.SpeciesId, roll.Rarity, roll.Mutation)
 	return true
@@ -118,12 +92,7 @@ local function TryEvolve(profile, creature)
 	local cost = Evolution.EvolveCost(creature)
 	profile.Essence -= cost
 	if Stages[creature.Stage + 1].RequiresRelic then
-		for i, item in creature.Equipment do
-			if item.Type == "Relic" then
-				table.remove(creature.Equipment, i)
-				break
-			end
-		end
+		Evolution.ConsumeRelic(creature)
 	end
 	creature.Stage += 1
 	creature.Power = Evolution.ComputePower(creature)

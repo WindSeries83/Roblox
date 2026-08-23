@@ -173,10 +173,7 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 	local mutationName = roll.Mutation ~= false and Mutations[roll.Mutation].Name or nil
 	local announced = Gameplay.RarityRank(roll.Rarity) >= Gameplay.RarityRank(Config.ANNOUNCE_MIN_RARITY)
 	questService:OnHatch(player, roll.Mutation ~= false)
-	local seasonService = container:Get("SeasonService")
-	if seasonService then
-		seasonService:OnHatch(player)
-	end
+	container:Get("SeasonService"):OnHatch(player)
 
 	Net.HatchResult:FireClient(player, {
 		EggId = eggId,

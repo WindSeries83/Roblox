@@ -79,14 +79,17 @@ function Fx.FloatText(worldPos: Vector3, text: string, color: Color3)
 	label.Text = text
 	label.Parent = gui
 
-	local start = os.clock()
-	task.spawn(function()
-		while os.clock() - start < 1 and part.Parent do
-			local elapsed = os.clock() - start
-			part.CFrame = CFrame.new(worldPos + Vector3.new(0, elapsed * 2, 0))
-			label.TextTransparency = math.min(1, elapsed)
-			task.wait()
-		end
+	local tween = game:GetService("TweenService"):Create(
+		part,
+		TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ CFrame = CFrame.new(worldPos + Vector3.new(0, 2, 0)) }
+	)
+	local fade =
+		game:GetService("TweenService")
+			:Create(label, TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { TextTransparency = 1 })
+	tween:Play()
+	fade:Play()
+	tween.Completed:Once(function()
 		part:Destroy()
 	end)
 end

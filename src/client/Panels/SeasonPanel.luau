@@ -42,88 +42,62 @@ local function Build(season, hasPremium)
 		UiKit.SetBar(fill, label, xp - xpForCurrent, xpForNext - xpForCurrent)
 	end
 
-	UiKit.Title(page, "Piste gratuite", 14)
-	for lvl = 1, Config.SEASON_MAX_LEVEL do
-		local claimed = season.ClaimedFree[lvl] == true
-		local claimable = not claimed and Season.CanClaim(season, lvl, "free")
-		local cell = UiKit.Cell(page)
-		UiKit.Create("TextLabel", {
-			BackgroundTransparency = 1,
-			TextColor3 = if claimed then TINTS.GREEN else TINTS.WHITE,
-			TextSize = 13,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.fromScale(0.6, 1),
-			Text = `Niv. {lvl} — {RewardLine(lvl, "free")}`,
-			TextWrapped = true,
-			Parent = cell,
-		})
-		if claimable then
-			local button = UiKit.Button(cell, "Réclamer", UDim2.new(0.34, 0, 0, 26), UDim2.new(0.64, 0, 0.5, -13))
-			button.Activated:Connect(function()
-				Audio.Play("CoinReward")
-				Net.SeasonClaim:FireServer(lvl, "free")
-			end)
-		else
+	local function Track(title: string, trackName: string, lockedText: string)
+		local isPremium = trackName == "premium"
+		local claimedList = if isPremium then season.ClaimedPremium else season.ClaimedFree
+		UiKit.Title(page, title, 14)
+		if isPremium and not hasPremium then
 			UiKit.Create("TextLabel", {
 				BackgroundTransparency = 1,
-				TextColor3 = if claimed then TINTS.GREEN else Color3.fromRGB(150, 150, 160),
-				TextSize = 12,
-				TextXAlignment = Enum.TextXAlignment.Right,
-				Size = UDim2.new(0.34, 0, 0, 26),
-				Position = UDim2.new(0.64, 0, 0.5, -13),
-				Text = if claimed then "Réclamé" else "Verrouillé",
+				TextColor3 = TINTS.RED,
+				TextSize = 13,
+				TextWrapped = true,
+				AutomaticSize = Enum.AutomaticSize.Y,
+				Size = UDim2.new(1, 0, 0, 18),
+				Text = "La piste premium se débloque avec le gamepass Saison Premium.",
+				Parent = page,
+			})
+		end
+		for lvl = 1, Config.SEASON_MAX_LEVEL do
+			local claimed = claimedList[lvl] == true
+			local claimable = (not isPremium or hasPremium) and not claimed and Season.CanClaim(season, lvl, trackName)
+			local cell = UiKit.Cell(page)
+			UiKit.Create("TextLabel", {
+				BackgroundTransparency = 1,
+				TextColor3 = if claimed then TINTS.GREEN else TINTS.WHITE,
+				TextSize = 13,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Size = UDim2.fromScale(0.6, 1),
+				Text = `Niv. {lvl} — {RewardLine(lvl, trackName)}`,
+				TextWrapped = true,
 				Parent = cell,
 			})
+			if claimable then
+				local button = UiKit.Button(cell, "Réclamer", UDim2.new(0.34, 0, 0, 26), UDim2.new(0.64, 0, 0.5, -13))
+				if isPremium then
+					button.BackgroundColor3 = TINTS.GREEN
+				end
+				button.Activated:Connect(function()
+					Audio.Play("CoinReward")
+					Net.SeasonClaim:FireServer(lvl, trackName)
+				end)
+			else
+				UiKit.Create("TextLabel", {
+					BackgroundTransparency = 1,
+					TextColor3 = if claimed then TINTS.GREEN else Color3.fromRGB(150, 150, 160),
+					TextSize = 12,
+					TextXAlignment = Enum.TextXAlignment.Right,
+					Size = UDim2.new(0.34, 0, 0, 26),
+					Position = UDim2.new(0.64, 0, 0.5, -13),
+					Text = if claimed then "Réclamé" else lockedText,
+					Parent = cell,
+				})
+			end
 		end
 	end
 
-	UiKit.Title(page, "Piste premium", 14)
-	if not hasPremium then
-		UiKit.Create("TextLabel", {
-			BackgroundTransparency = 1,
-			TextColor3 = TINTS.RED,
-			TextSize = 13,
-			TextWrapped = true,
-			AutomaticSize = Enum.AutomaticSize.Y,
-			Size = UDim2.new(1, 0, 0, 18),
-			Text = "La piste premium se débloque avec le gamepass Saison Premium.",
-			Parent = page,
-		})
-	end
-	for lvl = 1, Config.SEASON_MAX_LEVEL do
-		local claimed = season.ClaimedPremium[lvl] == true
-		local claimable = hasPremium and not claimed and Season.CanClaim(season, lvl, "premium")
-		local cell = UiKit.Cell(page)
-		UiKit.Create("TextLabel", {
-			BackgroundTransparency = 1,
-			TextColor3 = if claimed then TINTS.GREEN else TINTS.WHITE,
-			TextSize = 13,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.fromScale(0.6, 1),
-			Text = `Niv. {lvl} — {RewardLine(lvl, "premium")}`,
-			TextWrapped = true,
-			Parent = cell,
-		})
-		if claimable then
-			local button = UiKit.Button(cell, "Réclamer", UDim2.new(0.34, 0, 0, 26), UDim2.new(0.64, 0, 0.5, -13))
-			button.BackgroundColor3 = TINTS.GREEN
-			button.Activated:Connect(function()
-				Audio.Play("CoinReward")
-				Net.SeasonClaim:FireServer(lvl, "premium")
-			end)
-		else
-			UiKit.Create("TextLabel", {
-				BackgroundTransparency = 1,
-				TextColor3 = if claimed then TINTS.GREEN else Color3.fromRGB(150, 150, 160),
-				TextSize = 12,
-				TextXAlignment = Enum.TextXAlignment.Right,
-				Size = UDim2.new(0.34, 0, 0, 26),
-				Position = UDim2.new(0.64, 0, 0.5, -13),
-				Text = if claimed then "Réclamé" else if not hasPremium then "Premium requis" else "Verrouillé",
-				Parent = cell,
-			})
-		end
-	end
+	Track("Piste gratuite", "free", "Verrouillé")
+	Track("Piste premium", "premium", if not hasPremium then "Premium requis" else "Verrouillé")
 end
 
 function SeasonPanel.Create(parent: Instance): Frame

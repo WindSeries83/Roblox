@@ -107,10 +107,4 @@ return function(t)
 		expect.equal(#creature.Equipment, 1)
 		expect.equal(creature.Equipment[1].Id, "h1")
 	end)
-
-	-- Slots equal the stage.
-	t.test("slots equal the stage", function()
-		expect.equal(Evolution.SlotsForStage(1), 1)
-		expect.equal(Evolution.SlotsForStage(4), 4)
-	end)
 end

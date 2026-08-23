@@ -12,6 +12,8 @@ local LINE_HEIGHT = 18
 local LINE_GAP = 2
 local PAD = 8
 
+-- ponytail: doublon volontaire de UiKit.TINTS — ce module est requis par un test serveur,
+-- et UiKit tire Audio (client-only) ; garder HoverCard sans dépendance client.
 local COLORS = {
 	BG = Color3.fromRGB(20, 20, 26),
 	WHITE = Color3.fromRGB(235, 235, 245),

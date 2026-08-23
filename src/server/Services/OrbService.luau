@@ -79,8 +79,6 @@ end
 function OrbService:Init(cont)
 	log = cont:Get("Log")
 	essenceService = cont:Get("EssenceService")
-	claims = {}
-	activeCount = 0
 end
 
 function OrbService:Start()

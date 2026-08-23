@@ -20,15 +20,6 @@ local container
 
 local cooldowns: { [Player]: number } = {}
 
-local function FindCreature(creatures: { any }, creatureId: string)
-	for _, creature in creatures do
-		if creature.Id == creatureId then
-			return creature
-		end
-	end
-	return nil
-end
-
 function BreedingService:Init(cont)
 	container = cont
 	log = cont:Get("Log")
@@ -52,8 +43,8 @@ function BreedingService:Start()
 			return
 		end
 
-		local father = FindCreature(profile.Data.Creatures, fatherId)
-		local mother = FindCreature(profile.Data.Creatures, motherId)
+		local father = Gameplay.FindCreature(profile.Data.Creatures, fatherId)
+		local mother = Gameplay.FindCreature(profile.Data.Creatures, motherId)
 		local ok, reason = Breeding.CanBreed(father, mother)
 		if not ok then
 			log:Economy("Breeding", "Reject", { Player = player.Name, Reason = reason })
@@ -94,10 +85,7 @@ function BreedingService:Start()
 
 		profile.Data.Stats.TotalBred += 1
 		questService:OnBreed(player)
-		local seasonService = container:Get("SeasonService")
-		if seasonService then
-			seasonService:OnBreed(player)
-		end
+		container:Get("SeasonService"):OnBreed(player)
 
 		log:Economy("Breeding", "Success", {
 			Player = player.Name,

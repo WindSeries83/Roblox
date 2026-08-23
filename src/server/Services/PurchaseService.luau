@@ -165,14 +165,11 @@ function PurchaseService:Start()
 		end
 
 		-- Grant-then-ack (SE-3) : persistance du receipt AVANT PurchaseGranted
-		local okGrant = false
-		local grantErr = nil
-		pcall(function()
+		local okGrant = pcall(function()
 			essenceService:Add(player, product.Amount, `DevProduct_{productId}`)
-			okGrant = true
 		end)
 		if not okGrant then
-			LogPurchase("ReceiptGrantFailed", { PlayerId = playerId, ProductId = productId, Err = tostring(grantErr) })
+			LogPurchase("ReceiptGrantFailed", { PlayerId = playerId, ProductId = productId })
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		end
 

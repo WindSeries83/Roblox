@@ -24,9 +24,7 @@ function IndexService:Register(player: Player, speciesId: string, rarity: string
 		Rarity = rarity,
 		Mutation = tostring(mutation),
 	})
-	if questService then
-		questService:OnIndex(player)
-	end
+	questService:OnIndex(player)
 	return true
 end
 

@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 
@@ -41,21 +42,6 @@ local function ListedCount(player: Player): number
 		end
 	end
 	return count
-end
-
-local function CheckCooldown(player: Player, action: string, seconds: number): boolean
-	local now = os.clock()
-	local playerCooldowns = cooldowns[player]
-	if not playerCooldowns then
-		playerCooldowns = {}
-		cooldowns[player] = playerCooldowns
-	end
-	local last = playerCooldowns[action] or 0
-	if now - last < seconds then
-		return false
-	end
-	playerCooldowns[action] = now
-	return true
 end
 
 --[[ Pure logic (unit-testable) ]]
@@ -113,12 +99,10 @@ function MarketService.CanList(
 	if listedCount >= Config.MARKET_MAX_LISTINGS then
 		return false, "Nombre de ventes maximum atteint"
 	end
-	for _, owned in playerCreatures do
-		if owned.Id == creature.Id then
-			return true
-		end
+	if not Gameplay.FindCreature(playerCreatures, creature.Id) then
+		return false, "Créature introuvable"
 	end
-	return false, "Créature introuvable"
+	return true
 end
 
 --[[ Persistence (best-effort, cache mémoire source de vérité de session) ]]
@@ -163,7 +147,7 @@ end
 
 --[[ Sync ]]
 
-local function BroadcastListings()
+local function ListingsPayload(): { any }
 	local list = {}
 	for _, listing in listings do
 		table.insert(list, listing)
@@ -173,9 +157,13 @@ local function BroadcastListings()
 	end)
 	local payload = {}
 	for i = 1, math.min(Config.MARKET_LIST_LIMIT, #list) do
-		table.insert(payload, list[i])
+		payload[i] = list[i]
 	end
-	Net.MarketSync:FireAllClients({ Listings = payload })
+	return payload
+end
+
+local function BroadcastListings()
+	Net.MarketSync:FireAllClients({ Listings = ListingsPayload() })
 end
 
 local function CreditSeller(listing: any)
@@ -204,7 +192,7 @@ end
 --[[ Remotes ]]
 
 local function OnMarketList(player: Player, creatureId: any, price: any)
-	if not CheckCooldown(player, "List", Config.MARKET_COOLDOWN) then
+	if not Gameplay.CheckCooldown(cooldowns, player, "List", Config.MARKET_COOLDOWN) then
 		return
 	end
 	if typeof(creatureId) ~= "string" then
@@ -214,13 +202,7 @@ local function OnMarketList(player: Player, creatureId: any, price: any)
 	if not profile then
 		return
 	end
-	local creature = nil
-	for _, owned in profile.Data.Creatures do
-		if owned.Id == creatureId then
-			creature = owned
-			break
-		end
-	end
+	local creature = Gameplay.FindCreature(profile.Data.Creatures, creatureId)
 	local ok, reason = MarketService.CanList(price, creature, profile.Data.Creatures, ListedCount(player))
 	if not ok then
 		log:Economy("Market", "ListRejected", { Player = player.Name, Reason = reason })
@@ -264,7 +246,7 @@ local function OnMarketList(player: Player, creatureId: any, price: any)
 end
 
 local function OnMarketBuy(player: Player, listingId: any)
-	if not CheckCooldown(player, "Buy", Config.MARKET_COOLDOWN) then
+	if not Gameplay.CheckCooldown(cooldowns, player, "Buy", Config.MARKET_COOLDOWN) then
 		return
 	end
 	if typeof(listingId) ~= "string" then
@@ -311,7 +293,7 @@ local function OnMarketBuy(player: Player, listingId: any)
 end
 
 local function OnMarketRemove(player: Player, listingId: any)
-	if not CheckCooldown(player, "Remove", Config.MARKET_COOLDOWN) then
+	if not Gameplay.CheckCooldown(cooldowns, player, "Remove", Config.MARKET_COOLDOWN) then
 		return
 	end
 	if typeof(listingId) ~= "string" then
@@ -351,21 +333,10 @@ local function OnMarketRemove(player: Player, listingId: any)
 end
 
 local function OnMarketListings(player: Player)
-	if not CheckCooldown(player, "Query", Config.MARKET_QUERY_COOLDOWN) then
+	if not Gameplay.CheckCooldown(cooldowns, player, "Query", Config.MARKET_QUERY_COOLDOWN) then
 		return
 	end
-	local list = {}
-	for _, listing in listings do
-		table.insert(list, listing)
-	end
-	table.sort(list, function(a, b)
-		return a.ListedAt > b.ListedAt
-	end)
-	local payload = {}
-	for i = 1, math.min(Config.MARKET_LIST_LIMIT, #list) do
-		table.insert(payload, list[i])
-	end
-	Net.MarketSync:FireClient(player, { Listings = payload })
+	Net.MarketSync:FireClient(player, { Listings = ListingsPayload() })
 end
 
 --[[ Lifecycle ]]

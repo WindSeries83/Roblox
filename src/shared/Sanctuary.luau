@@ -10,23 +10,15 @@ function Sanctuary.MaxCreatures(sanctuaryLevel: number, bonusSlots: number?): nu
 		+ (bonusSlots or 0)
 end
 
-function Sanctuary.NextLevelCost(sanctuaryLevel: number): number?
-	return Config.SANCTUARY_UPGRADE_BASE_COST * (Config.SANCTUARY_UPGRADE_COST_MULT ^ (sanctuaryLevel - 1))
-end
-
 function Sanctuary.CanUpgrade(essence: number, sanctuaryLevel: number): (boolean, string?)
-	local cost = Sanctuary.NextLevelCost(sanctuaryLevel)
-	if not cost then
-		return false, "niveau maximum atteint"
-	end
-	if essence < cost then
+	if essence < Sanctuary.UpgradeCost(sanctuaryLevel) then
 		return false, "Essence insuffisante"
 	end
 	return true
 end
 
 function Sanctuary.UpgradeCost(sanctuaryLevel: number): number
-	return Sanctuary.NextLevelCost(sanctuaryLevel) or 0
+	return Config.SANCTUARY_UPGRADE_BASE_COST * (Config.SANCTUARY_UPGRADE_COST_MULT ^ (sanctuaryLevel - 1))
 end
 
 -- Tiers d'œufs verrouillés à ce rang : { tier = rang requis }. Absent = débloqué.
@@ -38,11 +30,7 @@ function Sanctuary.EggGate(sanctuaryLevel: number): { [string]: number }
 end
 
 function Sanctuary.EggLocked(tier: string, sanctuaryLevel: number): number?
-	local gate = Sanctuary.EggGate(sanctuaryLevel)
-	if gate[tier] then
-		return gate[tier]
-	end
-	return nil
+	return Sanctuary.EggGate(sanctuaryLevel)[tier]
 end
 
 return Sanctuary

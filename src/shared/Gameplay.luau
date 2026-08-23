@@ -130,4 +130,33 @@ function Gameplay.RarityRank(rarity: string): number
 	return rank or 0
 end
 
+function Gameplay.FindCreature(creatures: { any }, id: string?): any
+	for _, creature in creatures do
+		if creature.Id == id then
+			return creature
+		end
+	end
+	return nil
+end
+
+function Gameplay.CheckCooldown(
+	store: { [any]: { [string]: number } },
+	owner: any,
+	action: string,
+	seconds: number
+): boolean
+	local now = os.clock()
+	local perOwner = store[owner]
+	if not perOwner then
+		perOwner = {}
+		store[owner] = perOwner
+	end
+	local last = perOwner[action] or 0
+	if now - last < seconds then
+		return false
+	end
+	perOwner[action] = now
+	return true
+end
+
 return Gameplay

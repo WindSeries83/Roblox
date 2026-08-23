@@ -111,10 +111,7 @@ function SeasonService:Start()
 		if reward.Creature then
 			local creature =
 				Gameplay.CreateCreature(reward.Creature.Rarity, reward.Creature.SpeciesId, reward.Creature.Mutation)
-			local maxCreatures = 1e18
-			if #profile.Data.Creatures < maxCreatures then
-				table.insert(profile.Data.Creatures, creature)
-			end
+			table.insert(profile.Data.Creatures, creature)
 			log:Economy("Season", "Exclusive", {
 				Player = player.Name,
 				Species = creature.SpeciesId,

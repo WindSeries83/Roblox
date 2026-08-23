@@ -12,10 +12,6 @@ local essenceService
 
 local container
 
-local function DayString(): string
-	return os.date("%Y-%m-%d")
-end
-
 function QuestService.RollDaily(day: string, userId: number): { string }
 	local seed = 0
 	for i = 1, #day do
@@ -117,8 +113,8 @@ local function EnsureQuests(player: Player)
 		return nil
 	end
 	local quests = profile.Data.Quests
-	if quests.Day ~= DayString() then
-		quests.Day = DayString()
+	if quests.Day ~= os.date("%Y-%m-%d") then
+		quests.Day = os.date("%Y-%m-%d")
 		quests.Daily = {}
 		for _, questId in QuestService.RollDaily(quests.Day, player.UserId) do
 			table.insert(quests.Daily, { Id = questId, Progress = 0, Claimed = false })
@@ -177,28 +173,24 @@ local function ProgressDaily(player: Player, questId: string, amount: number)
 	return notice
 end
 
-function QuestService:OnHatch(player: Player, _mutated: boolean)
-	ProgressDaily(player, "HatchDaily", 1)
+local function ProgressAndUnlock(player: Player, questId: string, amount: number)
+	ProgressDaily(player, questId, amount)
 	local unlocked = UnlockAchievements(player)
 	if #unlocked > 0 then
 		SyncQuests(player, { Type = "Achievement", Name = unlocked[1].Name })
 	end
+end
+
+function QuestService:OnHatch(player: Player, _mutated: boolean)
+	ProgressAndUnlock(player, "HatchDaily", 1)
 end
 
 function QuestService:OnBreed(player: Player)
-	ProgressDaily(player, "BreedDaily", 1)
-	local unlocked = UnlockAchievements(player)
-	if #unlocked > 0 then
-		SyncQuests(player, { Type = "Achievement", Name = unlocked[1].Name })
-	end
+	ProgressAndUnlock(player, "BreedDaily", 1)
 end
 
 function QuestService:OnRiftWon(player: Player)
-	ProgressDaily(player, "RiftDaily", 1)
-	local unlocked = UnlockAchievements(player)
-	if #unlocked > 0 then
-		SyncQuests(player, { Type = "Achievement", Name = unlocked[1].Name })
-	end
+	ProgressAndUnlock(player, "RiftDaily", 1)
 end
 
 function QuestService:OnEssenceGained(player: Player, amount: number, source: string)
@@ -213,11 +205,7 @@ function QuestService:OnEssenceGained(player: Player, amount: number, source: st
 end
 
 function QuestService:OnIndex(player: Player)
-	ProgressDaily(player, "IndexDaily", 1)
-	local unlocked = UnlockAchievements(player)
-	if #unlocked > 0 then
-		SyncQuests(player, { Type = "Achievement", Name = unlocked[1].Name })
-	end
+	ProgressAndUnlock(player, "IndexDaily", 1)
 end
 
 function QuestService:OnRebirth(player: Player)
@@ -251,10 +239,7 @@ function QuestService:Start()
 					Reward = def.Reward,
 				})
 				SyncQuests(player)
-				local seasonService = container:Get("SeasonService")
-				if seasonService then
-					seasonService:OnQuestClaim(player)
-				end
+				container:Get("SeasonService"):OnQuestClaim(player)
 				return
 			end
 		end

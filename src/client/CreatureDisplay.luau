@@ -6,6 +6,7 @@ local RunService = game:GetService("RunService")
 local Net = require(ReplicatedStorage.Shared.Net)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Fx = require(script.Parent.Fx)
 local CreatureHud = require(script.Parent.CreatureHud)
 local HoverCard = require(script.Parent.HoverCard)
@@ -37,12 +38,7 @@ local RARITY_SIZE = { 1, 1.12, 1.25, 1.38, 1.5, 1.62, 1.75, 1.9 }
 local RARITY_PARTICLES = { 0, 4, 10, 16, 24, 32, 44, 60 }
 
 local function RarityRank(rarity: string): number
-	for i, name in Rarities.ORDER do
-		if name == rarity then
-			return i
-		end
-	end
-	return 1
+	return math.max(1, Gameplay.RarityRank(rarity))
 end
 
 local function MutationScale(mutation: any): number

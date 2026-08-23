@@ -11,10 +11,6 @@ function Evolution.StageDef(stage: number)
 	return Stages[stage]
 end
 
-function Evolution.SlotsForStage(stage: number): number
-	return stage
-end
-
 function Evolution.XPToNext(level: number): number
 	return Config.LEVEL_XP_BASE * level
 end

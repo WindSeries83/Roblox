@@ -16,15 +16,6 @@ local treeList
 
 local selection = { left = nil, right = nil }
 
-local function Hex(color: Color3): string
-	return string.format(
-		"#%02X%02X%02X",
-		math.floor(color.R * 255 + 0.5),
-		math.floor(color.G * 255 + 0.5),
-		math.floor(color.B * 255 + 0.5)
-	)
-end
-
 local function Pct(value: number): string
 	return `{math.floor(value * 100 + 0.5)} %`
 end
@@ -36,22 +27,16 @@ local function InheritanceText(): string
 end
 
 local function MutationRatesText(weights: { [string]: number }): string
-	local parts = {}
-	for _, rate in Gameplay.DropRates(weights) do
+	return UiKit.DropRatesText(weights, function(rate)
 		local mutation = Mutations[rate.Id]
 		if rate.Id == "None" or not mutation then
-			table.insert(parts, `Aucune {string.format("%g", rate.Percent)} %`)
-		else
-			table.insert(
-				parts,
-				`<font color="{Hex(mutation.Color)}">{mutation.Name} ×{mutation.Multiplier} {string.format(
-					"%g",
-					rate.Percent
-				)} %</font>`
-			)
+			return `Aucune {string.format("%g", rate.Percent)} %`
 		end
-	end
-	return table.concat(parts, " · ")
+		return `<font color="{UiKit.Hex(mutation.Color)}">{mutation.Name} ×{mutation.Multiplier} {string.format(
+			"%g",
+			rate.Percent
+		)} %</font>`
+	end)
 end
 
 local function CreatureLabel(creature): string
@@ -61,23 +46,14 @@ local function CreatureLabel(creature): string
 	return `[{string.upper(creature.Rarity)}] {name} — G{creature.Generation} — {stage.Name}`
 end
 
-local function FindById(creatures, id)
-	for _, creature in creatures do
-		if creature.Id == id then
-			return creature
-		end
-	end
-	return nil
-end
-
 local function Ancestors(creatures, creature, depth, seen)
 	if not creature or depth <= 0 or seen[creature.Id] then
 		return {}
 	end
 	seen[creature.Id] = true
 	local rows = { CreatureLabel(creature) }
-	local father = creature.Parents and FindById(creatures, creature.Parents.Father) or nil
-	local mother = creature.Parents and FindById(creatures, creature.Parents.Mother) or nil
+	local father = creature.Parents and Gameplay.FindCreature(creatures, creature.Parents.Father) or nil
+	local mother = creature.Parents and Gameplay.FindCreature(creatures, creature.Parents.Mother) or nil
 	for _, row in Ancestors(creatures, father, depth - 1, seen) do
 		table.insert(rows, `  {row}`)
 	end
@@ -89,7 +65,7 @@ end
 
 local function RenderTree(creatures, creatureId)
 	UiKit.Clear(treeList)
-	local creature = FindById(creatures, creatureId)
+	local creature = Gameplay.FindCreature(creatures, creatureId)
 	if not creature then
 		return
 	end
@@ -109,41 +85,25 @@ local function RenderTree(creatures, creatureId)
 end
 
 local function RenderSelectors(state)
-	UiKit.Clear(leftList)
-	UiKit.Clear(rightList)
-	for _, creature in state.Creatures do
-		local row = UiKit.Cell(leftList)
-		local button = UiKit.Create("TextButton", {
-			BackgroundTransparency = 1,
-			TextColor3 = UiKit.TINTS.WHITE,
-			TextSize = 13,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.fromScale(1, 0),
-			AutomaticSize = Enum.AutomaticSize.Y,
-			Text = CreatureLabel(creature),
-			Parent = row,
-		})
-		button.Activated:Connect(function()
-			selection.left = creature.Id
-			RenderTree(state.Creatures, creature.Id)
-		end)
-	end
-	for _, creature in state.Creatures do
-		local row = UiKit.Cell(rightList)
-		local button = UiKit.Create("TextButton", {
-			BackgroundTransparency = 1,
-			TextColor3 = UiKit.TINTS.WHITE,
-			TextSize = 13,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.fromScale(1, 0),
-			AutomaticSize = Enum.AutomaticSize.Y,
-			Text = CreatureLabel(creature),
-			Parent = row,
-		})
-		button.Activated:Connect(function()
-			selection.right = creature.Id
-			RenderTree(state.Creatures, creature.Id)
-		end)
+	for _, side in { { list = leftList, key = "left" }, { list = rightList, key = "right" } } do
+		UiKit.Clear(side.list)
+		for _, creature in state.Creatures do
+			local row = UiKit.Cell(side.list)
+			local button = UiKit.Create("TextButton", {
+				BackgroundTransparency = 1,
+				TextColor3 = UiKit.TINTS.WHITE,
+				TextSize = 13,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				Text = CreatureLabel(creature),
+				Parent = row,
+			})
+			button.Activated:Connect(function()
+				selection[side.key] = creature.Id
+				RenderTree(state.Creatures, creature.Id)
+			end)
+		end
 	end
 end
 

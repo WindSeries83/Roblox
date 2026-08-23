@@ -55,12 +55,6 @@ local viewportWidth = pcall(function()
 end) and workspace.CurrentCamera.ViewportSize.X or 800
 local compact = viewportWidth < 700
 
-local TIER_NAMES = {
-	CommonEgg = "Œuf commun",
-	UncommonEgg = "Œuf peu commun",
-	RareEgg = "Œuf rare",
-}
-
 local function RatesLine(weights: { [string]: number }, nameOf: (string) -> string): string
 	local parts = {}
 	for _, rate in Gameplay.DropRates(weights) do
@@ -71,7 +65,7 @@ end
 
 local function RiftEggRatesText(): string
 	return `Œufs : {RatesLine(Config.RIFT_EGG_WEIGHTS, function(id)
-		return TIER_NAMES[id] or id
+		return UiKit.EGG_TIER_NAMES[id] or id
 	end)}`
 end
 
@@ -164,7 +158,7 @@ local panelsFrame = UiKit.Create("Frame", {
 })
 
 local panels = {}
-local tabSelectors: { [string]: () -> () } = {}
+local selectEggsTab: (() -> ())?
 local tabCount = 0
 local function AddTab(name: string, panelModule: any)
 	tabCount += 1
@@ -197,7 +191,9 @@ local function AddTab(name: string, panelModule: any)
 	button.Activated:Connect(Select)
 
 	table.insert(panels, { module = panelModule, frame = frame })
-	tabSelectors[name] = Select
+	if name == "Œufs" then
+		selectEggsTab = Select
+	end
 end
 
 AddTab("Sanctuaire", SanctuaryPanel)
@@ -233,12 +229,6 @@ do
 	})
 	frame.Visible = false
 
-	local subBar = UiKit.Create("Frame", {
-		Name = "SubBar",
-		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 0, 30),
-		Parent = frame,
-	})
 	local subPages = {
 		DuelPanel.Create(frame),
 		SeasonPanel.Create(frame),
@@ -246,34 +236,12 @@ do
 	}
 	for _, page in subPages do
 		page.Position = UDim2.fromOffset(0, 32)
-		page.Visible = false
 	end
-	subPages[1].Visible = true
-	local subButtons = {}
-	for i, name in { "Duels", "Saison", "Classements" } do
-		local sub = UiKit.Create("TextButton", {
-			Name = `SubTab{i}`,
-			BackgroundColor3 = TINTS.DARK,
-			TextColor3 = TINTS.WHITE,
-			Font = Enum.Font.GothamBold,
-			TextSize = 13,
-			Size = UDim2.new(0.33, -4, 1, 0),
-			Position = UDim2.new(0.33 * (i - 1), 2, 0, 0),
-			Text = name,
-			Parent = subBar,
-		})
-		UiKit.Corner(sub)
-		sub.Activated:Connect(function()
-			for j, tab in subButtons do
-				tab.BackgroundColor3 = TINTS.DARK
-				subPages[j].Visible = false
-			end
-			sub.BackgroundColor3 = TINTS.PANEL
-			subPages[i].Visible = true
-		end)
-		table.insert(subButtons, sub)
-	end
-	subButtons[1].BackgroundColor3 = TINTS.PANEL
+	UiKit.SubTabs(frame, 30, {
+		{ Name = "Duels", Page = subPages[1] },
+		{ Name = "Saison", Page = subPages[2] },
+		{ Name = "Classements", Page = subPages[3] },
+	})
 
 	button.Activated:Connect(function()
 		for _, panel in panels do
@@ -318,12 +286,8 @@ local function LayoutTabs()
 		end
 	end
 end
-task.spawn(function()
-	while tabBar.Parent do
-		LayoutTabs()
-		task.wait(0.5)
-	end
-end)
+tabBar:GetPropertyChangedSignal("AbsoluteSize"):Connect(LayoutTabs)
+LayoutTabs()
 
 if panels[1] then
 	panels[1].frame.Visible = true
@@ -645,7 +609,7 @@ local function ShowRiftEnded(result)
 		Audio.Play("CoinReward")
 		local relicText = result.RelicTier and `\nRelique T{result.RelicTier} obtenue !` or ""
 		ShowAnnouncement(
-			`Faille terminée : +{result.Essence} Essence et {TIER_NAMES[result.EggTier] or result.EggTier}{relicText}`
+			`Faille terminée : +{result.Essence} Essence et {UiKit.EGG_TIER_NAMES[result.EggTier] or result.EggTier}{relicText}`
 		)
 		Flash(0.35)
 		Fx.Confetti(
@@ -656,9 +620,8 @@ local function ShowRiftEnded(result)
 		if not autoOpenedMenu and not tutorialDone then
 			autoOpenedMenu = true
 			SetMenuOpen(true)
-			local selectEggs = tabSelectors["Œufs"]
-			if selectEggs then
-				selectEggs()
+			if selectEggsTab then
+				selectEggsTab()
 			end
 		end
 	else
@@ -740,10 +703,6 @@ Net.RiftEnded.OnClientEvent:Connect(ShowRiftEnded)
 
 local riftCountdown: Thread? = nil
 
-local function RequestRiftState()
-	Net.RiftRequest:FireServer()
-end
-
 local function StartRiftCountdown(nextAt: number)
 	if riftCountdown then
 		coroutine.close(riftCountdown)
@@ -767,7 +726,7 @@ task.spawn(function()
 	-- le serveur peut ne pas avoir connecte RiftRequest au tout debut : retries
 	for i = 1, 5 do
 		task.wait(1.5 + i * 2)
-		RequestRiftState()
+		Net.RiftRequest:FireServer()
 	end
 end)
 

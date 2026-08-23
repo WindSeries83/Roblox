@@ -25,13 +25,13 @@ return function(t)
 	end)
 
 	t.test("free reward scales with level", function()
-		expect.truthy(Season.FreeReward(2).Essence > Season.FreeReward(1).Essence)
-		expect.equal(Season.FreeReward(1).Essence, Config.SEASON_FREE_ESSENCE[1] + Config.SEASON_FREE_ESSENCE[2])
+		expect.truthy(Season.RewardFor(2, "free").Essence > Season.RewardFor(1, "free").Essence)
+		expect.equal(Season.RewardFor(1, "free").Essence, Config.SEASON_FREE_ESSENCE[1] + Config.SEASON_FREE_ESSENCE[2])
 	end)
 
 	t.test("premium reward scales and exceeds free", function()
-		expect.truthy(Season.PremiumReward(1).Essence > Season.FreeReward(1).Essence)
-		expect.truthy(Season.PremiumReward(2).Essence > Season.PremiumReward(1).Essence)
+		expect.truthy(Season.RewardFor(1, "premium").Essence > Season.RewardFor(1, "free").Essence)
+		expect.truthy(Season.RewardFor(2, "premium").Essence > Season.RewardFor(1, "premium").Essence)
 	end)
 
 	t.test("max level free grants a title", function()

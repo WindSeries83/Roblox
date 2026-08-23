@@ -62,10 +62,7 @@ function RebirthService:Start()
 		Rebirth.ApplyReset(profile.Data)
 		profile.Data.LastPlayed = os.time()
 		questService:OnRebirth(player)
-		local seasonService = container:Get("SeasonService")
-		if seasonService then
-			seasonService:OnRebirth(player)
-		end
+		container:Get("SeasonService"):OnRebirth(player)
 
 		log:Economy("Rebirth", "Success", {
 			Player = player.Name,
