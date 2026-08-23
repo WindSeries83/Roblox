@@ -75,4 +75,14 @@ return function(t)
 	t.test("common egg never locked", function()
 		expect.falsy(Sanctuary.EggLocked("CommonEgg", 1))
 	end)
+
+	-- Free egg sources never bypass the gate.
+	t.test("resolve egg tier downgrades locked tiers", function()
+		expect.equal(Sanctuary.ResolveEggTier("CommonEgg", 1), "CommonEgg")
+		expect.equal(Sanctuary.ResolveEggTier("LegendaryEgg", 1), "CommonEgg")
+		expect.equal(Sanctuary.ResolveEggTier("EpicEgg", 2), "UncommonEgg")
+		expect.equal(Sanctuary.ResolveEggTier("RareEgg", 3), "RareEgg")
+		expect.equal(Sanctuary.ResolveEggTier("EpicEgg", 4), "EpicEgg")
+		expect.equal(Sanctuary.ResolveEggTier("LegendaryEgg", 5), "LegendaryEgg")
+	end)
 end

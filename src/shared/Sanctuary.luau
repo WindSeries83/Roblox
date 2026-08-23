@@ -35,4 +35,16 @@ function Sanctuary.EggLocked(tier: string, sanctuaryLevel: number): number?
 	return Sanctuary.EggGate(sanctuaryLevel)[tier]
 end
 
+local TIER_ORDER = { "CommonEgg", "UncommonEgg", "RareEgg", "EpicEgg", "LegendaryEgg" }
+
+-- Les sources gratuites (faille, offres) ne contournent pas le gate : retombe
+-- au meilleur palier débloqué.
+function Sanctuary.ResolveEggTier(tier: string, sanctuaryLevel: number): string
+	local i = table.find(TIER_ORDER, tier) or 1
+	while i > 1 and Sanctuary.EggLocked(TIER_ORDER[i], sanctuaryLevel) do
+		i -= 1
+	end
+	return TIER_ORDER[i]
+end
+
 return Sanctuary

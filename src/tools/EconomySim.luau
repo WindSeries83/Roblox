@@ -32,7 +32,11 @@ local function GetRate(profile)
 	local sanctuaryMult = 1 + Config.SANCTUARY_LEVEL_BONUS * (profile.SanctuaryLevel - 1)
 	local indexMult = Index.ComputeMult(profile.Index)
 	local starMult = Rebirth.StarEssenceMult(profile.Stars)
-	return rate * sanctuaryMult * indexMult * starMult
+	rate = rate * sanctuaryMult * indexMult * starMult
+	if profile.Entitlements and profile.Entitlements.PassiveBoost then
+		rate *= Config.PASSIVE_BOOST_MULT
+	end
+	return rate
 end
 
 local function DoRift(profile)
@@ -41,7 +45,7 @@ local function DoRift(profile)
 		math.max(Config.RIFT_MIN_REWARD, math.floor(rate * Config.RIFT_REWARD_SECONDS * Config.RIFT_ESSENCE_MULT))
 	profile.Essence += reward
 	profile.TotalEarned += reward
-	local eggTier = Gameplay.WeightedRoll(Config.RIFT_EGG_WEIGHTS)
+	local eggTier = Sanctuary.ResolveEggTier(Gameplay.WeightedRoll(Config.RIFT_EGG_WEIGHTS), profile.SanctuaryLevel)
 	table.insert(profile.Eggs, { Tier = eggTier })
 	local relicRoll = Gameplay.WeightedRoll(Config.RIFT_RELIC_WEIGHTS)
 	if relicRoll and relicRoll ~= "None" then
@@ -56,16 +60,23 @@ local function DoRift(profile)
 	return reward
 end
 
-local function BuyAndHatch(profile, tier)
+local function BonusSlots(profile)
+	if profile.Entitlements and profile.Entitlements.MoreSlots then
+		return 2
+	end
+	return 0
+end
+
+local function BuyAndHatch(profile, tier, hatchLuck)
 	local price = Config.EGG_PRICES[tier]
 	if profile.Essence < price then
 		return false
 	end
-	if #profile.Creatures >= Sanctuary.MaxCreatures(profile.SanctuaryLevel) then
+	if #profile.Creatures >= Sanctuary.MaxCreatures(profile.SanctuaryLevel, BonusSlots(profile)) then
 		return false
 	end
 	profile.Essence -= price
-	local roll = Gameplay.RollEgg(tier)
+	local roll = Gameplay.RollEgg(tier, hatchLuck)
 	local creature = Gameplay.CreateCreature(roll.Rarity, roll.SpeciesId, roll.Mutation)
 	table.insert(profile.Creatures, creature)
 	Index.Register(profile.Index, roll.SpeciesId, roll.Rarity, roll.Mutation)
@@ -73,7 +84,7 @@ local function BuyAndHatch(profile, tier)
 end
 
 local function TryUpgrade(profile)
-	if #profile.Creatures < Sanctuary.MaxCreatures(profile.SanctuaryLevel) then
+	if #profile.Creatures < Sanctuary.MaxCreatures(profile.SanctuaryLevel, BonusSlots(profile)) then
 		return false
 	end
 	local cost = Sanctuary.UpgradeCost(profile.SanctuaryLevel)
@@ -113,12 +124,33 @@ local function TryRebirth(profile, keepCreature)
 	return true
 end
 
-local function Simulate(strategy: string, options)
+-- Paniers joueur. La luck multiplie les poids de mutation (x1+bonus) :
+-- bonus élevé = plus de chances sur TOUTES les mutations, sans jackpot
+-- inflation (garanti par MutationWeights_Test "large luck bonus").
+local PROFILE_LUCK = { f2p = 0, starter = 0.35, whale = 0.75 }
+
+local function ApplyProfile(profile, kind)
+	if kind == "f2p" then
+		return profile
+	end
+	local creature = Gameplay.CreateCreature("Rare", "CinderSeraph", "Shadow")
+	table.insert(profile.Creatures, creature)
+	Index.Register(profile.Index, "CinderSeraph", "Rare", "Shadow")
+	profile.Essence += 1000
+	if kind == "whale" then
+		profile.Entitlements = { MoreSlots = true, PassiveBoost = true }
+	end
+	return profile
+end
+
+local function Simulate(strategy: string?, options)
 	options = options or {}
 	local keepCreature = options.keepCreature ~= false
 	local thresholds = options.thresholds or Config.REBIRTH_THRESHOLDS
+	local kind = options.profileKind or "f2p"
+	local hatchLuck = PROFILE_LUCK[kind] or PROFILE_LUCK.f2p
 
-	local profile = NewProfile(thresholds)
+	local profile = ApplyProfile(NewProfile(thresholds), kind)
 	local time = 0
 	local nextRift = Config.RIFT_INTERVAL
 	local riftActiveUntil = 0
@@ -157,7 +189,7 @@ local function Simulate(strategy: string, options)
 		if strategy == "progression" then
 			-- ponytail: respecte le gate sanctuaire (œufs verrouillés par rang)
 			local gate = Sanctuary.EggGate(profile.SanctuaryLevel)
-			for _, candidate in { "RareEgg", "UncommonEgg", "CommonEgg" } do
+			for _, candidate in { "LegendaryEgg", "EpicEgg", "RareEgg", "UncommonEgg", "CommonEgg" } do
 				if
 					profile.Essence >= Config.EGG_PRICES[candidate]
 					and not (gate[candidate] and profile.SanctuaryLevel < gate[candidate])
@@ -169,7 +201,7 @@ local function Simulate(strategy: string, options)
 		elseif strategy == "common" then
 			tier = "CommonEgg"
 		end
-		if tier and BuyAndHatch(profile, tier) then
+		if tier and BuyAndHatch(profile, tier, hatchLuck) then
 			stats.Hatched += 1
 		end
 
@@ -185,6 +217,21 @@ local function Simulate(strategy: string, options)
 
 		if TryRebirth(profile, keepCreature) then
 			table.insert(milestones, { Rebirth = profile.Rebirths, At = time })
+			if options.debug then
+				local top = profile.Creatures[1]
+				print(string.format(
+					"[SIMDBG] %s R%d t=%ds earned=%d rate=%.1f creatures=%d sanc=%d top=%s %s",
+					kind,
+					profile.Rebirths,
+					time,
+					profile.TotalEarned,
+					GetRate(profile),
+					#profile.Creatures,
+					profile.SanctuaryLevel,
+					top and top.SpeciesId or "-",
+					top and tostring(top.Rarity) .. "/" .. tostring(top.Mutation) or "-"
+				))
+			end
 		end
 	end
 
@@ -232,6 +279,7 @@ function EconomySim.Run(strategy: string?, options)
 
 	local out = {
 		Strategy = strategy,
+		Profile = kind,
 		Runs = #runsOut,
 		AvgRebirths7j = math.floor(avgRebirths / #runsOut),
 		BestRebirths7j = best and best.Rebirths or 0,

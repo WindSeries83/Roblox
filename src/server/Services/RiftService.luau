@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 local Net = require(ReplicatedStorage.Shared.Net)
 
 local RiftService = {}
@@ -215,7 +216,10 @@ local function WinRift(player: Player)
 		math.max(Config.RIFT_MIN_REWARD, math.floor(rate * Config.RIFT_REWARD_SECONDS * Config.RIFT_ESSENCE_MULT))
 	essenceService:Add(player, essence, "RiftCrystal")
 
-	local eggTier = Gameplay.WeightedRoll(Config.RIFT_EGG_WEIGHTS)
+	local eggTier = Sanctuary.ResolveEggTier(
+		Gameplay.WeightedRoll(Config.RIFT_EGG_WEIGHTS),
+		profile.Data.SanctuaryLevel
+	)
 	hatchService:GrantEgg(player, eggTier, "Rift", Config.RIFT_ASCEND_CHANCE)
 
 	local relicRoll = Gameplay.WeightedRoll(Config.RIFT_RELIC_WEIGHTS)
