@@ -161,7 +161,7 @@ local panelsFrame = UiKit.Create("Frame", {
 })
 
 local panels = {}
-local selectEggsTab: (() -> ())?
+local selectByName: { [string]: (() -> ())? } = {}
 local tabCount = 0
 local function AddTab(name: string, panelModule: any)
 	tabCount += 1
@@ -192,11 +192,9 @@ local function AddTab(name: string, panelModule: any)
 	end
 
 	button.Activated:Connect(Select)
+	selectByName[name] = Select
 
 	table.insert(panels, { module = panelModule, frame = frame })
-	if name == "Œufs" then
-		selectEggsTab = Select
-	end
 end
 
 AddTab("Sanctuaire", SanctuaryPanel)
@@ -248,13 +246,16 @@ do
 		{ Name = "Classements", Page = subPages[3] },
 	})
 
-	button.Activated:Connect(function()
+	local function Select()
 		for _, panel in panels do
 			panel.frame.Visible = false
 		end
 		frame.Visible = true
 		TutorialBridge.SetActive("Duels & Classements")
-	end)
+	end
+
+	button.Activated:Connect(Select)
+	selectByName["Duels & Classements"] = Select
 
 	table.insert(panels, {
 		module = {
@@ -328,19 +329,6 @@ local function UpdateQuestBadge(quests)
 	questBadge.Visible = ready > 0
 end
 
-local menuButton = UiKit.Create("TextButton", {
-	Name = "MenuButton",
-	BackgroundColor3 = TINTS.ACCENT,
-	TextColor3 = TINTS.WHITE,
-	Font = Enum.Font.GothamBold,
-	TextSize = if compact then 14 else 16,
-	Size = UDim2.fromOffset(if compact then 110 else 140, if compact then 40 else 40),
-	Position = UDim2.fromOffset(if compact then 254 else 324, 12),
-	Text = "Menu",
-	Parent = ui,
-})
-UiKit.Corner(menuButton)
-
 local menuTargetSize = UDim2.fromScale(if compact then 0.96 else 0.72, if compact then 0.96 else 0.72)
 local menuTween
 local menuOpen = false
@@ -371,21 +359,96 @@ local function SetMenuOpen(open: boolean)
 		end)
 		menuTween:Play()
 	end
-	menuButton.Text = if open then "Fermer" else "Menu"
 	TutorialBridge.Set("MenuOpen", open)
 end
 
-menuButton.Activated:Connect(function()
-	SetMenuOpen(not menuOpen)
+SetMenuOpen(false)
+
+local ShowAnnouncement: (string) -> ()
+
+-- Barre d'action permanente en bas (bible §4.B) : les 3 gestes du jeu + Plus.
+local actionBar = UiKit.Create("Frame", {
+	Name = "ActionBar",
+	BackgroundTransparency = 1,
+	Position = UDim2.new(0.5, 0, 1, -8),
+	AnchorPoint = Vector2.new(0.5, 1),
+	Size = UDim2.fromOffset(if compact then 336 else 424, 52),
+	Parent = ui,
+})
+UiKit.Create("UIListLayout", {
+	FillDirection = Enum.FillDirection.Horizontal,
+	HorizontalAlignment = Enum.HorizontalAlignment.Center,
+	Padding = UDim.new(0, 8),
+	SortOrder = Enum.SortOrder.LayoutOrder,
+	Parent = actionBar,
+})
+
+local function BarButton(text: string, layoutOrder: number, accent: boolean?): TextButton
+	local button = UiKit.Create("TextButton", {
+		Name = `Bar_{text}`,
+		BackgroundColor3 = if accent then TINTS.ACCENT else TINTS.PANEL,
+		TextColor3 = TINTS.WHITE,
+		Font = Enum.Font.GothamBold,
+		TextSize = 15,
+		Size = UDim2.fromOffset(100, 52),
+		LayoutOrder = layoutOrder,
+		Text = text,
+		Parent = actionBar,
+	})
+	UiKit.Corner(button)
+	return button
+end
+
+local failleButton = BarButton("Faille", 2)
+BarButton("Œufs", 1).Activated:Connect(function()
+	SetMenuOpen(true)
+	if selectByName["Œufs"] then
+		selectByName["Œufs"]()
+	end
+end)
+BarButton("Sanctuaire", 3).Activated:Connect(function()
+	SetMenuOpen(true)
+	if selectByName["Sanctuaire"] then
+		selectByName["Sanctuaire"]()
+	end
+end)
+BarButton("Plus", 4).Activated:Connect(function()
+	SetMenuOpen(true)
 end)
 
-SetMenuOpen(false)
+local riftActiveState = false
+local riftNextAt = 0
+
+local function UpdateFailleButton()
+	if riftActiveState then
+		failleButton.Text = "FAILLE !"
+	elseif riftNextAt > 0 then
+		local remaining = math.max(0, riftNextAt - os.time())
+		failleButton.Text = string.format("Faille %d:%02d", math.floor(remaining / 60), remaining % 60)
+	else
+		failleButton.Text = "Faille"
+	end
+end
+
+failleButton.Activated:Connect(function()
+	Net.RiftRequest:FireServer()
+	local msg
+	if riftActiveState then
+		msg = "Une faille est ouverte ! Rejoins le portail."
+	elseif riftNextAt > 0 then
+		local remaining = math.max(0, riftNextAt - os.time())
+		msg = string.format("Prochaine faille dans %d:%02d", math.floor(remaining / 60), remaining % 60)
+	else
+		msg = "La faille revient bientôt…"
+	end
+	ShowAnnouncement(msg)
+end)
 
 local riftHud = UiKit.Create("Frame", {
 	Name = "RiftHud",
 	BackgroundColor3 = TINTS.PANEL,
 	Size = UDim2.fromOffset(if compact then 330 else 420, if compact then 190 else 210),
-	Position = UDim2.fromScale(0.5, 1),
+	Position = UDim2.new(0.5, 0, 1, -70),
 	AnchorPoint = Vector2.new(0.5, 1),
 	Visible = false,
 	Parent = ui,
@@ -423,7 +486,7 @@ local attackButton = UiKit.Create("TextButton", {
 })
 UiKit.Corner(attackButton)
 
-UiKit.Create("TextLabel", {
+local riftRatesLabel = UiKit.Create("TextLabel", {
 	Name = "RiftRates",
 	RichText = true,
 	BackgroundTransparency = 1,
@@ -542,7 +605,7 @@ local riftStatusLabel = UiKit.Create("TextLabel", {
 UiKit.Corner(riftStatusLabel)
 
 local announceTween
-local function ShowAnnouncement(text: string)
+function ShowAnnouncement(text: string)
 	announcementLabel.Text = text
 	announcement.Visible = true
 	announcement.BackgroundTransparency = 0.1
@@ -629,8 +692,8 @@ local function ShowRiftEnded(result)
 		if not autoOpenedMenu and not tutorialDone then
 			autoOpenedMenu = true
 			SetMenuOpen(true)
-			if selectEggsTab then
-				selectEggsTab()
+			if selectByName["Œufs"] then
+				selectByName["Œufs"]()
 			end
 		end
 	else
@@ -687,7 +750,12 @@ Net.HatchResult.OnClientEvent:Connect(function(result)
 	revealLabel.Text = `Tu as obtenu {result.SpeciesName} !\n{result.RarityName}{mutationText}`
 	revealLabel.TextColor3 = result.RarityColor
 	if result.Creature then
-		CreaturePortrait.Show(revealPortrait, result.Creature.SpeciesId, result.Creature.Rarity, result.Creature.Mutation)
+		CreaturePortrait.Show(
+			revealPortrait,
+			result.Creature.SpeciesId,
+			result.Creature.Rarity,
+			result.Creature.Mutation
+		)
 	end
 	reveal.Visible = true
 	if result.Announced then
@@ -695,7 +763,7 @@ Net.HatchResult.OnClientEvent:Connect(function(result)
 	end
 end)
 
-	Net.BreedResult.OnClientEvent:Connect(function(result)
+Net.BreedResult.OnClientEvent:Connect(function(result)
 	local species = Species[result.Creature.SpeciesId]
 	local name = species and species.Name or result.Creature.SpeciesId
 	revealLabel.Text = `Élevage réussi !\n{name} — Génération {result.Creature.Generation}`
@@ -721,12 +789,15 @@ local function StartRiftCountdown(nextAt: number)
 		coroutine.close(riftCountdown)
 		riftCountdown = nil
 	end
+	riftNextAt = nextAt
+	riftActiveState = false
 	riftCountdown = task.spawn(function()
 		while riftStatusLabel and riftStatusLabel.Parent do
 			local remaining = math.max(0, nextAt - os.time())
 			riftStatusLabel.Text =
 				`Prochaine faille dans {string.format("%d:%02d", math.floor(remaining / 60), remaining % 60)}`
 			riftStatusLabel.Visible = remaining > 0
+			UpdateFailleButton()
 			if remaining <= 0 then
 				break
 			end
@@ -752,6 +823,9 @@ Net.RiftWorld.OnClientEvent:Connect(function(world)
 		Audio.Play("RiftWhoosh")
 		riftStatusLabel.Text = "Une faille s'est ouverte ! Entre dans le portail."
 		riftStatusLabel.Visible = true
+		riftActiveState = true
+		riftNextAt = 0
+		UpdateFailleButton()
 	elseif world.NextAt and world.NextAt > 0 then
 		StartRiftCountdown(world.NextAt)
 	else
@@ -760,6 +834,9 @@ Net.RiftWorld.OnClientEvent:Connect(function(world)
 			riftCountdown = nil
 		end
 		riftStatusLabel.Visible = false
+		riftActiveState = false
+		riftNextAt = 0
+		UpdateFailleButton()
 	end
 end)
 
@@ -811,5 +888,31 @@ Net.OrbClaimed.OnClientEvent:Connect(function(payload)
 		Fx.FloatText(payload.Position + Vector3.new(0, 2.5, 0), `+{payload.Amount}`, TINTS.ACCENT)
 	end
 end)
+
+-- Layout réactif au redimensionnement du viewport (bible §4.B).
+local function ApplyLayout()
+	local camera = workspace.CurrentCamera
+	local ok, width = pcall(function()
+		return camera.ViewportSize.X
+	end)
+	compact = if ok then width < 700 else false
+	topBar.Size = UDim2.fromOffset(if compact then 230 else 300, if compact then 56 else 64)
+	menuTargetSize = UDim2.fromScale(if compact then 0.96 else 0.72, if compact then 0.96 else 0.72)
+	if not menuOpen then
+		content.Size = menuTargetSize
+	end
+	actionBar.Size = UDim2.fromOffset(if compact then 336 else 424, 52)
+	riftHud.Size = UDim2.fromOffset(if compact then 330 else 420, if compact then 190 else 210)
+	riftRatesLabel.TextSize = if compact then 9 else 11
+	announcement.Size = UDim2.fromOffset(if compact then 340 else 520, 56)
+	announcement.Position = UDim2.fromScale(0.5, if compact then 0.12 else 0.06)
+	reveal.Size = UDim2.fromOffset(if compact then 330 else 420, if compact then 140 else 150)
+	riftStatusLabel.Size = UDim2.fromOffset(if compact then 180 else 240, if compact then 32 else 36)
+	riftStatusLabel.Position = UDim2.fromScale(0.5, if compact then 0.18 else 0.16)
+	riftStatusLabel.TextSize = if compact then 13 else 16
+end
+
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(ApplyLayout)
+ApplyLayout()
 
 return nil
