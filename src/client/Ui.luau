@@ -764,13 +764,15 @@ Net.RiftWorld.OnClientEvent:Connect(function(world)
 end)
 
 Net.QuestsSync.OnClientEvent:Connect(function(payload)
-	if not payload or not payload.Quests then
+	if not payload then
 		return
 	end
-	UpdateQuestBadge(payload.Quests)
-	for _, panel in panels do
-		if panel.module.Refresh then
-			panel.module.Refresh(state)
+	if payload.Quests then
+		UpdateQuestBadge(payload.Quests)
+		for _, panel in panels do
+			if panel.module.Refresh then
+				panel.module.Refresh(state)
+			end
 		end
 	end
 	local notice = payload.Notice
@@ -785,6 +787,10 @@ Net.QuestsSync.OnClientEvent:Connect(function(payload)
 			ShowAnnouncement(`Série de connexion jour {notice.Day} : +{notice.Amount} essence !`)
 			Audio.Play("CoinReward")
 			Flash(0.3)
+		elseif notice.Type == "Eclipse" then
+			ShowAnnouncement(`{notice.Name} {notice.Desc}`)
+			Audio.Play("CoinReward")
+			Flash(0.35)
 		end
 	end
 end)
