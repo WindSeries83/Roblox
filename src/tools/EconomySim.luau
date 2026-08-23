@@ -6,6 +6,7 @@ local Evolution = require(ReplicatedStorage.Shared.Evolution)
 local Index = require(ReplicatedStorage.Shared.Index)
 local Rebirth = require(ReplicatedStorage.Shared.Rebirth)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
+local SkillTree = require(ReplicatedStorage.Shared.SkillTree)
 local Stages = require(ReplicatedStorage.Shared.Data.Stages)
 
 local EconomySim = {}
@@ -22,6 +23,8 @@ local function NewProfile(thresholds)
 		Index = {},
 		Stars = 0,
 		Rebirths = 0,
+		SkillPoints = 0,
+		SkillRanks = {},
 		SanctuaryLevel = 1,
 		Thresholds = thresholds,
 	}
@@ -32,7 +35,7 @@ local function GetRate(profile)
 	local sanctuaryMult = 1 + Config.SANCTUARY_LEVEL_BONUS * (profile.SanctuaryLevel - 1)
 	local indexMult = Index.ComputeMult(profile.Index)
 	local starMult = Rebirth.StarEssenceMult(profile.Stars)
-	rate = rate * sanctuaryMult * indexMult * starMult
+	rate = rate * sanctuaryMult * indexMult * starMult * (1 + SkillTree.Effects(profile.SkillRanks).EssenceRate)
 	if profile.Entitlements and profile.Entitlements.PassiveBoost then
 		rate *= Config.PASSIVE_BOOST_MULT
 	end
@@ -120,14 +123,28 @@ local function TryRebirth(profile, keepCreature)
 	profile.SanctuaryLevel = 1
 	profile.Stars += 1
 	profile.Rebirths += 1
+	profile.SkillPoints += 1
 	profile.Essence = Config.STARTER_ESSENCE
 	return true
+end
+
+-- Priorité d'achat de l'Arbre d'Étoiles pour la sim (1 point/rénaissance).
+local NODE_PRIORITY = { "FarmRate1", "RiftReward", "MarketFeeCut", "FarmLuck", "MutOmen" }
+
+local function TryBuyNode(profile)
+	for _, id in NODE_PRIORITY do
+		if SkillTree.CanBuy(profile.SkillPoints, profile.SkillRanks, id) then
+			profile.SkillPoints = SkillTree.Buy(profile.SkillPoints, profile.SkillRanks, id)
+			return true
+		end
+	end
+	return false
 end
 
 -- Paniers joueur. La luck multiplie les poids de mutation (x1+bonus) :
 -- bonus élevé = plus de chances sur TOUTES les mutations, sans jackpot
 -- inflation (garanti par MutationWeights_Test "large luck bonus").
-local PROFILE_LUCK = { f2p = 0, starter = 0.35, whale = 0.75 }
+local PROFILE_LUCK = { f2p = 0, starter = 0.35, vip = 0.35 + Config.VIP_LUCK_BONUS, whale = 0.75 }
 
 local function ApplyProfile(profile, kind)
 	if kind == "f2p" then
@@ -148,7 +165,7 @@ local function Simulate(strategy: string?, options)
 	local keepCreature = options.keepCreature ~= false
 	local thresholds = options.thresholds or Config.REBIRTH_THRESHOLDS
 	local kind = options.profileKind or "f2p"
-	local hatchLuck = PROFILE_LUCK[kind] or PROFILE_LUCK.f2p
+	local baseLuck = PROFILE_LUCK[kind] or PROFILE_LUCK.f2p
 
 	local profile = ApplyProfile(NewProfile(thresholds), kind)
 	local time = 0
@@ -156,7 +173,7 @@ local function Simulate(strategy: string?, options)
 	local riftActiveUntil = 0
 	local riftDone = false
 	local milestones = {}
-	local stats = { Hatched = 0, Rifts = 0, Evolutions = 0, Upgrades = 0 }
+	local stats = { Hatched = 0, Rifts = 0, Evolutions = 0, Upgrades = 0, SkillNodes = 0 }
 
 	while time < MAX_SIM_SECONDS do
 		time += SIM_TICK
@@ -201,7 +218,11 @@ local function Simulate(strategy: string?, options)
 		elseif strategy == "common" then
 			tier = "CommonEgg"
 		end
-		if tier and BuyAndHatch(profile, tier, hatchLuck) then
+		if TryBuyNode(profile) then
+			stats.SkillNodes += 1
+		end
+
+		if tier and BuyAndHatch(profile, tier, baseLuck + SkillTree.Effects(profile.SkillRanks).HatchLuck) then
 			stats.Hatched += 1
 		end
 
@@ -279,7 +300,7 @@ function EconomySim.Run(strategy: string?, options)
 
 	local out = {
 		Strategy = strategy,
-		Profile = kind,
+		Profile = (options and options.profileKind) or "f2p",
 		Runs = #runsOut,
 		AvgRebirths7j = math.floor(avgRebirths / #runsOut),
 		BestRebirths7j = best and best.Rebirths or 0,
