@@ -112,8 +112,10 @@ function PurchaseService.GrantPass(player: Player, passKey: string): boolean
 	end
 	profile.Data.LastPlayed = os.time()
 	LogPurchase("Gamepass", { Player = player.Name, Pass = passKey })
-	analyticsService:Event("purchase", { Pass = passKey })
-	analyticsService:Funnel(profile, "FirstPurchaseAt")
+	if firstGrant then
+		analyticsService:Event("purchase", { Pass = passKey })
+		analyticsService:Funnel(profile, "FirstPurchaseAt")
+	end
 	dataSync:Send(player)
 	return true
 end
