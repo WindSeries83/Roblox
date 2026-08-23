@@ -67,7 +67,7 @@ Constat : les œufs plafonnent à `Rare` alors que 8 raretés sont définies (`R
 | Potion Chance ×1,5 / 10 min | 49 R$ | Consommable vedette des jeux d'éclosion |
 | Potion Chance ×2 / 30 min | 149 R$ | idem |
 | Server Boost | 99 R$ | +50 % chance pour tout le serveur, 15 min, annoncé + jauge visible. Dépense sociale/statut, empilable jusqu'à un cap affiché |
-| VIP Pass (30 j) | ~249 R$ | ×1,25 chance, tag doré, aura + accès Zone VIP (coffre journalier, œuf VIP, statut) — détail §2.5 |
+| VIP Pass (30 j) | ~399 R$ | ×1,25 chance, tag doré, aura, prix soldés −10 % sur les consommables vedettes + Zone VIP de luxe (coffre journalier, œuf VIP, statut) — détail §2.5 |
 | Auto-Éclosion / +Slots / Rendement | 249 / 199 / 199 R$ | Confort (existants, repricing) |
 | Offre 1er achat | −50 % une fois | Déclenchée après le 1er drop Épic+ OU au retour J2 |
 | Offres de retour | J2/J7 | Cadeau + bundle temporaire |
@@ -96,14 +96,21 @@ Constat : les œufs plafonnent à `Rare` alors que 8 raretés sont définies (`R
 
 ### 2.5 VIP Pass & Zone VIP
 
-**Modèle — Pass 30 jours (~249 R$, prix validé par sim avant code)** :
+**Modèle — Pass 30 jours (~399 R$, prix validé par sim avant code)** :
 
 - Dev product ; achat → `VipExpiresAt = max(maintenant, expiration actuelle) + 30 j` — les achats s'empilent
 - Timer d'expiration visible en boutique (« encore 12 j ») — FOMO léger informatif, jamais menaçant
 - À l'expiration : perte de l'accès zone/œuf/coffre ; **tout ce qui a été gagné est conservé** (cosmétiques, titres, créatures écloses)
 - Bonus pendant le pass : ×1,25 chance (déjà câblé via `VIP_LUCK_BONUS`), tag doré, aura
 
-**Zone VIP — îlot flottant accessible par portail doré, barrière validée serveur (jamais client)** :
+**Remise VIP — vrais prix soldés −10 % en Robux** :
+
+- Les prix dev products sont fixes et identiques pour tous (aucune API de prix par joueur) → chaque consommable vedette existe en **deux SKUs** : standard + « VIP » soldé −10 % (potions 49/149 R$ → 44/134 R$, Server Boost 99 → 89 R$, packs Essence −10 %). La boutique affiche les SKUs standards aux non-VIP (badge « −10 % avec le Pass VIP ») et les SKU soldés aux VIP
+- Périmètre strict : ce qui se rachète en boucle uniquement — potions, Server Boost, packs Essence. Jamais les gamepasses permanents (double passe = conflit), jamais le mur des soutiens ni les cosmétiques unitaires
+- Fuite connue et acceptée : `PromptProductPurchase` est appelable côté client (doc officielle) — un non-VIP qui découvre l'ID d'un SKU soldé peut l'acheter lui-même ; il paie des Robux réels pour le même produit, perte marginale bornée aux exploitants
+- Boucle voulue : la remise rend le pass rentable pour qui dépense déjà → le pass multiplie les achats au lieu d'être un achat unique et figé
+
+**Zone VIP — îlot flottant de luxe, contraste volontaire avec l'île crépusculaire sombre : or poli, marbre, néons chauds, tapis doré depuis le portail, statues de créatures légendaires, aura de particules — scintillante et visible depuis le sol ; accès par portail doré, barrière validée serveur (jamais client)** :
 
 1. **Coffre journalier** — le cadeau quotidien devient un coffre physique à ouvrir dans la zone : Essence + potion chance courte + petit drop aléatoire. 1×/jour calendaire (réutilise `VipGiftDate`)
 2. **Œuf VIP** — mêmes espèces que le jeu (pool des meilleurs œufs accessibles), taux ~×1,5 sur Rare+, prix Essence élevé. On vend de la chance, **zéro espèce exclusive** — les exclusives restent l'apanage du Season Premium (règle bible : F2P fait 100 % du contenu)
@@ -111,7 +118,7 @@ Constat : les œufs plafonnent à `Rare` alors que 8 raretés sont définies (`R
 
 Le non-VIP voit la zone depuis le sol (levier bible §7 « le statut se regarde ») avec panneau listant le contenu.
 
-Code impacté : `Shared/Vip.luau` (pur : `IsActive`, `Extend`, testable), champ `VipExpiresAt` (migration v7), gate téléporteur + coffre dans un `VipService`, entrées Config.
+Code impacté : `Shared/Vip.luau` (pur : `IsActive`, `Extend`, testable), champ `VipExpiresAt` (migration v7), gate téléporteur + coffre dans un `VipService`, SKUs VIP soldés dans `Config.DEV_PRODUCTS` + routage receipts existant étendu.
 
 ### 2.6 Monétisation honnête — ajouts
 
