@@ -9,6 +9,7 @@ local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local Luck = require(ReplicatedStorage.Shared.Luck)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 local Net = require(ReplicatedStorage.Shared.Net)
 
@@ -20,6 +21,8 @@ local saveService
 local indexService
 local questService
 local sessionLuck
+local luckService
+local boostService
 
 local container
 
@@ -97,6 +100,8 @@ function HatchService:Init(cont)
 	indexService = cont:Get("IndexService")
 	questService = cont:Get("QuestService")
 	sessionLuck = cont:Get("SessionLuck")
+	luckService = cont:Get("LuckService")
+	boostService = cont:Get("BoostService")
 end
 
 function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: boolean?): boolean
@@ -136,7 +141,7 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 	end
 
 	local egg = table.remove(profile.Data.Eggs, eggIndex)
-	local luck = sessionLuck.For(player)
+	local luck = Luck.Combine(sessionLuck.For(player), luckService:PotionBonus(player), boostService:CurrentBonus())
 	local rarityWeights = nil
 	if profile.Data.Stats.TotalHatched == 0 and egg.Tier == "CommonEgg" then
 		rarityWeights = Config.FIRST_HATCH_WEIGHTS

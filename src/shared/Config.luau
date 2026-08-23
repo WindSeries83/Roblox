@@ -161,6 +161,9 @@ return {
 		EssencePackSmall = { Id = 0, Name = "500 Essence", Amount = 500 },
 		EssencePackMedium = { Id = 0, Name = "2500 Essence", Amount = 2500 },
 		EssencePackLarge = { Id = 0, Name = "10000 Essence", Amount = 10000 },
+		LuckPotionSmall = { Id = 0, Name = "Potion de chance +15 % (10 min)", Kind = "LuckPotion", PotionKind = "Small" },
+		LuckPotionBig = { Id = 0, Name = "Potion de chance +35 % (30 min)", Kind = "LuckPotion", PotionKind = "Big" },
+		ServerBoostProduct = { Id = 0, Name = "Boost de serveur +25 % (15 min)", Kind = "ServerBoost" },
 	},
 
 	TUTORIAL_REWARD = 50,

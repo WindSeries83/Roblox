@@ -40,6 +40,9 @@ Net.QuestClaim = Event("QuestClaim")
 Net.TutorialComplete = Event("TutorialComplete")
 Net.OrbClaimed = Event("OrbClaimed")
 
+Net.LuckSync = Event("LuckSync")
+Net.BoostState = Event("BoostState")
+
 Net.MarketList = Event("MarketList")
 Net.MarketListings = Event("MarketListings")
 Net.MarketBuy = Event("MarketBuy")

@@ -14,6 +14,8 @@ local PurchaseService = {}
 local saveService
 local essenceService
 local dataSync
+local luckService
+local boostService
 
 local ReceiptsStore
 local receiptsOk = pcall(function()
@@ -117,6 +119,8 @@ function PurchaseService:Init(container)
 	saveService = container:Get("SaveService")
 	essenceService = container:Get("EssenceService")
 	dataSync = container:Get("DataSync")
+	luckService = container:Get("LuckService")
+	boostService = container:Get("BoostService")
 end
 
 function PurchaseService:Start()
@@ -166,7 +170,13 @@ function PurchaseService:Start()
 
 		-- Grant-then-ack (SE-3) : persistance du receipt AVANT PurchaseGranted
 		local okGrant = pcall(function()
-			essenceService:Add(player, product.Amount, `DevProduct_{productId}`)
+			if product.Kind == "LuckPotion" then
+				luckService:GrantPotion(player, product.PotionKind)
+			elseif product.Kind == "ServerBoost" then
+				boostService:Activate(player)
+			else
+				essenceService:Add(player, product.Amount, `DevProduct_{productId}`)
+			end
 		end)
 		if not okGrant then
 			LogPurchase("ReceiptGrantFailed", { PlayerId = playerId, ProductId = productId })
@@ -183,6 +193,7 @@ function PurchaseService:Start()
 		LogPurchase("Receipt", {
 			PlayerId = playerId,
 			ProductId = productId,
+			Kind = product.Kind or "Essence",
 			Amount = product.Amount,
 			PurchaseId = receiptInfo.PurchaseId,
 		})
