@@ -6,10 +6,12 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Stages = require(ReplicatedStorage.Shared.Data.Stages)
 local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
+local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Evolution = require(ReplicatedStorage.Shared.Evolution)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 local CreatureHud = require(script.Parent.Parent.CreatureHud)
 local HoverCard = require(script.Parent.Parent.HoverCard)
+local CreaturePortrait = require(script.Parent.Parent.CreaturePortrait)
 
 local SanctuaryPanel = {}
 
@@ -17,6 +19,18 @@ local creatureList
 local detail
 local upgradeLabel
 local upgradeButton
+
+-- Initiale courte du rang, affichée sur la bande de rareté des cards.
+local RANK_LETTER = {
+	Common = "C",
+	Uncommon = "M",
+	Rare = "U",
+	Epic = "R",
+	Legendary = "E",
+	Mythic = "L",
+	UltraRare = "M",
+	Secret = "S",
+}
 
 local function ItemName(item)
 	local def = Equipment[item.Type]
@@ -136,6 +150,18 @@ function SanctuaryPanel.Create(parent)
 
 	creatureList = UiKit.Scroller(frame, UDim2.fromScale(0, 0.14), UDim2.fromScale(0.5, 0.86))
 	creatureList.Name = "CreatureList"
+	-- Grille de cards à la place de la liste verticale du Scroller.
+	for _, child in creatureList:GetChildren() do
+		if child:IsA("UIListLayout") then
+			child:Destroy()
+		end
+	end
+	UiKit.Create("UIGridLayout", {
+		CellSize = UDim2.fromOffset(150, 170),
+		CellPadding = UDim2.fromOffset(8, 8),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = creatureList,
+	})
 
 	detail = UiKit.Create("Frame", {
 		Name = "Detail",
@@ -170,26 +196,120 @@ function SanctuaryPanel.Refresh(state)
 	end
 
 	UiKit.Clear(creatureList)
+	-- Tri meute : rang de rareté décroissant puis puissance décroissante.
+	local creatures = {}
+	for _, creature in state.Creatures do
+		table.insert(creatures, creature)
+	end
+	table.sort(creatures, function(a, b)
+		local ra, rb = Gameplay.RarityRank(a.Rarity), Gameplay.RarityRank(b.Rarity)
+		if ra ~= rb then
+			return ra > rb
+		end
+		return a.Power > b.Power
+	end)
+
 	local selected = detail and detail:GetAttribute("SelectedId") or nil
-	for i, creature in state.Creatures do
-		local row = UiKit.Cell(creatureList)
-		row.Name = `CreatureRow{i}`
-		local button = UiKit.Create("TextButton", {
+	for i, creature in creatures do
+		local card = UiKit.Card(creatureList, UDim2.fromOffset(150, 170))
+		card.Name = `CreatureCard{i}`
+		card.LayoutOrder = i
+
+		-- Bande rareté 12px en haut avec l'initiale du rang (texte contrasté).
+		local rarityDef = Rarities[creature.Rarity]
+		local bandColor = rarityDef and rarityDef.Color or UiKit.TINTS.WHITE
+		local luminance = bandColor.R * 0.299 + bandColor.G * 0.587 + bandColor.B * 0.114
+		local band = UiKit.Create("Frame", {
+			Name = "RarityBand",
+			BackgroundColor3 = bandColor,
+			Size = UDim2.new(1, 0, 0, 12),
+			Parent = card,
+		})
+		UiKit.Corner(band)
+		UiKit.Create("TextLabel", {
+			Name = "RankLetter",
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 1),
+			Font = Enum.Font.GothamBold,
+			TextSize = 10,
+			TextColor3 = if luminance > 0.5 then UiKit.TINTS.DARK else UiKit.TINTS.WHITE,
+			Text = RANK_LETTER[creature.Rarity] or "?",
+			Parent = band,
+		})
+
+		local portrait = CreaturePortrait.Create(card, UDim2.new(0, 0, 0, 14), UDim2.new(1, 0, 0, 100))
+		CreaturePortrait.Show(portrait, creature.SpeciesId, creature.Rarity, creature.Mutation)
+
+		UiKit.Create("TextLabel", {
+			Name = "SpeciesName",
 			BackgroundTransparency = 1,
 			TextColor3 = UiKit.TINTS.WHITE,
-			TextSize = 14,
+			Font = Enum.Font.GothamBold,
+			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.fromScale(1, 0),
-			AutomaticSize = Enum.AutomaticSize.Y,
-			TextWrapped = true,
-			Text = CreatureLabel(creature),
-			Parent = row,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			Position = UDim2.new(0, 0, 0, 115),
+			Size = UDim2.new(1, 0, 0, 14),
+			Text = Gameplay.SpeciesName(creature.SpeciesId),
+			Parent = card,
 		})
-		button.Activated:Connect(function()
+
+		UiKit.Create("TextLabel", {
+			Name = "LevelLine",
+			BackgroundTransparency = 1,
+			TextColor3 = Color3.fromRGB(180, 180, 195),
+			TextSize = 11,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			Position = UDim2.new(0, 0, 0, 129),
+			Size = UDim2.new(0.65, 0, 0, 13),
+			Text = `Niv {creature.Level} · {Stages[creature.Stage].Name}`,
+			Parent = card,
+		})
+		UiKit.Create("TextLabel", {
+			Name = "PowerLine",
+			BackgroundTransparency = 1,
+			TextColor3 = UiKit.TINTS.ACCENT,
+			Font = Enum.Font.GothamBold,
+			TextSize = 12,
+			TextXAlignment = Enum.TextXAlignment.Right,
+			Position = UDim2.new(0.65, 0, 0, 129),
+			Size = UDim2.new(0.35, 0, 0, 13),
+			Text = `⚔ {math.floor(creature.Power)}`,
+			Parent = card,
+		})
+
+		-- Mini-barre XP 6px en bas de card.
+		local xpBg = UiKit.Create("Frame", {
+			Name = "XpBar",
+			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+			BackgroundTransparency = 0.5,
+			Position = UDim2.new(0, 0, 0, 145),
+			Size = UDim2.new(1, 0, 0, 6),
+			Parent = card,
+		})
+		UiKit.Corner(xpBg)
+		local xpFill = UiKit.Create("Frame", {
+			Name = "XpFill",
+			BackgroundColor3 = UiKit.TINTS.ACCENT,
+			Size = UDim2.fromScale(math.clamp(creature.XP / Evolution.XPToNext(creature.Level), 0, 1), 1),
+			Parent = xpBg,
+		})
+		UiKit.Corner(xpFill)
+
+		local hit = UiKit.Create("TextButton", {
+			Name = "Hit",
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 1),
+			ZIndex = 5,
+			Text = "",
+			Parent = card,
+		})
+		hit.Activated:Connect(function()
 			detail:SetAttribute("SelectedId", creature.Id)
 			RenderDetail(creature, state.Items)
 		end)
-		HoverCard.Hook(row, {
+		HoverCard.Hook(hit, {
 			SpeciesId = creature.SpeciesId,
 			Rarity = creature.Rarity,
 			Mutation = creature.Mutation,

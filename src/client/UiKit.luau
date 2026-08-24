@@ -181,6 +181,27 @@ function UiKit.Scroller(parent: Instance, position: UDim2, size: UDim2): Scrolli
 	return scroller
 end
 
+-- Card réutilisable : panneau arrondi + liseré discret, base des grilles (sanctuaire, index).
+function UiKit.Card(parent: Instance, size: UDim2): Frame
+	local card = UiKit.Create("Frame", {
+		Name = "Card",
+		BackgroundColor3 = UiKit.TINTS.PANEL,
+		Size = size,
+		Parent = parent,
+	})
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = card
+	UiKit.Padding(card, 8)
+	UiKit.Create("UIStroke", {
+		Color = Color3.fromRGB(70, 70, 90),
+		Thickness = 1,
+		Transparency = 0.4,
+		Parent = card,
+	})
+	return card
+end
+
 function UiKit.Clear(frame: Instance)
 	for _, child in frame:GetChildren() do
 		if child:IsA("GuiObject") then
