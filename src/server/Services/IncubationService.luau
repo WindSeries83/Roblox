@@ -91,10 +91,11 @@ local function GroundedOrigin(player: Player, slot: number): Vector3
 		local params = RaycastParams.new()
 		params.FilterType = Enum.RaycastFilterType.Include
 		params.FilterDescendantsInstances = { model }
-		local slotOffset = Incubation.SlotOffset(slot)
-		local hit = Workspace:Raycast(Vector3.new(base.X, base.Y + 50, base.Z) + slotOffset, Vector3.new(0, -200, 0), params)
+		local from = Vector3.new(base.X, base.Y + 50, base.Z) + Incubation.SlotOffset(slot)
+		local hit = Workspace:Raycast(from, Vector3.new(0, -200, 0), params)
 		if hit then
-			return Vector3.new(base.X + slotOffset.X, hit.Position.Y, base.Z + slotOffset.Z)
+			-- Y mesuré au droit du slot, XZ centre : SlotCFrame rajoute lui-même l'offset.
+			return Vector3.new(base.X, hit.Position.Y, base.Z)
 		end
 	end
 
