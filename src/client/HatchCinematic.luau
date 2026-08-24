@@ -160,7 +160,8 @@ function HatchCinematic.Play(result)
 		TweenService:Create(camera, TweenInfo.new(0.4, Enum.EasingStyle.Quad), { FieldOfView = fov0 }):Play()
 	end)
 
-	-- Carte de révélation : œuf couvé le plus proche du joueur, sinon nid, sinon joueur.
+	-- Carte de révélation : œuf couvé le plus proche, sinon le joueur (toujours là
+	-- où se passe l'action — le nid du spawn n'est pas toujours dans le champ).
 	local character = Players.LocalPlayer.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart")
 	local anchor = nil
@@ -173,9 +174,6 @@ function HatchCinematic.Play(result)
 				anchor = model.PrimaryPart.Position
 			end
 		end
-	end
-	if not anchor then
-		anchor = egg and egg.Position
 	end
 	if not anchor then
 		anchor = root and root.Position or Vector3.zero
