@@ -275,10 +275,6 @@ function HatchService:Start()
 			end
 		end
 	end)
-
-	Net.HatchEgg.OnServerEvent:Connect(function(player: Player, eggId: string)
-		self:HatchEggById(player, eggId)
-	end)
 end
 
 return HatchService

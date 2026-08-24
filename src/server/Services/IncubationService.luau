@@ -10,6 +10,7 @@ local IncubationService = {}
 local log
 local saveService
 local hatchService
+local container
 
 -- Couleur de coquille par tier, sobre : ivoire / vert d'eau / bleu / violet / doré.
 local SHELL_COLORS = {
@@ -114,9 +115,10 @@ local function BuildEggModel(tier: string): Model
 end
 
 function IncubationService:Init(cont)
+	container = cont
 	log = cont:Get("Log")
 	saveService = cont:Get("SaveService")
-	hatchService = cont:Get("HatchService")
+	-- HatchService pas encore enregistré pendant la passe Init : résolution différée au Start.
 end
 
 function IncubationService:Place(player: Player, eggId: string, tier: string)
@@ -172,6 +174,9 @@ function IncubationService:AutoPlaceAndHatch(player: Player, eggId: string, tier
 end
 
 function IncubationService:Start()
+	-- Convention repo : dépendances enregistrées après nous se résolvent au Start.
+	hatchService = container:Get("HatchService")
+
 	Net.PlaceEgg.OnServerEvent:Connect(function(player: Player, eggId: unknown)
 		if typeof(eggId) ~= "string" then
 			return

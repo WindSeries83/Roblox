@@ -16,7 +16,6 @@ local function Event(name: string): RemoteEvent
 end
 
 Net.BuyEgg = Event("BuyEgg")
-Net.HatchEgg = Event("HatchEgg")
 Net.PlaceEgg = Event("PlaceEgg")
 Net.RiftAttack = Event("RiftAttack")
 Net.Sync = Event("Sync")
