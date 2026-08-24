@@ -176,11 +176,16 @@ local function buildGraph(ranks: { [string]: number }, points: number)
 		if not maxed and not locked and points > 0 then
 			local pulse = Instance.new("UIScale")
 			pulse.Parent = nodeButton
-			TweenService:Create(
+			local pulseTween = TweenService:Create(
 				pulse,
 				TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
 				{ Scale = 1.06 }
-			):Play()
+			)
+			pulseTween:Play()
+			-- Un tween infini survit au Destroy : on le coupe explicitement à la destruction du bouton.
+			nodeButton.Destroying:Once(function()
+				pulseTween:Cancel()
+			end)
 		end
 
 		nodeButton.Activated:Connect(function()
