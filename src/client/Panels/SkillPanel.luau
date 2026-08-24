@@ -8,7 +8,7 @@ local SkillTree = require(ReplicatedStorage.Shared.SkillTree)
 local SkillPanel = {}
 
 -- Géométrie du graphe : marge de canvas et pas fixes entre lignes/colonnes.
-local CANVAS_PAD = 40
+local CANVAS_PAD = 56
 local COL_STEP = 130
 local ROW_STEP = 110
 local NODE_SIZE = 56
@@ -18,8 +18,8 @@ local COLOR_LOCKED = Color3.fromRGB(45, 45, 58)
 local COLOR_LOCKED_TEXT = Color3.fromRGB(120, 120, 135)
 local COLOR_OWNED = Color3.fromRGB(70, 70, 90)
 local COLOR_MAX = Color3.fromRGB(255, 215, 94)
-local COLOR_LINE_OWNED = Color3.fromRGB(70, 70, 90)
-local COLOR_LINE_LOCKED = Color3.fromRGB(45, 45, 58)
+local COLOR_LINE_OWNED = Color3.fromRGB(150, 150, 190)
+local COLOR_LINE_LOCKED = Color3.fromRGB(85, 85, 110)
 
 local pointsLabel
 local canvas
@@ -110,6 +110,27 @@ end
 local function buildGraph(ranks: { [string]: number }, points: number)
 	UiKit.Clear(canvas)
 
+	-- En-têtes de branches : une colonne = une branche, nommée d'après son premier nœud.
+	local seenCols = {}
+	for _, node in SkillTree.Nodes() do
+		if not seenCols[node.Col] then
+			seenCols[node.Col] = true
+			UiKit.Create("TextLabel", {
+				Name = `ColHeader_{node.Col}`,
+				BackgroundTransparency = 1,
+				TextColor3 = UiKit.TINTS.ACCENT,
+				Font = Enum.Font.GothamBold,
+				TextSize = 12,
+				AnchorPoint = Vector2.new(0.5, 0),
+				Position = UDim2.fromOffset(nodeCenter(node), 8),
+				Size = UDim2.fromOffset(COL_STEP - 10, 16),
+				Text = node.Branch,
+				ZIndex = 2,
+				Parent = canvas,
+			})
+		end
+	end
+
 	-- Traits de connexion d'abord : ancrés au centre du parent, pivotés vers l'enfant, sous les nœuds.
 	for _, node in SkillTree.Nodes() do
 		local x, y = nodeCenter(node)
@@ -127,7 +148,7 @@ local function buildGraph(ranks: { [string]: number }, points: number)
 					BorderSizePixel = 0,
 					AnchorPoint = Vector2.new(0, 0.5),
 					Position = UDim2.fromOffset(px, py),
-					Size = UDim2.fromOffset(length, 3),
+					Size = UDim2.fromOffset(length, 4),
 					Rotation = math.deg(math.atan2(dy, dx)),
 					ZIndex = 1,
 					Parent = canvas,
@@ -171,6 +192,21 @@ local function buildGraph(ranks: { [string]: number }, points: number)
 		local corner = Instance.new("UICorner")
 		corner.CornerRadius = UDim.new(0, NODE_SIZE / 2)
 		corner.Parent = nodeButton
+
+		UiKit.Create("TextLabel", {
+			Name = `NodeLabel_{node.Id}`,
+			BackgroundTransparency = 1,
+			TextColor3 = if maxed then COLOR_MAX elseif locked then COLOR_LOCKED_TEXT else UiKit.TINTS.WHITE,
+			Font = Enum.Font.Gotham,
+			TextSize = 10,
+			TextWrapped = true,
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = UDim2.fromOffset(x, y + NODE_SIZE / 2 + 2),
+			Size = UDim2.fromOffset(COL_STEP - 20, 24),
+			Text = node.Name,
+			ZIndex = 2,
+			Parent = canvas,
+		})
 
 		-- Pulse discret sur les nœuds achetables pour attirer l'œil.
 		if not maxed and not locked and points > 0 then
