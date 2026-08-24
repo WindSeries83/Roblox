@@ -59,7 +59,10 @@ function CreaturePortrait.Create(parent: Instance, position: UDim2, size: UDim2)
 	return state
 end
 
-function CreaturePortrait.Show(state: any, speciesId: string?, rarity: string?, mutation: any)
+-- Silhouette : teinte unique très sombre pour les espèces non découvertes (pokédex).
+local SILHOUETTE_COLOR = Color3.fromRGB(20, 20, 26)
+
+function CreaturePortrait.Show(state: any, speciesId: string?, rarity: string?, mutation: any, silhouette: boolean?)
 	if state.model then
 		state.model:Destroy()
 		state.model = nil
@@ -85,9 +88,10 @@ function CreaturePortrait.Show(state: any, speciesId: string?, rarity: string?, 
 	end
 
 	local def = (mutation ~= false and mutation and Mutations[mutation]) or Rarities[rarity or ""]
-	local color = def and def.Color or Color3.new(1, 1, 1)
+	local color = if silhouette then SILHOUETTE_COLOR else (def and def.Color or Color3.new(1, 1, 1))
 	for _, part in model:GetDescendants() do
-		if part:IsA("BasePart") and not part.Name:find("Eye", 1, true) then
+		-- En silhouette on teinte aussi les yeux : la forme doit rester illisible.
+		if part:IsA("BasePart") and (silhouette or not part.Name:find("Eye", 1, true)) then
 			part.Color = color
 		end
 	end

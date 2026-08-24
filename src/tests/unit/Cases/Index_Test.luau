@@ -59,4 +59,36 @@ return function(t)
 		Index.Register(entries, "Moonhowl", "Rare", false)
 		expect.falsy(Index.FamilyCompletions(entries).Mystic)
 	end)
+
+	-- Catalog lists every species exactly once with its def fields.
+	t.test("catalog lists every species once", function()
+		local species = require(game.ReplicatedStorage.Shared.Data.Species)
+		local expected = 0
+		for _ in species do
+			expected += 1
+		end
+		local seen = {}
+		local count = 0
+		for _, entry in Index.Catalog() do
+			expect.truthy(entry.SpeciesId ~= nil)
+			expect.truthy(entry.Name ~= nil)
+			expect.truthy(entry.Rarity ~= nil)
+			expect.truthy(entry.Family ~= nil)
+			expect.falsy(seen[entry.SpeciesId])
+			seen[entry.SpeciesId] = true
+			count += 1
+		end
+		expect.equal(count, expected)
+	end)
+
+	-- EntryState reports owned, discovered or unknown per species.
+	t.test("entry state reports owned discovered unknown", function()
+		local entries = {}
+		Index.Register(entries, "Moonhowl", "Rare", false)
+		local creatures = { { SpeciesId = "Riftling" } }
+		expect.equal(Index.EntryState(entries, "Riftling", creatures), "owned")
+		expect.equal(Index.EntryState(entries, "Riftling", {}), "unknown")
+		expect.equal(Index.EntryState(entries, "Moonhowl", creatures), "discovered")
+		expect.equal(Index.EntryState(entries, "PondSentinel", creatures), "unknown")
+	end)
 end
