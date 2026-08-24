@@ -2,18 +2,17 @@ return function(t)
 	local expect = t.expect
 	local Incubation = require(game.ReplicatedStorage.Shared.Incubation)
 
-	-- Plafond de slots d'incubation par joueur.
 	t.test("MAX_PLACED vaut 3", function()
 		expect.equal(Incubation.MAX_PLACED, 3)
 	end)
 
-	-- Chaque slot est à rayon 4 de l'origine, à plat, et les angles sont régulièrement espacés.
-	t.test("slots à rayon 4, angles réguliers, y constant", function()
+	-- Slots compactes posés sur le plateau : rayon constant, angles réguliers, à plat.
+	t.test("slots à rayon constant, angles réguliers, y constant", function()
 		local origin = Vector3.new(10, 5, -3)
 		local positions = {}
 		for i = 1, Incubation.MAX_PLACED do
 			local pos = Incubation.SlotCFrame(origin, i).Position
-			expect.near((pos - origin).Magnitude, 4, 0.01)
+			expect.near((pos - origin).Magnitude, Incubation.SLOT_RADIUS, 0.01)
 			expect.near(pos.Y, origin.Y, 0.01)
 			table.insert(positions, pos)
 		end
@@ -24,11 +23,16 @@ return function(t)
 		expect.near(d23, d31, 0.01)
 	end)
 
-	-- L'index cycle : un tour complet ramène au premier slot.
+	-- Pas de chevauchement : distance centre-à-centre > diamètre coquille (1,4).
+	t.test("distance inter-slots supérieure au diamètre d'un oeuf", function()
+		local a = Incubation.SlotCFrame(Vector3.zero, 1).Position
+		local b = Incubation.SlotCFrame(Vector3.zero, 2).Position
+		expect.truthy((a - b).Magnitude > 1.4)
+	end)
+
 	t.test("index 4 == index 1 (cycle complet)", function()
-		local origin = Vector3.zero
-		local first = Incubation.SlotCFrame(origin, 1).Position
-		local wrapped = Incubation.SlotCFrame(origin, Incubation.MAX_PLACED + 1).Position
+		local first = Incubation.SlotCFrame(Vector3.zero, 1).Position
+		local wrapped = Incubation.SlotCFrame(Vector3.zero, Incubation.MAX_PLACED + 1).Position
 		expect.near((first - wrapped).Magnitude, 0, 0.01)
 	end)
 end

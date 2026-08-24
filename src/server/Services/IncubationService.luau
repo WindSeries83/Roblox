@@ -84,6 +84,19 @@ local function GroundedOrigin(player: Player): Vector3
 		return if character then character:GetPivot().Position else Vector3.zero
 	end
 
+	-- La couveuse étant partiellement enterrée, on vise son propre dessus :
+	-- raycast vertical restreint AU modèle (sinon on touche le terrain autour).
+	if model then
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Include
+		params.FilterDescendantsInstances = { model }
+		local hit = Workspace:Raycast(Vector3.new(base.X, base.Y + 50, base.Z), Vector3.new(0, -200, 0), params)
+		if hit then
+			return Vector3.new(base.X, hit.Position.Y, base.Z)
+		end
+	end
+
+	-- Fallback historique : sol sous la couveuse.
 	local from = Vector3.new(base.X, base.Y + 50, base.Z)
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
