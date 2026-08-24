@@ -40,6 +40,7 @@ function DataSync:Send(player: Player)
 		LuckPotion = profile.Data.LuckPotion,
 		SkillPoints = profile.Data.SkillPoints,
 		SkillRanks = profile.Data.SkillRanks,
+		CompanionId = profile.Data.CompanionId,
 		Meute = packService and packService:Count(player) or 0,
 	})
 end

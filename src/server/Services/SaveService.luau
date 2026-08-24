@@ -6,7 +6,7 @@ local SaveService = {}
 
 SaveService.Profiles = {}
 
-local DATA_VERSION = 6
+local DATA_VERSION = 7
 
 local Store = ProfileStore.New("RiftBeastsData_v1", {
 	Essence = 0,
@@ -149,6 +149,10 @@ local MIGRATIONS = {
 			}
 		data.VipGiftDate = data.VipGiftDate or ""
 		data.Version = 6
+	end,
+	[6] = function(data)
+		data.CompanionId = data.CompanionId or nil
+		data.Version = 7
 	end,
 }
 

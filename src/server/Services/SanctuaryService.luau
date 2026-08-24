@@ -48,6 +48,38 @@ function SanctuaryService:Start()
 		})
 		dataSync:Send(player)
 	end)
+
+	-- Le joueur désigne son compagnon (nil = rappel à la grille).
+	Net.SetCompanion.OnServerEvent:Connect(function(player: Player, creatureId: string?)
+		local profile = saveService:GetProfile(player)
+		if not profile then
+			return
+		end
+
+		if creatureId ~= nil and type(creatureId) ~= "string" then
+			return
+		end
+		if creatureId ~= nil then
+			local exists = false
+			for _, creature in profile.Data.Creatures do
+				if creature.Id == creatureId then
+					exists = true
+					break
+				end
+			end
+			if not exists then
+				log:Economy("Companion", "Reject", {
+					Player = player.Name,
+					CreatureId = creatureId,
+					Reason = "Créature introuvable",
+				})
+				return
+			end
+		end
+
+		profile.Data.CompanionId = creatureId
+		dataSync:Send(player)
+	end)
 end
 
 return SanctuaryService

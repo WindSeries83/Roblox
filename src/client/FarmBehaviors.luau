@@ -105,12 +105,12 @@ function FarmBehaviors.Start()
 
 			if role == "Gatherer" then
 				local angle = t * 0.8 + seed * math.pi * 2
-				local x = math.cos(angle) * 1.8
-				local z = math.sin(angle) * 1.8
+				local x = math.cos(angle) * 2.6
+				local z = math.sin(angle) * 2.6
 				model:PivotTo(base * CFrame.new(x, 0, z) * CFrame.Angles(0, -angle + math.pi / 2, 0))
 			elseif role == "Guardian" then
 				local phaseT = t * 0.9 + seed * 6
-				local x = math.sin(phaseT) * 2.5
+				local x = math.sin(phaseT) * 3.2
 				local facing = if math.cos(phaseT) >= 0 then 90 else -90
 				model:PivotTo(base * CFrame.new(x, 0, 0) * CFrame.Angles(0, math.rad(facing), 0))
 			else

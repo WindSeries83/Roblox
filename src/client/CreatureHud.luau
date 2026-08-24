@@ -22,6 +22,7 @@ local stageLabel: TextLabel? = nil
 local xpLabel: TextLabel? = nil
 local xpFill: Frame? = nil
 local equipButton: TextButton? = nil
+local companionButton: TextButton? = nil
 local evolveButton: TextButton? = nil
 local priceBox: TextBox? = nil
 
@@ -82,6 +83,9 @@ local function Render()
 		equipButton.Visible = false
 	end
 
+	local isCompanion = lastState.CompanionId == creature.Id
+	companionButton.Text = if isCompanion then "Rappeler à la grille" else "Faire suivre"
+
 	local canEvolve, reason = Evolution.CanEvolve(creature, lastState.Essence)
 	evolveButton.Text = if canEvolve
 		then `Évoluer ({Evolution.EvolveCost(creature)} Essence)`
@@ -110,7 +114,7 @@ local function Build()
 	local panel = UiKit.Create("Frame", {
 		Name = "Panel",
 		BackgroundColor3 = TINTS.PANEL,
-		Size = UDim2.fromOffset(320, 250),
+		Size = UDim2.fromOffset(320, 300),
 		Position = UDim2.new(0.5, 0, 1, -16),
 		AnchorPoint = Vector2.new(0.5, 1),
 		ZIndex = 50,
@@ -150,7 +154,7 @@ local function Build()
 	xpLabel.Position = UDim2.fromScale(0, 0.26)
 	xpLabel.Size = UDim2.fromScale(1, 0.1)
 
-	equipButton = UiKit.Button(panel, "Équiper", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.4))
+	equipButton = UiKit.Button(panel, "Équiper", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.37))
 	equipButton.ZIndex = 50
 	equipButton.Activated:Connect(function()
 		local item = lastState and lastState.Items[1]
@@ -159,7 +163,18 @@ local function Build()
 		end
 	end)
 
-	evolveButton = UiKit.Button(panel, "Évoluer", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.55))
+	companionButton = UiKit.Button(panel, "Faire suivre", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.52))
+	companionButton.ZIndex = 50
+	companionButton.Activated:Connect(function()
+		local creature = CurrentCreature()
+		if creature then
+			local isCurrent = lastState.CompanionId == creature.Id
+			-- true → rappel (nil) ; false → désignation.
+			Net.SetCompanion:FireServer(if isCurrent then nil else creature.Id)
+		end
+	end)
+
+	evolveButton = UiKit.Button(panel, "Évoluer", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.67))
 	evolveButton.ZIndex = 50
 	evolveButton.Activated:Connect(function()
 		local creature = CurrentCreature()
@@ -180,13 +195,14 @@ local function Build()
 		Text = "",
 		ClearTextOnFocus = false,
 		Size = UDim2.fromScale(0.45, 0.13),
-		Position = UDim2.fromScale(0, 0.7),
+		Position = UDim2.fromScale(0, 0.81),
 		ZIndex = 50,
 		Parent = panel,
 	})
 	UiKit.Corner(priceBox)
 
-	local sellButton = UiKit.Button(panel, "Vendre au marché", UDim2.fromScale(0.53, 0.13), UDim2.fromScale(0.47, 0.7))
+	local sellButton =
+		UiKit.Button(panel, "Vendre au marché", UDim2.fromScale(0.53, 0.13), UDim2.fromScale(0.47, 0.81))
 	sellButton.ZIndex = 50
 	sellButton.Activated:Connect(function()
 		local price = tonumber(priceBox.Text)
@@ -204,8 +220,8 @@ local function Build()
 		Font = Enum.Font.Gotham,
 		TextSize = 11,
 		TextTransparency = 0.4,
-		Size = UDim2.fromScale(1, 0.08),
-		Position = UDim2.fromScale(0, 0.86),
+		Size = UDim2.fromScale(1, 0.05),
+		Position = UDim2.fromScale(0, 0.95),
 		ZIndex = 50,
 		Text = "Clic ailleurs pour fermer",
 		Parent = panel,

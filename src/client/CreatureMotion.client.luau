@@ -72,6 +72,8 @@ RunService.RenderStepped:Connect(function(t)
 		end
 		local entries = tracked[model] or Track(model)
 		if not entries then
+			-- Aucune part nommée : FollowController animera le modèle entier en hop.
+			model:SetAttribute("HopFallback", true)
 			continue
 		end
 		local primary = model.PrimaryPart

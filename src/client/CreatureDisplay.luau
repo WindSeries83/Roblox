@@ -35,6 +35,11 @@ function CreatureDisplay.Creatures()
 	return if lastState then lastState.Creatures else {}
 end
 
+-- Source unique de l'identité du compagnon choisi (nil = aucun).
+function CreatureDisplay.CompanionId(): string?
+	return if lastState then lastState.CompanionId else nil
+end
+
 local RARITY_SIZE = { 1, 1.12, 1.25, 1.38, 1.5, 1.62, 1.75, 1.9 }
 local RARITY_PARTICLES = { 0, 4, 10, 16, 24, 32, 44, 60 }
 
@@ -105,6 +110,19 @@ function CreatureDisplay.Refresh(state)
 	for _, creature in state.Creatures do
 		alive[creature.Id] = true
 	end
+
+	-- Transition de compagnon : libère l'ancien et le nouveau du mode follow
+	-- (sinon une créature rappelée reste figée hors grille).
+	local previousCompanion = if lastState then lastState.CompanionId else nil
+	if previousCompanion ~= state.CompanionId then
+		if previousCompanion then
+			CreatureDisplay.Motion[previousCompanion] = nil
+		end
+		if state.CompanionId then
+			CreatureDisplay.Motion[state.CompanionId] = nil
+		end
+	end
+
 	for id, model in spawned do
 		if not alive[id] then
 			model:Destroy()
@@ -215,9 +233,12 @@ function CreatureDisplay.Refresh(state)
 			* (RARITY_SIZE[rank] or 1)
 			* MutationScale(creature.Mutation)
 		if model.PrimaryPart then
-			bases[creature.Id] = GridPosition(index)
-			if not CreatureDisplay.Motion[creature.Id] then
-				model:PivotTo(bases[creature.Id])
+			-- Le compagnon n'occupe pas de slot : sa base reste celle du follow.
+			if state.CompanionId ~= creature.Id then
+				bases[creature.Id] = GridPosition(index)
+				if not CreatureDisplay.Motion[creature.Id] then
+					model:PivotTo(bases[creature.Id])
+				end
 			end
 			pcall(function()
 				model:ScaleTo(scale)
