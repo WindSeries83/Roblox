@@ -961,10 +961,28 @@ end)
 
 ObjectiveBanner.Mount(ui)
 
-require(script.Parent.CreatureDisplay)
-require(script.Parent.CouveusePanel)
-require(script.Parent.FollowController).Start()
-require(script.Parent.FarmBehaviors).Start()
+-- ponytail: retry car un require qui échoue (sync rojo partielle au boot) reste en cache erreur
+local function RequireWithRetry(module: ModuleScript)
+	for _ = 1, 20 do
+		local ok, result = pcall(require, module)
+		if ok then
+			return result
+		end
+		task.wait(0.5)
+	end
+	return nil
+end
+
+RequireWithRetry(script.Parent.CreatureDisplay)
+RequireWithRetry(script.Parent.CouveusePanel)
+local followController = RequireWithRetry(script.Parent.FollowController)
+if followController then
+	followController.Start()
+end
+local farmBehaviors = RequireWithRetry(script.Parent.FarmBehaviors)
+if farmBehaviors then
+	farmBehaviors.Start()
+end
 
 Net.OrbClaimed.OnClientEvent:Connect(function(payload)
 	if payload and payload.Position then

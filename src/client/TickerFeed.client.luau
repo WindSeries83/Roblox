@@ -3,7 +3,21 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Net = require(ReplicatedStorage.Shared.Net)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
-local UiKit = require(script.Parent.UiKit)
+-- ponytail: retry car un require qui échoue (sync rojo partielle au boot) reste en cache erreur
+local UiKit
+for _ = 1, 20 do
+	local ok, result = pcall(function()
+		return require(script.Parent:WaitForChild("UiKit"))
+	end)
+	if ok then
+		UiKit = result
+		break
+	end
+	task.wait(0.5)
+end
+if not UiKit then
+	return
+end
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")

@@ -135,6 +135,38 @@ function UiKit.Title(parent: Instance, text: string, size: number?): TextLabel
 	})
 end
 
+-- Titre de section : plus discret que le titre principal du panel.
+function UiKit.SectionTitle(parent: Instance, text: string): TextLabel
+	local label = UiKit.Title(parent, text, 15)
+	label.TextColor3 = Color3.fromRGB(180, 180, 195)
+	return label
+end
+
+-- Petit badge coloré (compteur, récompense) à largeur automatique.
+function UiKit.Badge(parent: Instance, text: string, color: Color3): Frame
+	local frame = UiKit.Create("Frame", {
+		BackgroundColor3 = color,
+		Size = UDim2.fromOffset(0, 22),
+		AutomaticSize = Enum.AutomaticSize.X,
+		Parent = parent,
+	})
+	UiKit.Corner(frame)
+	local pad = Instance.new("UIPadding")
+	pad.PaddingLeft = UDim.new(0, 8)
+	pad.PaddingRight = UDim.new(0, 8)
+	pad.Parent = frame
+	UiKit.Create("TextLabel", {
+		BackgroundTransparency = 1,
+		TextColor3 = UiKit.TINTS.DARK,
+		Font = Enum.Font.GothamBold,
+		TextSize = 12,
+		Size = UDim2.fromScale(1, 1),
+		Text = text,
+		Parent = frame,
+	})
+	return frame
+end
+
 function UiKit.Button(parent: Instance, text: string, size: UDim2?, position: UDim2?): TextButton
 	local button = UiKit.Create("TextButton", {
 		BackgroundColor3 = UiKit.TINTS.ACCENT,
