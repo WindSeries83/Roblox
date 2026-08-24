@@ -99,6 +99,34 @@ local function GridPosition(index: number): CFrame
 	return CFrame.new(-36 + column * 3, 11, -18 + row * 3) * CFrame.Angles(0, math.rad(180), 0)
 end
 
+local function CreatureById(id: string?)
+	if not id or not lastState then
+		return nil
+	end
+	for _, candidate in lastState.Creatures do
+		if candidate.Id == id then
+			return candidate
+		end
+	end
+	return nil
+end
+
+local function AttachClickDetector(model: Model, creature)
+	local click = Instance.new("ClickDetector")
+	click.MaxActivationDistance = 40
+	click.MouseClick:Connect(function()
+		local primary = model.PrimaryPart
+		if primary then
+			Fx.Burst(primary, DisplayColor(creature), 26)
+			pops[creature.Id] = os.clock() + 0.5
+		end
+		CreatureHud.Open(creature, lastState)
+	end)
+	if model.PrimaryPart then
+		click.Parent = model.PrimaryPart
+	end
+end
+
 function CreatureDisplay.Refresh(state)
 	if not sanctuary or not sanctuary.Parent then
 		sanctuary = Instance.new("Folder")
@@ -153,19 +181,7 @@ function CreatureDisplay.Refresh(state)
 			PrepareClone(model)
 			model.Parent = sanctuary
 			spawned[creature.Id] = model
-			local click = Instance.new("ClickDetector")
-			click.MaxActivationDistance = 40
-			click.MouseClick:Connect(function()
-				local primary = model.PrimaryPart
-				if primary then
-					Fx.Burst(primary, DisplayColor(creature), 26)
-					pops[creature.Id] = os.clock() + 0.5
-				end
-				CreatureHud.Open(creature, lastState)
-			end)
-			if model.PrimaryPart then
-				click.Parent = model.PrimaryPart
-			end
+			AttachClickDetector(model, creature)
 			local stage = STAGE_INFO[creature.Stage or 1]
 			if stage then
 				local billboard = Instance.new("BillboardGui")
@@ -297,6 +313,21 @@ end
 
 RunService.Heartbeat:Connect(function(t)
 	for id, model in spawned do
+		-- La génération procédurale refait les parts du clone ~3 s après le spawn : répare PrimaryPart, clic et étiquette.
+		if not model.PrimaryPart then
+			model.PrimaryPart = model:FindFirstChildWhichIsA("BasePart", true)
+		end
+		if model.PrimaryPart and not model.PrimaryPart:FindFirstChildOfClass("ClickDetector") then
+			local creature = CreatureById(id)
+			if creature then
+				AttachClickDetector(model, creature)
+			end
+		end
+		local stageTag = model:FindFirstChild("StageTag")
+		if stageTag and stageTag.Adornee == nil then
+			(stageTag :: BillboardGui).Adornee = model.PrimaryPart
+		end
+
 		if CreatureDisplay.Motion[id] then
 			continue
 		end
