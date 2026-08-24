@@ -7,6 +7,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local CreatureTemplates = require(ReplicatedStorage.Shared.CreatureTemplates)
 local Fx = require(script.Parent.Fx)
 local CreatureHud = require(script.Parent.CreatureHud)
 local HoverCard = require(script.Parent.HoverCard)
@@ -98,11 +99,6 @@ local function GridPosition(index: number): CFrame
 end
 
 function CreatureDisplay.Refresh(state)
-	local templates = Workspace:FindFirstChild("Creatures")
-	if not templates then
-		return
-	end
-
 	if not sanctuary or not sanctuary.Parent then
 		sanctuary = Instance.new("Folder")
 		sanctuary.Name = "SanctuaryDisplay"
@@ -133,7 +129,7 @@ function CreatureDisplay.Refresh(state)
 		local displayColor = DisplayColor(creature)
 		local model = spawned[creature.Id]
 		if not model or not model.Parent then
-			local template = templates:FindFirstChild(creature.SpeciesId)
+			local template = CreatureTemplates.Get(creature.SpeciesId)
 			if not template then
 				continue
 			end

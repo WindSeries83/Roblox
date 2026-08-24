@@ -1,9 +1,9 @@
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
 
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
+local CreatureTemplates = require(ReplicatedStorage.Shared.CreatureTemplates)
 
 -- Portrait vivant : ViewportFrame qui fait tourner lentement le modèle 3D
 -- de l'espèce, teinté rareté/mutation. Réutilisable partout où on affiche
@@ -67,8 +67,7 @@ function CreaturePortrait.Show(state: any, speciesId: string?, rarity: string?, 
 	if not speciesId then
 		return
 	end
-	local templates = Workspace:FindFirstChild("Creatures")
-	local template = templates and templates:FindFirstChild(speciesId)
+	local template = CreatureTemplates.Get(speciesId)
 	if not template then
 		return
 	end

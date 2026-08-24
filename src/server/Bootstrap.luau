@@ -1,6 +1,24 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+
 local Bootstrap = {}
 
 Bootstrap.Services = {}
+
+-- Les modèles d'espèces sont des templates de clonage, pas du décor :
+-- on les cache dans ReplicatedStorage pour éviter le doublon visible au spawn.
+local function RelocateTemplates()
+	if ReplicatedStorage:FindFirstChild("CreatureTemplates") then
+		return
+	end
+	local folder = Workspace:FindFirstChild("Creatures")
+	if not folder then
+		return
+	end
+	folder.Name = "CreatureTemplates"
+	folder.Parent = ReplicatedStorage
+	print("[Bootstrap] Templates d'espèces déplacés vers ReplicatedStorage.CreatureTemplates")
+end
 
 local ORDER = {
 	"Log",
@@ -36,6 +54,7 @@ local ORDER = {
 }
 
 function Bootstrap:Init()
+	RelocateTemplates()
 	for _, name in ORDER do
 		local service = require(script.Parent.Services[name])
 		self.Services[name] = service
