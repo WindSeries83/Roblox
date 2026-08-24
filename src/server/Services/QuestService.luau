@@ -239,6 +239,7 @@ function QuestService:Start()
 					Reward = def.Reward,
 				})
 				SyncQuests(player)
+				container:Get("DataSync"):Send(player)
 				container:Get("SeasonService"):OnQuestClaim(player)
 				return
 			end

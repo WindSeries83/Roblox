@@ -28,6 +28,7 @@ local skillService
 local tickerService
 local eclipseService
 local incubationService
+local dataSync
 
 local container
 
@@ -247,6 +248,7 @@ end
 function HatchService:Start()
 	tickerService = container:Get("TickerService")
 	eclipseService = container:Get("EclipseService")
+	dataSync = container:Get("DataSync")
 	Net.BuyEgg.OnServerEvent:Connect(function(player: Player, tier: string)
 		local price = Config.EGG_PRICES[tier]
 		if not price then
@@ -274,6 +276,8 @@ function HatchService:Start()
 				end
 			end
 		end
+		-- Feedback immédiat : l'œuf et la déduction d'essence apparaissent sans attendre le tick 1 s.
+		dataSync:Send(player)
 	end)
 end
 
