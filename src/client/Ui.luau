@@ -925,7 +925,10 @@ Net.QuestsSync.OnClientEvent:Connect(function(payload)
 	if not payload then
 		return
 	end
-	if payload.Quests then
+	if payload.Quests and state then
+		-- Le state local est périmé côté quêtes : fusionner avant refresh,
+		-- sinon le bouton Réclamer reste affiché après un claim réussi.
+		state.Quests = payload.Quests
 		UpdateQuestBadge(payload.Quests)
 		for _, panel in panels do
 			if panel.module.Refresh then
