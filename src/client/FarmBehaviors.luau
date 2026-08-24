@@ -69,7 +69,10 @@ local function ApplyDig(id: string, t: number, base: CFrame, model: Model): bool
 end
 
 function FarmBehaviors.Start()
-	RunService.Heartbeat:Connect(function(t)
+	-- Heartbeat passe deltaTime : on accumule pour un temps absolu d'animation
+	local elapsed = 0
+	RunService.Heartbeat:Connect(function(deltaTime)
+		elapsed += deltaTime
 		local models = CreatureDisplay.Models()
 		local creatures = CreatureDisplay.Creatures()
 		local seen = {}
@@ -87,7 +90,7 @@ function FarmBehaviors.Start()
 			if CreatureDisplay.Motion[id] == "follow" then
 				local companionBase = FollowController.Current[id]
 				if companionBase and FollowController.Idle then
-					ApplyDig(id, t, companionBase, model)
+					ApplyDig(id, elapsed, companionBase, model)
 				end
 				continue
 			end
@@ -96,7 +99,7 @@ function FarmBehaviors.Start()
 				CreatureDisplay.Motion[id] = "farm"
 				claimed[id] = true
 				home[id] = model:GetPivot()
-				nextDig[id] = t + 2 + Hash(id) * 4
+				nextDig[id] = elapsed + 2 + Hash(id) * 4
 			end
 
 			local role = RoleFor(creature)
@@ -104,17 +107,17 @@ function FarmBehaviors.Start()
 			local seed = Hash(id)
 
 			if role == "Gatherer" then
-				local angle = t * 0.8 + seed * math.pi * 2
+				local angle = elapsed * 0.8 + seed * math.pi * 2
 				local x = math.cos(angle) * 2.6
 				local z = math.sin(angle) * 2.6
 				model:PivotTo(base * CFrame.new(x, 0, z) * CFrame.Angles(0, -angle + math.pi / 2, 0))
 			elseif role == "Guardian" then
-				local phaseT = t * 0.9 + seed * 6
+				local phaseT = elapsed * 0.9 + seed * 6
 				local x = math.sin(phaseT) * 3.2
 				local facing = if math.cos(phaseT) >= 0 then 90 else -90
 				model:PivotTo(base * CFrame.new(x, 0, 0) * CFrame.Angles(0, math.rad(facing), 0))
 			else
-				ApplyDig(id, t, base, model)
+				ApplyDig(id, elapsed, base, model)
 			end
 		end
 

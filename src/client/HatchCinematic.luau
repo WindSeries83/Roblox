@@ -101,11 +101,13 @@ local function ShowRevealCard(anchor: Vector3, result)
 		})
 		fade:Play()
 		shrink:Play()
-		fade.Completed:Wait()
-		if currentCard == holder then
-			currentCard = nil
-		end
-		holder:Destroy()
+		-- Pas de Wait : la carte peut être détruite entre-temps (ré-éclosion rapprochée).
+		task.delay(0.6, function()
+			if currentCard == holder then
+				currentCard = nil
+			end
+			holder:Destroy()
+		end)
 	end)
 end
 
@@ -117,7 +119,7 @@ function HatchCinematic.Play(result)
 	local egg = Workspace:FindFirstChild("Nest") and Workspace.Nest:FindFirstChild("NestEgg")
 	local color = result.RarityColor or Color3.fromRGB(255, 255, 255)
 
-	if egg and egg:IsA("BasePart") then
+	if egg and egg:IsA("BasePart") and egg.Transparency < 1 then
 		task.spawn(function()
 			for i = 1, 3 do
 				local grow = TweenService:Create(egg, TweenInfo.new(0.12, Enum.EasingStyle.Quad), {

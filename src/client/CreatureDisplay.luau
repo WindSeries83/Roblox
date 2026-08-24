@@ -330,7 +330,11 @@ function CreatureDisplay.Refresh(state)
 	end
 end
 
-RunService.Heartbeat:Connect(function(t)
+-- Heartbeat passe deltaTime : on accumule pour un temps absolu d'animation
+local elapsed = 0
+RunService.Heartbeat:Connect(function(deltaTime)
+	elapsed += deltaTime
+	local now = os.clock()
 	for id, model in spawned do
 		-- La génération procédurale refait les parts du clone ~3 s après le spawn : répare PrimaryPart, clic et étiquette.
 		if not model.PrimaryPart then
@@ -357,19 +361,19 @@ RunService.Heartbeat:Connect(function(t)
 		if base and model.PrimaryPart then
 			local bobAmp = 0.15 + (rank - 1) * 0.06 + (stage == 1 and 0.08 or 0)
 			local bobSpeed = stage <= 2 and 3.2 or 2
-			local bob = math.sin(t * bobSpeed + idx * 0.8) * bobAmp
-			local tilt = math.sin(t * 1.3 + idx * 0.8) * 0.02
+			local bob = math.sin(elapsed * bobSpeed + idx * 0.8) * bobAmp
+			local tilt = math.sin(elapsed * 1.3 + idx * 0.8) * 0.02
 			local popUntil = pops[id] or 0
 			local pop = 0
-			if t < popUntil then
-				pop = math.sin((popUntil - t) * 8) * 1.2
+			if now < popUntil then
+				pop = math.sin((popUntil - now) * 8) * 1.2
 			end
 			model:PivotTo(base * CFrame.new(0, bob + pop, 0) * CFrame.Angles(0, 0, tilt))
 		end
 		if mutations[id] == "Prismatic" then
 			local aura = model:FindFirstChild("Aura")
 			if aura then
-				local hue = (t * 0.18 + idx * 0.13) % 1
+				local hue = (elapsed * 0.18 + idx * 0.13) % 1
 				aura.Color = Color3.fromHSV(hue, 0.75, 1)
 				local glow = aura:FindFirstChildOfClass("PointLight")
 				if glow then

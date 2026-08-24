@@ -50,6 +50,7 @@ end
 
 function Rebirth.ApplyReset(data: any)
 	data.Creatures = Rebirth.KeepBestCreature(data.Creatures)
+	data.CompanionId = nil
 	data.Eggs = {}
 	data.SanctuaryLevel = 1
 	data.Items = Rebirth.KeepItems(data.Items)

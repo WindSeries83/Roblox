@@ -13,7 +13,10 @@ FollowController.Current = {} -- [id] = CFrame du compagnon cette frame
 FollowController.Idle = true
 
 function FollowController.Start()
-	RunService.Heartbeat:Connect(function(t)
+	-- Heartbeat passe deltaTime : on accumule pour un temps absolu d'animation
+	local elapsed = 0
+	RunService.Heartbeat:Connect(function(deltaTime)
+		elapsed += deltaTime
 		table.clear(FollowController.Current)
 
 		local character = Players.LocalPlayer.Character
@@ -38,7 +41,7 @@ function FollowController.Start()
 
 		CreatureDisplay.Motion[id] = "follow"
 		local target = root.CFrame * CFrame.new(OFFSET) * CFrame.Angles(0, math.rad(180), 0)
-		target = target + Vector3.new(0, math.sin(t * 2) * 0.15, 0)
+		target = target + Vector3.new(0, math.sin(elapsed * 2) * 0.15, 0)
 		local currentCFrame = smoothed[id] or model:GetPivot()
 		local nextCFrame = currentCFrame:Lerp(target, LERP)
 
@@ -55,7 +58,11 @@ function FollowController.Start()
 		-- Composé ici : PivotTo unique par frame, aucun risque d'être écrasé.
 		local display = nextCFrame
 		if not FollowController.Idle and model:GetAttribute("HopFallback") then
-			display *= CFrame.new(0, math.sin(t * 6) * 0.12, 0) * CFrame.Angles(0, 0, math.sin(t * 6) * 0.04)
+			display *= CFrame.new(0, math.sin(elapsed * 6) * 0.12, 0) * CFrame.Angles(
+				0,
+				0,
+				math.sin(elapsed * 6) * 0.04
+			)
 		end
 
 		model:PivotTo(display)
