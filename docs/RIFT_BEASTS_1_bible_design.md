@@ -102,6 +102,8 @@ Slots par créature : 1 au départ, +1 par palier d'évolution.
 Créatures (4 stades) · Reliques (fusion 3→1) · Sanctuaire (capacité, vitesse, slots d'équipe) · Arbre de compétence · Rang joueur · Paliers d'Index.
 
 ### 3.6 Index / Bestiaire
+Présenté comme un **Pokédex** : TOUTES les espèces du jeu sont listées depuis la table Species (modulaire — toute future espèce apparaît seule) avec 3 états : **Possédée** (portrait couleur + compteur), **Découverte non possédée** (portrait couleur + badge), **Inconnue** (silhouette sombre + « ??? », nom masqué). Filtres par famille ; bonus famille affiché quand complétée.
+
 Ce n'est **pas** une collection cosmétique — c'est la source des bonus permanents et **le contenu de fin de jeu**.
 
 - Chaque espèce enregistrée = petit bonus global.
@@ -111,7 +113,7 @@ Ce n'est **pas** une collection cosmétique — c'est la source des bonus perman
 - **C'est par l'Index que le jeu est « infini »** : les mondes se finissent en quelques heures, mais compléter l'Index prend des dizaines d'heures — c'est le curseur entre joueur pressé et collectionneur.
 
 ### 3.7 Arbre de compétence du joueur
-3 branches, points gagnés à chaque renaissance, **permanent** (survit à la renaissance).
+3 branches, points gagnés à chaque renaissance, **permanent** (survit à la renaissance). Présentation en **graphe visuel** : nœuds reliés entre eux, tronc commun puis branches Farm / Faille / Économie, avec prérequis entre nœuds (un nœud exige le rang ≥ 1 d'un nœud parent) ; les gains/valeurs seront approfondis plus tard (déjà couvert par §10).
 
 - **+1 point par renaissance** (bonus de points si performance : renaissance rapide).
 - L'Index récompense la collection ; **l'arbre récompense le style de jeu**. On peut tout débloquer en jouant — rien n'y est à vendre.
@@ -166,7 +168,7 @@ Prévoir : place de marché, historique des échanges, protection anti-arnaque (
 - Post-lancement : +3-5 espèces/semaine par le même pipeline — cadence tenable.
 
 ### 3.13 Arbre d'Étoiles
-Version pragmatique de l'arbre de compétence (§3.7) : +1 point par renaissance, grille d'environ **12 nœuds permanents**, 3 branches Farm / Faille / Économie. Data-driven (`Shared/SkillTree.luau`). **Rien n'y est vendable.**
+Version pragmatique de l'arbre de compétence (§3.7) : +1 point par renaissance, grille d'environ **12 nœuds permanents**, 3 branches Farm / Faille / Économie. Même présentation en **graphe visuel** (nœuds reliés, tronc commun, branches Farm/Faille) avec prérequis entre nœuds (rang ≥ 1 du nœud parent) ; les gains/valeurs seront approfondis plus tard (déjà couvert par §10). Data-driven (`Shared/SkillTree.luau`). **Rien n'y est vendable.**
 
 ### 3.14 FTUE — « Le monde d'abord »
 Problème racine acté : la boucle est complète mais l'abandon se joue dans les 5 premières minutes (monde mort, jeu de menus, pas de direction).
@@ -216,7 +218,7 @@ Principe : **jamais de faux joueurs** (ToS + détection). Des données globales 
   - Options de confort : vitesse d'UI, densité d'info (UI dense par défaut, sans infantilisation).
 
 ### 4.A Hubs dans le monde & pouvoir visible
-- **Couveuse** : objet 3D dans l'enclos, ProximityPrompt → BillboardGui (liste œufs + acheter + éclore).
+- **Couveuse = LE hub d'éclosion** : objet 3D dans l'enclos. Les œufs achetés/gagnés vont dans l'inventaire ; le joueur les **place physiquement** autour de la couveuse (max 3 posés) ; chaque œuf posé porte un prompt « Éclore » in-world. L'éclosion déclenche une **cinématique dans le monde** ET une **carte de révélation** lisible (portrait de la créature + nom + rareté, visible ≥ 4 s). Le gamepass AutoHatch place et éclore automatiquement.
 - **Arche de faille permanente** construite au démarrage serveur : brille quand la faille est active, compte à rebours « Faille dans X:XX ». Rythme inchangé (`RIFT_INTERVAL = 600`, actif 180 s).
 - **Créatures cliquables** : panneau contextuel équiper / évoluer / vendre avec prix suggéré pré-rempli modifiable (passe par `MarketList`).
 - **Feedbacks** : `Fx.FloatText` (+N Essence au tick), saut + burst au clic.
@@ -230,6 +232,8 @@ Principe : **jamais de faux joueurs** (ToS + détection). Des données globales 
 - **Boucle visuelle de récompense** : ticker global coin haut-droit, pyramide de célébration (Épic = burst + son · Légendaire+ = slow-mo · UltraRare+ = plein écran + annonce), jauges visibles (pity, Éclipse, Server Boost).
 - **Boutique dédiée** : onglet unique — potions, packs, Pass VIP (avec timer d'expiration), Server Boost, rename, cosmétiques, bundle mensuel, offres à timer — prix clairs, valeur affichée.
 - **Amis** : bouton « Rejoindre un ami » (téléport direct `TeleportService`), toast « X (ami) a rejoint », raccourci visite de sanctuaire depuis la liste d'amis.
+- **Fermeture du menu** : bouton ✕ sur le panneau, re-clic sur le bouton de la barre d'action (toggle), touche B (manette) / Échap.
+- **HUD permanent des possessions** sur l'écran de base : créatures n/max, étoiles de renaissance, points d'Arbre d'Étoiles non dépensés (badge cliquable), quêtes prêtes.
 
 ### 4.C Social — bonus de groupe et de meute
 - **Groupe Roblox officiel** (check `IsInGroup` serveur mis en cache) : +10 % Essence permanent, tag coloré, 1 œuf commun gratuit/jour. Canal d'annonces updates/événements.
@@ -395,6 +399,8 @@ Deux classements pour deux ambitions, **un plafond de dépense clairement commun
 - Activation pub récompensée (AdService) : décision post-lancement sur ARPDAU réel
 - Chemin d'obtention du Secret (décidé tard, jamais documenté)
 - Détail du seuil Starter Pack (prix final du pack → plafond du classement léger)
+- Profondeur de la boucle de gameplay (à retravailler après le lot 3.5 — contenu mi-session, objectifs long terme)
+- Valeurs des gains de l'Arbre d'Étoiles (sim avant code)
 
 **Instrumentation analytics (dès le Lot 2 « moteur »)** : `AnalyticsService`, events custom — `hatch(rarity, mutation, source)` · `rift_complete(win, duration)` · `purchase(productId, price)` · `market_sale(price)` ; funnel temps jusqu'au 1er œuf / 1er drop Rare+ / 1er achat ; cohortes D1/D7/D30, ARPDAU, temps avant premier achat — revue hebdomadaire, décisions data.
 
@@ -407,6 +413,7 @@ Deux classements pour deux ambitions, **un plafond de dépense clairement commun
 | **1 · La chasse** | S1-2 | Œufs Épique/Légendaire + tables Mythic→Secret, potions chance + Server Boost + boutique v1, ticker global, marché cross-serveur | Jeu vendable, testable |
 | **2 · Le moteur** | S3-4 | Arbre d'Étoiles, Éclipse, offres 1er achat/retour, VIP complet (Pass + Zone), instrumentation analytics | Rétention + mesure |
 | **3 · L'écran** | S5 | Pass mobile-first complet, barre d'action, boutique dédiée, amis (rejoindre/toast/bonus meute), célébrations, fix resize | Jouable partout |
+| **3.5 · Le monde vivant** | S5+ | Correctifs playtest : menu refermable, éclosion 100 % dans le monde (placement couveuse), compagnon choisi + créatures autonomes animées, Index pokédex, Sanctuaire/Objectifs/Arbre lisibles, HUD possessions, eau terrain | Qualité perçue |
 | **4 · Le monde** | S6-8 | Espèces 10→30 (pipeline IA), Monde 2 thématique + Mode Rush, mur VIP Secrets, mur des soutiens (accueil), cosmétiques + rename + titres, PNJ sauvages, bonus groupe Roblox | Profondeur |
 | **5 · Lancement** | S9-10 | Icône/thumbnails A/B, IDs produits réels, playtest fermé 20-30 joueurs, publication | Revenus |
 
