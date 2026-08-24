@@ -61,27 +61,20 @@ local viewportWidth = pcall(function()
 end) and workspace.CurrentCamera.ViewportSize.X or 800
 local compact = viewportWidth < 700
 
-local function RatesLine(weights: { [string]: number }, nameOf: (string) -> string): string
-	local parts = {}
-	for _, rate in Gameplay.DropRates(weights) do
-		table.insert(parts, `{nameOf(rate.Id)} {string.format("%g", rate.Percent)} %`)
-	end
-	return table.concat(parts, " · ")
-end
-
 local function RiftEggRatesText(): string
-	return `Œufs : {RatesLine(Config.RIFT_EGG_WEIGHTS, function(id)
-		return UiKit.EGG_TIER_NAMES[id] or id
+	return `Œufs : {UiKit.DropRatesText(Config.RIFT_EGG_WEIGHTS, function(rate)
+		return `{UiKit.EGG_TIER_NAMES[rate.Id] or rate.Id} {string.format("%g", rate.Percent)} %`
 	end)}`
 end
 
 local function RiftRelicRatesText(): string
-	return `Reliques : {RatesLine(Config.RIFT_RELIC_WEIGHTS, function(id)
-		if id == "None" then
-			return "Aucune"
+	return `Reliques : {UiKit.DropRatesText(Config.RIFT_RELIC_WEIGHTS, function(rate)
+		local name = "Aucune"
+		if rate.Id ~= "None" then
+			local tier = Equipment.Relic.Tiers[tonumber(string.sub(rate.Id, 2))]
+			name = tier and tier.Name or rate.Id
 		end
-		local tier = Equipment.Relic.Tiers[tonumber(string.sub(id, 2))]
-		return tier and tier.Name or id
+		return `{name} {string.format("%g", rate.Percent)} %`
 	end)}`
 end
 
@@ -649,18 +642,10 @@ local riftStatusLabel = UiKit.Create("TextLabel", {
 })
 UiKit.Corner(riftStatusLabel)
 
-local announceTween
 function ShowAnnouncement(text: string)
 	announcementLabel.Text = text
 	announcement.Visible = true
 	announcement.BackgroundTransparency = 0.1
-	if announceTween then
-		announceTween:Cancel()
-	end
-	announceTween = TweenService:Create(announcement, TweenInfo.new(0.4), {
-		BackgroundTransparency = 0.1,
-	})
-	announceTween:Play()
 	task.delay(5, function()
 		local fade = TweenService:Create(announcement, TweenInfo.new(0.4), {
 			BackgroundTransparency = 1,

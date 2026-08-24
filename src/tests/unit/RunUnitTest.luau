@@ -61,34 +61,22 @@ function expect.deepEqual(actual, expected)
 	end
 end
 
-local function runOne(fn, timeout)
-	local done, ok, err = false, false, nil
+local function runOne(fn)
 	local cpuStart = os.clock()
-	task.spawn(function()
-		ok, err = pcall(fn)
-		done = true
-	end)
-	local waited = 0
-	while not done and waited < timeout do
-		waited += task.wait()
-	end
-	local elapsed = waited > 0 and waited or (os.clock() - cpuStart)
-	if not done then
-		return "timeout", elapsed, string.format("exceeded %.1fs", timeout)
-	elseif ok then
+	local ok, err = pcall(fn)
+	local elapsed = os.clock() - cpuStart
+	if ok then
 		return "pass", elapsed, nil
-	else
-		return "fail", elapsed, tostring(err)
 	end
+	return "fail", elapsed, tostring(err)
 end
 
-return function(filter, timeout)
-	timeout = timeout or 5
+return function()
 	local totals = { run = 0, passed = 0, failed = 0 }
 	local sessionStart = os.clock()
 
 	for _, module in ipairs(ServerStorage.UnitTest.Cases:GetDescendants()) do
-		if module:IsA("ModuleScript") and (filter == nil or string.find(module.Name, filter, 1, true)) then
+		if module:IsA("ModuleScript") then
 			local okRequire, caseFn = pcall(require, module)
 			if not okRequire or type(caseFn) ~= "function" then
 				totals.run += 1
@@ -98,7 +86,7 @@ return function(filter, timeout)
 				local t = { expect = expect }
 				function t.test(name, fn)
 					totals.run += 1
-					local status, elapsed, message = runOne(fn, timeout)
+					local status, elapsed, message = runOne(fn)
 					if status == "pass" then
 						totals.passed += 1
 						print(string.format("[PASS] %s > %s (%.3fs)", module.Name, name, elapsed))

@@ -5,7 +5,7 @@ local UiKit = require(script.Parent.Parent.UiKit)
 local Audio = require(script.Parent.Parent.Audio)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Config = require(ReplicatedStorage.Shared.Config)
-local Species = require(ReplicatedStorage.Shared.Data.Species)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 
 local DuelPanel = {}
 
@@ -24,16 +24,9 @@ local incoming = nil
 local incomingFrame
 local incomingLabel
 
-local function SpeciesName(creature): string
-	local species = Species[creature.SpeciesId]
-	return species and species.Name or creature.SpeciesId
-end
-
 local function ResetSelection()
 	selectedTarget = nil
 	selectedTeam = {}
-	UiKit.Clear(targetPage)
-	UiKit.Clear(teamPage)
 end
 
 local function RebuildTargets(state)
@@ -76,7 +69,7 @@ local function RebuildTeam(state)
 			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Size = UDim2.fromScale(0.62, 1),
-			Text = `[{string.upper(creature.Rarity)}] {SpeciesName(creature)} — Niv. {creature.Level} — {creature.Power}`,
+			Text = `[{string.upper(creature.Rarity)}] {Gameplay.SpeciesName(creature.SpeciesId)} — Niv. {creature.Level} — {creature.Power}`,
 			TextWrapped = true,
 			Parent = cell,
 		})

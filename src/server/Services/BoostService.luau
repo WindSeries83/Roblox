@@ -7,7 +7,6 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local BoostService = {}
 
 local log
-local dataSync
 
 local boostUntil = 0
 local boostBonus = 0
@@ -44,9 +43,6 @@ end
 
 function BoostService:Init(container)
 	log = container:Get("Log")
-	dataSync = container:Get("DataSync")
 end
-
-function BoostService:Start() end
 
 return BoostService

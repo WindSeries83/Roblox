@@ -19,13 +19,6 @@ return function(t)
 		expect.equal(Sanctuary.UpgradeCost(2), Config.SANCTUARY_UPGRADE_BASE_COST * Config.SANCTUARY_UPGRADE_COST_MULT)
 	end)
 
-	-- Upgrade requires enough essence.
-	t.test("upgrade requires enough essence", function()
-		local cost = Sanctuary.UpgradeCost(1)
-		expect.falsy(Sanctuary.CanUpgrade(cost - 1, 1))
-		expect.truthy(Sanctuary.CanUpgrade(cost, 1))
-	end)
-
 	-- Egg gate locks both purchasable upgrades at rank 1.
 	t.test("egg gate at rank 1 locks uncommon and rare", function()
 		local gate = Sanctuary.EggGate(1)

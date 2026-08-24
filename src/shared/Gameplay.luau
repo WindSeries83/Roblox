@@ -8,6 +8,12 @@ local Evolution = require(script.Parent.Evolution)
 
 local Gameplay = {}
 
+-- Nom affiché : Name si l'espèce existe, sinon l'id brut (donnée absente/legacy).
+function Gameplay.SpeciesName(speciesId: string): string
+	local species = Species[speciesId]
+	return species and species.Name or speciesId
+end
+
 function Gameplay.WeightedRoll(weights: { [string]: number }): string?
 	if type(weights) ~= "table" then
 		return nil

@@ -7,8 +7,4 @@ function Funnel.Stamp(funnel: { [string]: number }, key: string, now: number)
 	end
 end
 
-function Funnel.Reached(funnel: { [string]: number }, key: string): boolean
-	return (funnel[key] or 0) > 0
-end
-
 return Funnel

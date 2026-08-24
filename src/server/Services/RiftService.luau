@@ -5,6 +5,7 @@ local Players = game:GetService("Players")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
+local DuelSim = require(ReplicatedStorage.Shared.DuelSim)
 local Net = require(ReplicatedStorage.Shared.Net)
 
 local RiftService = {}
@@ -33,11 +34,7 @@ local function TeamPower(player: Player): number
 	if not profile then
 		return 0
 	end
-	local power = 0
-	for _, creature in profile.Data.Creatures do
-		power += creature.Power
-	end
-	return power
+	return DuelSim.TeamPower(profile.Data.Creatures)
 end
 
 -- Arche permanente : existe dès le démarrage, s'illumine quand la faille est active.

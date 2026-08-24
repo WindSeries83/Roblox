@@ -65,6 +65,4 @@ function LuckService:PotionState(player: Player)
 	return { PotionKind = potion.PotionKind, Bonus = potion.Bonus, Until = potion.Until }
 end
 
-function LuckService:Start() end
-
 return LuckService

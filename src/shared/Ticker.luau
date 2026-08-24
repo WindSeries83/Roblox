@@ -3,11 +3,6 @@ local Gameplay = require(script.Parent.Gameplay)
 
 local Ticker = {}
 
--- Outbound : pas plus d'un publish MessagingService par intervalle.
-function Ticker.CanPublish(now: number, lastPublishAt: number, minInterval: number): boolean
-	return now - lastPublishAt >= minInterval
-end
-
 -- Inbound : sélectionne le prochain payload à afficher. Les rangs hauts
 -- passent sans throttle, le reste est limité (TICKER_MIN_INTERVAL).
 function Ticker.NextToDisplay(queue: { any }, now: number, lastShownAt: number): (any?, number)

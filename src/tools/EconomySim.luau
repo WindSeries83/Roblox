@@ -69,7 +69,7 @@ end
 
 local function BonusSlots(profile)
 	if profile.Entitlements and profile.Entitlements.MoreSlots then
-		return 2
+		return Config.GAMEPASSES.MoreSlots.BonusSlots
 	end
 	return 0
 end

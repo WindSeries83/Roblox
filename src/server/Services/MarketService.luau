@@ -1,4 +1,3 @@
-local DataStoreService = game:GetService("DataStoreService")
 local HttpService = game:GetService("HttpService")
 local MessagingService = game:GetService("MessagingService")
 local Players = game:GetService("Players")
@@ -9,6 +8,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
+local SafeStore = require(script.Parent.SafeStore)
 
 local MarketService = {}
 
@@ -21,18 +21,7 @@ local analyticsService
 
 local ListingsKey = "Listings"
 
-local Store
-local storeOk = pcall(function()
-	Store = DataStoreService:GetDataStore("RiftBeastsMarket_v1")
-end)
-if not storeOk then
-	Store = {
-		GetAsync = function()
-			return nil
-		end,
-		SetAsync = function() end,
-	}
-end
+local Store = SafeStore.Get("RiftBeastsMarket_v1", nil)
 
 local listings: { [string]: any } = {}
 local pendingCredits: { [number]: number } = {}
@@ -273,7 +262,7 @@ local function OnMarketBuy(player: Player, listingId: any)
 		return
 	end
 	local listing = listings[listingId]
-	local bonusSlots = if profile.Data.Entitlements.MoreSlots then 2 else 0
+	local bonusSlots = if profile.Data.Entitlements.MoreSlots then Config.GAMEPASSES.MoreSlots.BonusSlots else 0
 	local ok, reason = MarketService.CanBuy(
 		listing,
 		player.UserId,

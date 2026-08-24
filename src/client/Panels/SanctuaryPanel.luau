@@ -2,7 +2,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local UiKit = require(script.Parent.Parent.UiKit)
 local Net = require(ReplicatedStorage.Shared.Net)
-local Species = require(ReplicatedStorage.Shared.Data.Species)
+local Config = require(ReplicatedStorage.Shared.Config)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Stages = require(ReplicatedStorage.Shared.Data.Stages)
 local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
 local Evolution = require(ReplicatedStorage.Shared.Evolution)
@@ -24,8 +25,7 @@ local function ItemName(item)
 end
 
 local function CreatureLabel(creature): string
-	local species = Species[creature.SpeciesId]
-	local name = species and species.Name or creature.SpeciesId
+	local name = Gameplay.SpeciesName(creature.SpeciesId)
 	local stage = Stages[creature.Stage]
 	return `[{string.upper(creature.Rarity)}] {name} — {stage.Name} — Niv. {creature.Level} — {creature.Power}`
 end
@@ -156,7 +156,9 @@ function SanctuaryPanel.Create(parent)
 end
 
 function SanctuaryPanel.Refresh(state)
-	local bonusSlots = if state.Entitlements and state.Entitlements.MoreSlots then 2 else 0
+	local bonusSlots = if state.Entitlements and state.Entitlements.MoreSlots
+		then Config.GAMEPASSES.MoreSlots.BonusSlots
+		else 0
 	local maxCreatures = Sanctuary.MaxCreatures(state.SanctuaryLevel, bonusSlots)
 	local cost = Sanctuary.UpgradeCost(state.SanctuaryLevel)
 	upgradeLabel.Text =
@@ -187,19 +189,14 @@ function SanctuaryPanel.Refresh(state)
 			detail:SetAttribute("SelectedId", creature.Id)
 			RenderDetail(creature, state.Items)
 		end)
-		row.MouseEnter:Connect(function()
-			HoverCard.Show(row, {
-				SpeciesId = creature.SpeciesId,
-				Rarity = creature.Rarity,
-				Mutation = creature.Mutation,
-				Level = creature.Level,
-				Power = creature.Power,
-				SuggestedPrice = CreatureHud.SuggestedPrice(creature.Rarity),
-			})
-		end)
-		row.MouseLeave:Connect(function()
-			HoverCard.Hide()
-		end)
+		HoverCard.Hook(row, {
+			SpeciesId = creature.SpeciesId,
+			Rarity = creature.Rarity,
+			Mutation = creature.Mutation,
+			Level = creature.Level,
+			Power = creature.Power,
+			SuggestedPrice = CreatureHud.SuggestedPrice(creature.Rarity),
+		})
 		if creature.Id == selected then
 			RenderDetail(creature, state.Items)
 		end

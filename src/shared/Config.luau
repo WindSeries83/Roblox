@@ -282,7 +282,7 @@ return {
 
 	-- Placeholders: IDs réels à renseigner lors de la création des assets (P5 humain)
 	GAMEPASSES = {
-		MoreSlots = { Id = 0, Name = "Sanctuaire +2 places" },
+		MoreSlots = { Id = 0, Name = "Sanctuaire +2 places", BonusSlots = 2 },
 		PassiveBoost = { Id = 0, Name = "Rendement +50 %" },
 		AutoHatch = { Id = 0, Name = "Éclosion automatique" },
 		StarterBundle = { Id = 0, Name = "Pack de départ" },

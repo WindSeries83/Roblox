@@ -103,7 +103,7 @@ If no argument is provided, ask the user for a bug description before proceeding
 Read `docs/production/qa/bugs/[BUG-ID].md`. Extract the reproduction steps and expected result.
 
 1. **Re-run reproduction steps** — launch the game via MCP Studio (`roblox_start_stop_play`) and replay the repro steps if they're launch/state-reachable; use `roblox_execute_luau`, game tree inspection and console output as evidence. Otherwise fall back to using Grep/Glob to check whether the root cause code path still exists as described. If the fix removed or changed it, note the change.
-2. **Run the related test** — if the bug's system has a test file in `tests/`, run the test file directly via Bash and report pass/fail.
+2. **Run the related test** — if the bug's system has an automated test, run it via Bash and report pass/fail.
 3. **Check for regression** — grep the codebase for any new occurrence of the pattern that caused the bug.
 
 Produce a verification verdict:
@@ -114,7 +114,7 @@ Produce a verification verdict:
 
 Ask: "May I update `docs/production/qa/bugs/[BUG-ID].md` to set Status: Verified Fixed / Still Present / Cannot Verify?"
 
-If STILL PRESENT: reopen the bug, set Status back to Open, and suggest re-running `/hotfix [BUG-ID]`.
+If STILL PRESENT: reopen the bug, set Status back to Open, and suggest a new root-cause pass via `systematic-debugging`.
 
 ---
 
@@ -161,7 +161,7 @@ After saving, suggest based on mode:
 
 **After filing (Description/Analyze mode):**
 - Run `/bug-triage` to prioritize alongside existing open bugs
-- If S1 or S2: run `/hotfix [BUG-ID]` for emergency fix workflow
+- If S1 or S2: fix immediately — root cause via `systematic-debugging`, closure via `verification-before-completion`
 
 **After fixing the bug (developer confirms fix is in):**
 - Run `/bug-report verify [BUG-ID]` — confirm the fix actually works before closing

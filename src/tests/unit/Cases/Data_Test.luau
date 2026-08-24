@@ -53,22 +53,6 @@ return function(t)
 		end
 	end)
 
-	-- Mutation order lists every mutation exactly once.
-	t.test("mutation order lists all mutations exactly once", function()
-		expect.equal(#Mutations.ORDER, 6)
-		local seen = {}
-		for _, id in Mutations.ORDER do
-			expect.truthy(Mutations[id] ~= nil)
-			expect.falsy(seen[id])
-			seen[id] = true
-		end
-		for id, value in Mutations do
-			if type(id) == "string" and type(value) == "table" and id ~= "ORDER" then
-				expect.truthy(seen[id])
-			end
-		end
-	end)
-
 	-- Egg rarity tables use positive weights on known rarities.
 	t.test("egg rarity tables use positive weights on known rarities", function()
 		for tier, weights in Config.EGG_RARITY_WEIGHTS do

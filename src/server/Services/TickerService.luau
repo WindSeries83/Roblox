@@ -1,4 +1,3 @@
-local DataStoreService = game:GetService("DataStoreService")
 local MessagingService = game:GetService("MessagingService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -7,6 +6,7 @@ local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Ticker = require(ReplicatedStorage.Shared.Ticker)
+local SafeStore = require(script.Parent.SafeStore)
 
 local TickerService = {}
 
@@ -17,20 +17,7 @@ local lastShownAt = 0
 local sessionHatches = 0
 local knownTotal = 0
 
-local StatsStore
-local statsOk = pcall(function()
-	StatsStore = DataStoreService:GetDataStore(Config.GLOBAL_STATS_STORE)
-end)
-if not statsOk then
-	StatsStore = {
-		UpdateAsync = function(_, _, transform)
-			return transform(0)
-		end,
-		GetAsync = function()
-			return 0
-		end,
-	}
-end
+local StatsStore = SafeStore.Get(Config.GLOBAL_STATS_STORE, 0)
 
 local function FlushStats()
 	local amount = sessionHatches

@@ -3,7 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UiKit = require(script.Parent.Parent.UiKit)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
-local Species = require(ReplicatedStorage.Shared.Data.Species)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 
 local LeaderboardPanel = {}
 
@@ -15,11 +15,6 @@ local detailFrame
 local function RarityName(rarity: string): string
 	local def = Rarities[rarity]
 	return def and def.Name or rarity
-end
-
-local function SpeciesName(speciesId: string): string
-	local def = Species[speciesId]
-	return def and def.Name or speciesId
 end
 
 local function ShowDetail(payload)
@@ -53,7 +48,7 @@ local function ShowDetail(payload)
 			TextXAlignment = Enum.TextXAlignment.Left,
 			AutomaticSize = Enum.AutomaticSize.Y,
 			Size = UDim2.new(1, 0, 0, 18),
-			Text = `{SpeciesName(species.Id)} ×{species.Count}`,
+			Text = `{Gameplay.SpeciesName(species.Id)} ×{species.Count}`,
 			Parent = detailFrame,
 		})
 	end

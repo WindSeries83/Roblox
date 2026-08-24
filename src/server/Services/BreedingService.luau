@@ -53,7 +53,7 @@ function BreedingService:Start()
 			return
 		end
 
-		local bonusSlots = if profile.Data.Entitlements.MoreSlots then 2 else 0
+		local bonusSlots = if profile.Data.Entitlements.MoreSlots then Config.GAMEPASSES.MoreSlots.BonusSlots else 0
 		local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel, bonusSlots)
 		if #profile.Data.Creatures >= maxCreatures then
 			log:Economy("Breeding", "CapReached", {

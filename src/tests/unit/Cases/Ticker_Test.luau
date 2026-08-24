@@ -1,14 +1,6 @@
 return function(t)
 	local expect = t.expect
 	local Ticker = require(game.ReplicatedStorage.Shared.Ticker)
-	local Config = require(game.ReplicatedStorage.Shared.Config)
-
-	-- Publish throttle is a simple elapsed-time gate.
-	t.test("can publish respects the interval", function()
-		expect.truthy(Ticker.CanPublish(100, 0, Config.TICKER_MIN_INTERVAL))
-		expect.falsy(Ticker.CanPublish(100, 100, Config.TICKER_MIN_INTERVAL))
-		expect.truthy(Ticker.CanPublish(106, 100, Config.TICKER_MIN_INTERVAL))
-	end)
 
 	-- Empty queue yields nothing and keeps the last shown time.
 	t.test("empty queue shows nothing", function()

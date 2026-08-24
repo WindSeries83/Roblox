@@ -1,27 +1,16 @@
-local DataStoreService = game:GetService("DataStoreService")
 local MessagingService = game:GetService("MessagingService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Net = require(ReplicatedStorage.Shared.Net)
+local SafeStore = require(script.Parent.SafeStore)
 
 local LeaderboardService = {}
 
 local saveService
 
-local Store
-local storeOk = pcall(function()
-	Store = DataStoreService:GetDataStore("RiftBeastsLeaderboard_v1")
-end)
-if not storeOk then
-	Store = {
-		GetAsync = function()
-			return nil
-		end,
-		SetAsync = function() end,
-	}
-end
+local Store = SafeStore.Get("RiftBeastsLeaderboard_v1", nil)
 
 -- Cache local : entrées { userId = { Name, Essence, SanctuaryLevel, Ranks = { [rarity] = n }, Species = { [speciesId] = n } } }
 local entries: { [number]: any } = {}

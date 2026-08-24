@@ -1,7 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local UiKit = require(script.Parent.Parent.UiKit)
-local Species = require(ReplicatedStorage.Shared.Data.Species)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Index = require(ReplicatedStorage.Shared.Index)
 local HoverCard = require(script.Parent.Parent.HoverCard)
 local CreaturePortrait = require(script.Parent.Parent.CreaturePortrait)
@@ -59,8 +59,7 @@ function IndexPanel.Refresh(state)
 	table.sort(keys)
 	for _, key in keys do
 		local speciesId, rarity, mutation = ParseKey(key)
-		local species = Species[speciesId]
-		local name = species and species.Name or speciesId
+		local name = Gameplay.SpeciesName(speciesId)
 		local mutationName = mutation ~= "false" and mutation or "sans mutation"
 		local row = UiKit.Cell(entryList)
 		local portrait = CreaturePortrait.Create(row, UDim2.new(0, 2, 0, 2), UDim2.new(0, 52, 1, -4))
@@ -81,12 +80,7 @@ function IndexPanel.Refresh(state)
 			Mutation = if mutation ~= "false" then mutation else false,
 			Discovered = true,
 		}
-		row.MouseEnter:Connect(function()
-			HoverCard.Show(row, entry)
-		end)
-		row.MouseLeave:Connect(function()
-			HoverCard.Hide()
-		end)
+		HoverCard.Hook(row, entry)
 	end
 
 	local families = Index.FamilyCompletions(state.Index)

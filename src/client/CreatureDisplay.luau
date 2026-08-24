@@ -59,10 +59,6 @@ local MUTATION_FX = {
 
 local mutations: { [string]: string? } = {}
 
-local function RarityRank(rarity: string): number
-	return math.max(1, Gameplay.RarityRank(rarity))
-end
-
 local function MutationScale(mutation: any): number
 	if mutation ~= false and Mutations[mutation] then
 		return 1 + math.log10(Mutations[mutation].Multiplier) * 0.06
@@ -124,7 +120,7 @@ function CreatureDisplay.Refresh(state)
 	for _, creature in state.Creatures do
 		index += 1
 		order[creature.Id] = index
-		local rank = RarityRank(creature.Rarity)
+		local rank = math.max(1, Gameplay.RarityRank(creature.Rarity))
 		ranks[creature.Id] = rank
 		local displayColor = DisplayColor(creature)
 		local model = spawned[creature.Id]

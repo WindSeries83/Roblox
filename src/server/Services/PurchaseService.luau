@@ -1,4 +1,4 @@
-local DataStoreService = game:GetService("DataStoreService")
+local SafeStore = require(script.Parent.SafeStore)
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,18 +18,7 @@ local luckService
 local boostService
 local analyticsService
 
-local ReceiptsStore
-local receiptsOk = pcall(function()
-	ReceiptsStore = DataStoreService:GetDataStore("RiftBeastsReceipts_v1")
-end)
-if not receiptsOk then
-	ReceiptsStore = {
-		GetAsync = function()
-			return nil
-		end,
-		SetAsync = function() end,
-	}
-end
+local ReceiptsStore = SafeStore.Get("RiftBeastsReceipts_v1", nil)
 
 local function LogPurchase(source: string, data: { [string]: any })
 	Log:Economy("Purchase", source, data)
@@ -110,7 +99,7 @@ function PurchaseService.GrantPass(player: Player, passKey: string): boolean
 			essenceService:Add(player, effect.Essence, "StarterBundle")
 		end
 		if effect.Creature then
-			local bonusSlots = if profile.Data.Entitlements.MoreSlots then 2 else 0
+			local bonusSlots = if profile.Data.Entitlements.MoreSlots then Config.GAMEPASSES.MoreSlots.BonusSlots else 0
 			local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel, bonusSlots)
 			if #profile.Data.Creatures < maxCreatures then
 				local pool = {}

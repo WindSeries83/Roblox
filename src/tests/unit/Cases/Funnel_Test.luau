@@ -14,10 +14,4 @@ return function(t)
 		Funnel.Stamp(f, "FirstPurchaseAt", 42)
 		expect.equal(f.FirstPurchaseAt, 42)
 	end)
-
-	t.test("reached reports zero and missing as false", function()
-		expect.falsy(Funnel.Reached({}, "FirstHatchAt"))
-		expect.falsy(Funnel.Reached({ FirstHatchAt = 0 }, "FirstHatchAt"))
-		expect.truthy(Funnel.Reached({ FirstHatchAt = 5 }, "FirstHatchAt"))
-	end)
 end

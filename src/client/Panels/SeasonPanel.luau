@@ -5,7 +5,7 @@ local Audio = require(script.Parent.Parent.Audio)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Season = require(ReplicatedStorage.Shared.Season)
-local Species = require(ReplicatedStorage.Shared.Data.Species)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 
 local SeasonPanel = {}
 
@@ -18,8 +18,7 @@ local function RewardLine(level: number, track: string): string
 	local reward = Season.RewardFor(level, track)
 	local line = `{reward.Essence} Essence`
 	if reward.Creature then
-		local species = Species[reward.Creature.SpeciesId]
-		line = `{line} + {species and species.Name or reward.Creature.SpeciesId} exclusive`
+		line = `{line} + {Gameplay.SpeciesName(reward.Creature.SpeciesId)} exclusive`
 	end
 	if reward.Title then
 		line = `{line} + titre "{reward.Title}"`

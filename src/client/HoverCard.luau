@@ -174,4 +174,14 @@ function HoverCard.Hide()
 	end
 end
 
+-- Câble hover show/hide sur un ancrage GUI avec une entry figée à la création.
+function HoverCard.Hook(anchor: GuiObject, entry)
+	anchor.MouseEnter:Connect(function()
+		HoverCard.Show(anchor, entry)
+	end)
+	anchor.MouseLeave:Connect(function()
+		HoverCard.Hide()
+	end)
+end
+
 return HoverCard

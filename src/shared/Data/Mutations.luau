@@ -31,13 +31,4 @@ local Mutations = {
 	},
 }
 
-Mutations.ORDER = {
-	"Shadow",
-	"Frost",
-	"Golden",
-	"Prismatic",
-	"Corrupted",
-	"Celestial",
-}
-
 return Mutations

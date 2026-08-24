@@ -189,7 +189,7 @@ function UiKit.Clear(frame: Instance)
 	end
 end
 
-function UiKit.SubTabs(parent: Instance, height: number, pages: { any }): Frame
+function UiKit.SubTabs(parent: Instance, height: number, pages: { any }, onSelect: ((number, any) -> ())?)
 	local bar = UiKit.Create("Frame", {
 		Name = "SubBar",
 		BackgroundTransparency = 1,
@@ -218,6 +218,9 @@ function UiKit.SubTabs(parent: Instance, height: number, pages: { any }): Frame
 			end
 			button.BackgroundColor3 = UiKit.TINTS.PANEL
 			page.Page.Visible = true
+			if onSelect then
+				onSelect(i, page)
+			end
 		end)
 		buttons[i] = button
 	end

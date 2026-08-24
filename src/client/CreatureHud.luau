@@ -28,15 +28,9 @@ local priceBox: TextBox? = nil
 local currentId: string? = nil
 local lastState = nil
 
-local function RarityRank(rarity: string): number
-	return math.max(1, Gameplay.RarityRank(rarity))
-end
-
 function CreatureHud.SuggestedPrice(rarity: string): number
-	return math.max(
-		Config.MARKET_MIN_PRICE,
-		math.floor(Config.EGG_PRICES.CommonEgg * (1 + (RarityRank(rarity) - 1) * 2))
-	)
+	local rank = math.max(1, Gameplay.RarityRank(rarity))
+	return math.max(Config.MARKET_MIN_PRICE, math.floor(Config.EGG_PRICES.CommonEgg * (1 + (rank - 1) * 2)))
 end
 
 local function Close()

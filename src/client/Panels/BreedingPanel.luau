@@ -5,7 +5,6 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
-local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Stages = require(ReplicatedStorage.Shared.Data.Stages)
 
 local BreedingPanel = {}
@@ -40,8 +39,7 @@ local function MutationRatesText(weights: { [string]: number }): string
 end
 
 local function CreatureLabel(creature): string
-	local species = Species[creature.SpeciesId]
-	local name = species and species.Name or creature.SpeciesId
+	local name = Gameplay.SpeciesName(creature.SpeciesId)
 	local stage = Stages[creature.Stage]
 	return `[{string.upper(creature.Rarity)}] {name} — G{creature.Generation} — {stage.Name}`
 end

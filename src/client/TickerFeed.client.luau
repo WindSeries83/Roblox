@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Net = require(ReplicatedStorage.Shared.Net)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
+local UiKit = require(script.Parent.UiKit)
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -45,15 +46,6 @@ layout.Padding = UDim.new(0, 2)
 layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 layout.Parent = list
 
-local function Hex(color: Color3): string
-	return string.format(
-		"#%02X%02X%02X",
-		math.floor(color.R * 255 + 0.5),
-		math.floor(color.G * 255 + 0.5),
-		math.floor(color.B * 255 + 0.5)
-	)
-end
-
 local function AddItem(payload)
 	local color = (Rarities[payload.Rarity] or {}).Color or Color3.new(1, 1, 1)
 	local mutationText = payload.MutationName and (" (" .. payload.MutationName .. ")") or ""
@@ -70,7 +62,7 @@ local function AddItem(payload)
 	label.Text = string.format(
 		'<font color="#9DB2D0">%s</font> a obtenu <font color="%s">%s%s</font>',
 		payload.PlayerName or "?",
-		Hex(color),
+		UiKit.Hex(color),
 		payload.SpeciesName or "?",
 		mutationText
 	)

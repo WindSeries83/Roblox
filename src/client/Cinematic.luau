@@ -11,10 +11,6 @@ local GOLDEN_TINT = Color3.fromRGB(255, 238, 190)
 
 local Cinematic = {}
 
-function Cinematic.ShouldPlay(rarity: string?): boolean
-	return Gameplay.RarityRank(rarity or "") >= MIN_RANK
-end
-
 local busy = false
 local generation = 0
 local blur: BlurEffect? = nil

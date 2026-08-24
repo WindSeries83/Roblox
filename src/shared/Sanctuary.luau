@@ -10,13 +10,6 @@ function Sanctuary.MaxCreatures(sanctuaryLevel: number, bonusSlots: number?): nu
 		+ (bonusSlots or 0)
 end
 
-function Sanctuary.CanUpgrade(essence: number, sanctuaryLevel: number): (boolean, string?)
-	if essence < Sanctuary.UpgradeCost(sanctuaryLevel) then
-		return false, "Essence insuffisante"
-	end
-	return true
-end
-
 function Sanctuary.UpgradeCost(sanctuaryLevel: number): number
 	return Config.SANCTUARY_UPGRADE_BASE_COST * (Config.SANCTUARY_UPGRADE_COST_MULT ^ (sanctuaryLevel - 1))
 end
@@ -35,16 +28,16 @@ function Sanctuary.EggLocked(tier: string, sanctuaryLevel: number): number?
 	return Sanctuary.EggGate(sanctuaryLevel)[tier]
 end
 
-local TIER_ORDER = { "CommonEgg", "UncommonEgg", "RareEgg", "EpicEgg", "LegendaryEgg" }
+Sanctuary.EGG_TIERS = { "CommonEgg", "UncommonEgg", "RareEgg", "EpicEgg", "LegendaryEgg" }
 
 -- Les sources gratuites (faille, offres) ne contournent pas le gate : retombe
 -- au meilleur palier débloqué.
 function Sanctuary.ResolveEggTier(tier: string, sanctuaryLevel: number): string
-	local i = table.find(TIER_ORDER, tier) or 1
-	while i > 1 and Sanctuary.EggLocked(TIER_ORDER[i], sanctuaryLevel) do
+	local i = table.find(Sanctuary.EGG_TIERS, tier) or 1
+	while i > 1 and Sanctuary.EggLocked(Sanctuary.EGG_TIERS[i], sanctuaryLevel) do
 		i -= 1
 	end
-	return TIER_ORDER[i]
+	return Sanctuary.EGG_TIERS[i]
 end
 
 return Sanctuary

@@ -5,7 +5,7 @@ local UiKit = require(script.Parent.Parent.UiKit)
 local Audio = require(script.Parent.Parent.Audio)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Config = require(ReplicatedStorage.Shared.Config)
-local Species = require(ReplicatedStorage.Shared.Data.Species)
+local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local CreatureHud = require(script.Parent.Parent.CreatureHud)
 local HoverCard = require(script.Parent.Parent.HoverCard)
 
@@ -15,7 +15,6 @@ local TINTS = UiKit.TINTS
 
 local myUserId = Players.LocalPlayer.UserId
 
-local subBar
 local sellHeader
 local buyPage
 local sellPage
@@ -24,51 +23,21 @@ local priceBox
 local sellStatus
 local marketListings = {}
 
-local function SpeciesName(creature): string
-	local species = Species[creature.SpeciesId]
-	return species and species.Name or creature.SpeciesId
-end
-
 local function CreatureLine(creature): string
 	local mutation = creature.Mutation ~= false and ` {creature.Mutation}` or ""
-	return `[{string.upper(creature.Rarity)}] {SpeciesName(creature)} — Niv. {creature.Level}{mutation}`
-end
-
-local function HookHover(cell: Instance, creature, price: number)
-	cell.MouseEnter:Connect(function()
-		HoverCard.Show(cell, {
-			SpeciesId = creature.SpeciesId,
-			Rarity = creature.Rarity,
-			Mutation = creature.Mutation,
-			Level = creature.Level,
-			Power = creature.Power,
-			SuggestedPrice = price,
-		})
-	end)
-	cell.MouseLeave:Connect(function()
-		HoverCard.Hide()
-	end)
-end
-
-local function ShowPage(page: Instance)
-	for _, tab in subBar:GetChildren() do
-		if tab:IsA("TextButton") then
-			tab.BackgroundColor3 = TINTS.DARK
-		end
-	end
-	local button = subBar:FindFirstChild(`Tab_{page.Name}`)
-	if button then
-		button.BackgroundColor3 = TINTS.PANEL
-	end
-	buyPage.Visible = page == buyPage
-	sellPage.Visible = page == sellPage
-	minePage.Visible = page == minePage
-	sellHeader.Visible = page == sellPage
+	return `[{string.upper(creature.Rarity)}] {Gameplay.SpeciesName(creature.SpeciesId)} — Niv. {creature.Level}{mutation}`
 end
 
 local function SellRow(creature)
 	local cell = UiKit.Cell(sellPage)
-	HookHover(cell, creature, CreatureHud.SuggestedPrice(creature.Rarity))
+	HoverCard.Hook(cell, {
+		SpeciesId = creature.SpeciesId,
+		Rarity = creature.Rarity,
+		Mutation = creature.Mutation,
+		Level = creature.Level,
+		Power = creature.Power,
+		SuggestedPrice = CreatureHud.SuggestedPrice(creature.Rarity),
+	})
 	UiKit.Create("TextLabel", {
 		BackgroundTransparency = 1,
 		TextColor3 = TINTS.WHITE,
@@ -97,7 +66,14 @@ end
 local function BuyRow(listing, essence)
 	local cell = UiKit.Cell(buyPage)
 	local creature = listing.Creature
-	HookHover(cell, creature, listing.Price)
+	HoverCard.Hook(cell, {
+		SpeciesId = creature.SpeciesId,
+		Rarity = creature.Rarity,
+		Mutation = creature.Mutation,
+		Level = creature.Level,
+		Power = creature.Power,
+		SuggestedPrice = listing.Price,
+	})
 	UiKit.Create("TextLabel", {
 		BackgroundTransparency = 1,
 		TextColor3 = TINTS.WHITE,
@@ -126,7 +102,14 @@ end
 local function MineRow(listing)
 	local cell = UiKit.Cell(minePage)
 	local creature = listing.Creature
-	HookHover(cell, creature, listing.Price)
+	HoverCard.Hook(cell, {
+		SpeciesId = creature.SpeciesId,
+		Rarity = creature.Rarity,
+		Mutation = creature.Mutation,
+		Level = creature.Level,
+		Power = creature.Power,
+		SuggestedPrice = listing.Price,
+	})
 	UiKit.Create("TextLabel", {
 		BackgroundTransparency = 1,
 		TextColor3 = TINTS.WHITE,
@@ -160,38 +143,6 @@ function MarketPanel.Create(parent: Instance): Frame
 		Parent = parent,
 	})
 	UiKit.Padding(panel, 10)
-
-	subBar = UiKit.Create("Frame", {
-		Name = "SubBar",
-		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 0, 30),
-		Parent = panel,
-	})
-	local tabs = { { "Acheter", "Tab_Acheter" }, { "Vendre", "Tab_Vendre" }, { "Mes ventes", "Tab_MesVentes" } }
-	for i, tabDef in tabs do
-		local name, tabName = tabDef[1], tabDef[2]
-		local button = UiKit.Create("TextButton", {
-			Name = tabName,
-			BackgroundColor3 = TINTS.DARK,
-			TextColor3 = TINTS.WHITE,
-			Font = Enum.Font.GothamBold,
-			TextSize = 13,
-			Size = UDim2.new(0.33, -4, 1, 0),
-			Position = UDim2.new(0.33 * (i - 1), 2, 0, 0),
-			Text = name,
-			Parent = subBar,
-		})
-		UiKit.Corner(button)
-	end
-	subBar.Tab_Acheter.Activated:Connect(function()
-		ShowPage(buyPage)
-	end)
-	subBar.Tab_Vendre.Activated:Connect(function()
-		ShowPage(sellPage)
-	end)
-	subBar.Tab_MesVentes.Activated:Connect(function()
-		ShowPage(minePage)
-	end)
 
 	sellHeader = UiKit.Create("Frame", {
 		Name = "SellHeader",
@@ -230,8 +181,14 @@ function MarketPanel.Create(parent: Instance): Frame
 	minePage = UiKit.Scroller(panel, UDim2.fromOffset(0, 74), UDim2.new(1, 0, 1, -80))
 	minePage.Name = "MinePage"
 	sellHeader.Visible = false
-	minePage.Visible = false
-	ShowPage(buyPage)
+
+	UiKit.SubTabs(panel, 30, {
+		{ Name = "Acheter", Page = buyPage },
+		{ Name = "Vendre", Page = sellPage },
+		{ Name = "Mes ventes", Page = minePage },
+	}, function(_, page)
+		sellHeader.Visible = page.Page == sellPage
+	end)
 
 	Net.MarketSync.OnClientEvent:Connect(function(payload)
 		marketListings = payload and payload.Listings or {}
