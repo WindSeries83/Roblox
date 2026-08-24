@@ -19,7 +19,7 @@ function ObjectiveBanner.Mount(parent: Instance)
 		BackgroundColor3 = TINTS.DARK,
 		BackgroundTransparency = 0.25,
 		Size = UDim2.fromOffset(420, 34),
-		Position = UDim2.new(0.5, 0, 1, -206),
+		Position = UDim2.new(0.5, 0, 1, -252), -- au-dessus de la bannière tuto (lot 3)
 		AnchorPoint = Vector2.new(0.5, 0),
 		ZIndex = 40,
 		Visible = false,

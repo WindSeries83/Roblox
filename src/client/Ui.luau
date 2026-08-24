@@ -802,7 +802,8 @@ local function StartRiftCountdown(nextAt: number)
 			local remaining = math.max(0, nextAt - os.time())
 			riftStatusLabel.Text =
 				`Prochaine faille dans {string.format("%d:%02d", math.floor(remaining / 60), remaining % 60)}`
-			riftStatusLabel.Visible = remaining > 0
+			-- en compact le bouton Faille de la barre porte le compte à rebours
+			riftStatusLabel.Visible = remaining > 0 and not compact
 			UpdateFailleButton()
 			if remaining <= 0 then
 				break
@@ -828,7 +829,7 @@ Net.RiftWorld.OnClientEvent:Connect(function(world)
 		end
 		Audio.Play("RiftWhoosh")
 		riftStatusLabel.Text = "Une faille s'est ouverte ! Entre dans le portail."
-		riftStatusLabel.Visible = true
+		riftStatusLabel.Visible = not compact
 		riftActiveState = true
 		riftNextAt = 0
 		UpdateFailleButton()
@@ -918,6 +919,9 @@ local function ApplyLayout()
 	riftStatusLabel.Size = UDim2.fromOffset(if compact then 180 else 240, if compact then 32 else 36)
 	riftStatusLabel.Position = UDim2.fromScale(0.5, if compact then 0.18 else 0.16)
 	riftStatusLabel.TextSize = if compact then 13 else 16
+	if compact then
+		riftStatusLabel.Visible = false
+	end
 end
 
 workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(ApplyLayout)

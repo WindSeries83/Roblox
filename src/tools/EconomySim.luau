@@ -7,6 +7,7 @@ local Index = require(ReplicatedStorage.Shared.Index)
 local Rebirth = require(ReplicatedStorage.Shared.Rebirth)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 local SkillTree = require(ReplicatedStorage.Shared.SkillTree)
+local Pack = require(ReplicatedStorage.Shared.Pack)
 local Stages = require(ReplicatedStorage.Shared.Data.Stages)
 
 local EconomySim = {}
@@ -36,6 +37,9 @@ local function GetRate(profile)
 	local indexMult = Index.ComputeMult(profile.Index)
 	local starMult = Rebirth.StarEssenceMult(profile.Stars)
 	rate = rate * sanctuaryMult * indexMult * starMult * (1 + SkillTree.Effects(profile.SkillRanks).EssenceRate)
+	if profile.PackFriends then
+		rate *= Pack.Mult(profile.PackFriends)
+	end
 	if profile.Entitlements and profile.Entitlements.PassiveBoost then
 		rate *= Config.PASSIVE_BOOST_MULT
 	end
@@ -147,6 +151,11 @@ end
 local PROFILE_LUCK = { f2p = 0, starter = 0.35, vip = 0.35 + Config.VIP_LUCK_BONUS, whale = 0.75 }
 
 local function ApplyProfile(profile, kind)
+	if kind == "meute" then
+		-- f2p jouant avec 3 amis actifs dans le serveur (cap meute, bible §4.C).
+		profile.PackFriends = Config.PACK_MAX_FRIENDS
+		return profile
+	end
 	if kind == "f2p" then
 		return profile
 	end
@@ -240,18 +249,20 @@ local function Simulate(strategy: string?, options)
 			table.insert(milestones, { Rebirth = profile.Rebirths, At = time })
 			if options.debug then
 				local top = profile.Creatures[1]
-				print(string.format(
-					"[SIMDBG] %s R%d t=%ds earned=%d rate=%.1f creatures=%d sanc=%d top=%s %s",
-					kind,
-					profile.Rebirths,
-					time,
-					profile.TotalEarned,
-					GetRate(profile),
-					#profile.Creatures,
-					profile.SanctuaryLevel,
-					top and top.SpeciesId or "-",
-					top and tostring(top.Rarity) .. "/" .. tostring(top.Mutation) or "-"
-				))
+				print(
+					string.format(
+						"[SIMDBG] %s R%d t=%ds earned=%d rate=%.1f creatures=%d sanc=%d top=%s %s",
+						kind,
+						profile.Rebirths,
+						time,
+						profile.TotalEarned,
+						GetRate(profile),
+						#profile.Creatures,
+						profile.SanctuaryLevel,
+						top and top.SpeciesId or "-",
+						top and tostring(top.Rarity) .. "/" .. tostring(top.Mutation) or "-"
+					)
+				)
 			end
 		end
 	end
