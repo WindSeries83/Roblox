@@ -59,8 +59,8 @@ function CreaturePortrait.Create(parent: Instance, position: UDim2, size: UDim2)
 	return state
 end
 
--- Silhouette : teinte unique très sombre pour les espèces non découvertes (pokédex).
-local SILHOUETTE_COLOR = Color3.fromRGB(20, 20, 26)
+-- Silhouette : teinte sombre mais lisible pour les espèces non découvertes (pokédex).
+local SILHOUETTE_COLOR = Color3.fromRGB(55, 55, 70)
 
 function CreaturePortrait.Show(state: any, speciesId: string?, rarity: string?, mutation: any, silhouette: boolean?)
 	if state.model then

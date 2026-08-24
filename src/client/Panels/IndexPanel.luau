@@ -14,6 +14,7 @@ local summaryLabel
 local pages -- { { Name, Page } } — « Tout » en premier, puis une page par famille
 local tabButtons -- { [family] = TextButton }
 local catalog
+local lastSignature -- empreinte counts/index du refresh précédent (early-exit)
 
 -- Page de grille pokédex : scroller + UIGridLayout de cards 150×170.
 local function MakeGridPage(parent: Instance, name: string, position: UDim2, size: UDim2): ScrollingFrame
@@ -150,16 +151,39 @@ function IndexPanel.Create(parent)
 	UiKit.SubTabs(tabBarSlot, 28, pages)
 
 	-- Références des boutons pour le préfixe ✓ doré au refresh.
-	for i, child in tabBarSlot:GetChildren() do
+	-- SubTabs parente les boutons à sa SubBar interne : descendre de deux niveaux.
+	for _, child in tabBarSlot:GetDescendants() do
 		if child:IsA("TextButton") then
+			local index = tonumber(string.match(child.Name, "^SubTab(%d+)$"))
 			child.RichText = true
-			tabButtons[pages[i].Name] = child
+			tabButtons[pages[index].Name] = child
 		end
 	end
 	return frame
 end
 
 function IndexPanel.Refresh(state)
+	-- Early-exit : les cards ne dépendent que des counts par espèce + taille de l'index.
+	local counts = {}
+	local parts = {}
+	for _, creature in state.Creatures do
+		counts[creature.SpeciesId] = (counts[creature.SpeciesId] or 0) + 1
+	end
+	for _, entry in catalog do
+		if counts[entry.SpeciesId] then
+			table.insert(parts, `{entry.SpeciesId}:{counts[entry.SpeciesId]}`)
+		end
+	end
+	local indexSize = 0
+	for _ in state.Index do
+		indexSize += 1
+	end
+	local signature = table.concat(parts, ",") .. "#" .. indexSize
+	if signature == lastSignature then
+		return
+	end
+	lastSignature = signature
+
 	-- Header : découvertes / total + bonus rendement.
 	local total = #catalog
 	local decouvertes = 0
@@ -175,12 +199,6 @@ function IndexPanel.Refresh(state)
 	local completions = Index.FamilyCompletions(state.Index)
 	for name, button in tabButtons do
 		button.Text = if completions[name] then `<font color="{UiKit.Hex(GOLD)}">✓</font> {name}` else name
-	end
-
-	-- Compteurs possédées par espèce (badge xN).
-	local counts = {}
-	for _, creature in state.Creatures do
-		counts[creature.SpeciesId] = (counts[creature.SpeciesId] or 0) + 1
 	end
 
 	-- Chaque espèce rendue sur sa page famille ET sur la page Tout.

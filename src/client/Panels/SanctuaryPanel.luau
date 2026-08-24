@@ -23,12 +23,12 @@ local upgradeButton
 -- Initiale courte du rang, affichée sur la bande de rareté des cards.
 local RANK_LETTER = {
 	Common = "C",
-	Uncommon = "M",
-	Rare = "U",
-	Epic = "R",
-	Legendary = "E",
-	Mythic = "L",
-	UltraRare = "M",
+	Uncommon = "U",
+	Rare = "R",
+	Epic = "E",
+	Legendary = "L",
+	Mythic = "M",
+	UltraRare = "UR",
 	Secret = "S",
 }
 
@@ -237,7 +237,7 @@ function SanctuaryPanel.Refresh(state)
 			Parent = band,
 		})
 
-		local portrait = CreaturePortrait.Create(card, UDim2.new(0, 0, 0, 14), UDim2.new(1, 0, 0, 100))
+		local portrait = CreaturePortrait.Create(card, UDim2.fromOffset(0, 14), UDim2.new(1, 0, 0, 100))
 		CreaturePortrait.Show(portrait, creature.SpeciesId, creature.Rarity, creature.Mutation)
 
 		UiKit.Create("TextLabel", {
@@ -248,7 +248,7 @@ function SanctuaryPanel.Refresh(state)
 			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
-			Position = UDim2.new(0, 0, 0, 115),
+			Position = UDim2.fromOffset(0, 115),
 			Size = UDim2.new(1, 0, 0, 14),
 			Text = Gameplay.SpeciesName(creature.SpeciesId),
 			Parent = card,
@@ -261,7 +261,7 @@ function SanctuaryPanel.Refresh(state)
 			TextSize = 11,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
-			Position = UDim2.new(0, 0, 0, 129),
+			Position = UDim2.fromOffset(0, 129),
 			Size = UDim2.new(0.65, 0, 0, 13),
 			Text = `Niv {creature.Level} · {Stages[creature.Stage].Name}`,
 			Parent = card,
@@ -284,7 +284,7 @@ function SanctuaryPanel.Refresh(state)
 			Name = "XpBar",
 			BackgroundColor3 = Color3.fromRGB(0, 0, 0),
 			BackgroundTransparency = 0.5,
-			Position = UDim2.new(0, 0, 0, 145),
+			Position = UDim2.fromOffset(0, 145),
 			Size = UDim2.new(1, 0, 0, 6),
 			Parent = card,
 		})
