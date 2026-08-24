@@ -160,11 +160,24 @@ function HatchCinematic.Play(result)
 		TweenService:Create(camera, TweenInfo.new(0.4, Enum.EasingStyle.Quad), { FieldOfView = fov0 }):Play()
 	end)
 
-	-- Carte de révélation au-dessus du nid (ou du joueur si œuf introuvable)
-	local anchor = egg and egg.Position
+	-- Carte de révélation : œuf couvé le plus proche du joueur, sinon nid, sinon joueur.
+	local character = Players.LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	local anchor = nil
+	local bestDist = 30
+	for _, model in Workspace:GetChildren() do
+		if model.Name == "IncubatingEgg" and model.PrimaryPart then
+			local d = root and (model.PrimaryPart.Position - root.Position).Magnitude or 0
+			if d < bestDist then
+				bestDist = d
+				anchor = model.PrimaryPart.Position
+			end
+		end
+	end
 	if not anchor then
-		local character = Players.LocalPlayer.Character
-		local root = character and character:FindFirstChild("HumanoidRootPart")
+		anchor = egg and egg.Position
+	end
+	if not anchor then
 		anchor = root and root.Position or Vector3.zero
 	end
 	ShowRevealCard(anchor, result)
