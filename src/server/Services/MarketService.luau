@@ -237,6 +237,10 @@ local function OnMarketList(player: Player, creatureId: any, price: any)
 			break
 		end
 	end
+	-- La créature vendue ne peut plus rester compagnon (donnée morte sinon).
+	if profile.Data.CompanionId == creatureId then
+		profile.Data.CompanionId = nil
+	end
 	profile.Data.LastPlayed = os.time()
 	dataSync:Send(player)
 

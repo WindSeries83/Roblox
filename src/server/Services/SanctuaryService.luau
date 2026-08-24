@@ -57,6 +57,7 @@ function SanctuaryService:Start()
 		end
 
 		if creatureId ~= nil and type(creatureId) ~= "string" then
+			log:Economy("Companion", "Reject", { Player = player.Name, Reason = "type invalide" })
 			return
 		end
 		if creatureId ~= nil then
