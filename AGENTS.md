@@ -4,7 +4,7 @@ Dès qu'une image, capture d'écran ou screenshot doit être examinée, décrite
 
 # Roblox
 
-Toute tâche liée à Roblox, Luau, Studio, au MCP `roblox` (outils `roblox_*`) ou au développement de ce jeu : charge **toujours** le skill `roblox-game` (outil `skill`, nom `roblox-game`) et suis-le. Tout le code et l'orchestration des outils `roblox_*` passent par ses références (`references/`, `workflows/`, `templates/`), en particulier `references/mcp-orchestration.md` pour la correspondance des outils.
+Toute tâche liée à Roblox, Luau, Studio, au MCP `roblox` (outils `roblox_*`) ou au développement de ce jeu : charge **toujours** le skill projet `roblox-dev-skill` (`.claude/skills/roblox-dev-skill/`) — connaissances domaine Luau/Rojo/réseau/sécurité/perf. Le lookup API passe par les outils MCP officiels (`roblox_http_get`, `rbx-docs-search`).
 
 ## Synchro Rojo — procédure obligatoire
 
@@ -13,3 +13,33 @@ Toute tâche liée à Roblox, Luau, Studio, au MCP `roblox` (outils `roblox_*`) 
 3. Un seul processus `rojo serve` à la fois (`Get-Process rojo` doit montrer ≤ 2 PID parent/enfant).
 4. Le message `[profilestore]: Roblox API services unavailable` est **attendu** en Studio non publié (mock) — ne pas le traiter comme une erreur.
 5. Sessions courtes : éviter les dumps complets de logs/captures dans les tours ; les longues boucles de diagnostic saturent le contexte et coupent la session.
+
+# Orchestration des process
+
+## Skills projet (`.claude/skills/`)
+
+- **Connaissance domaine** : `roblox-dev-skill` (+ `references/` — datastore, networking, sécurité, perf, UI, migration, monétisation).
+- **Process** : `playtest-report`, `bug-report`, `bug-triage`, `retrospective`, `scope-check`, `balance-check`.
+- **Templates** : `docs/templates/` — game-design-document, systems-index, milestone-definition, sprint-plan, post-mortem, prototype-report.
+
+## Précédence
+
+1. Demandes directes de l'utilisateur
+2. Superpowers (process) : brainstorming, writing-plans, systematic-debugging, test-driven-development, verification-before-completion
+3. Skills projet ci-dessus (domaine)
+4. Ponytail gouverne uniquement le style de sortie (lean, YAGNI)
+
+## Routage
+
+| Déclencheur | Chaîne |
+|---|---|
+| Nouvelle feature / système | brainstorming → fiche GDD (`docs/templates/game-design-document.md`) si méritée → writing-plans |
+| Bug | bug-report → bug-triage → systematic-debugging → fix → verification-before-completion |
+| Fin de lot | retrospective (+ template post-mortem si lot majeur) |
+| Avant validation d'un lot | scope-check |
+| Session playtest MCP Studio | playtest-report |
+| Équilibrage économie / revenus | balance-check |
+
+Mode lean par défaut : les skills projet sautent leur cérémonie optionnelle sauf demande explicite.
+
+Sources tierces MIT : voir `THIRD_PARTY_NOTICES.md`.
