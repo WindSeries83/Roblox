@@ -39,7 +39,7 @@ local function Refresh()
 	lockedTiers = Sanctuary.EggGate(lastState.SanctuaryLevel or 1)
 	RefreshBuyButtons()
 	UiKit.Clear(eggList)
-	for i, egg in lastState.Eggs do
+	for i, egg in Sanctuary.SortEggs(lastState.Eggs) do
 		local row = UiKit.Cell(eggList)
 		row.Name = `EggRow{i}`
 		row.Size = UDim2.new(1, -8, 0, 38)

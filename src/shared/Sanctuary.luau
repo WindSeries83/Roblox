@@ -30,6 +30,24 @@ end
 
 Sanctuary.EGG_TIERS = { "CommonEgg", "UncommonEgg", "RareEgg", "EpicEgg", "LegendaryEgg" }
 
+-- Tri déterministe de l'inventaire : palier croissant (ordre boutique),
+-- puis ancienneté. table.sort n'est pas stable -> tiebreak explicite.
+function Sanctuary.SortEggs(eggs: { any }): { any }
+	local tierRank = {}
+	for rank, tier in Sanctuary.EGG_TIERS do
+		tierRank[tier] = rank
+	end
+	local sorted = table.clone(eggs)
+	table.sort(sorted, function(a, b)
+		local ra, rb = tierRank[a.Tier] or 0, tierRank[b.Tier] or 0
+		if ra ~= rb then
+			return ra < rb
+		end
+		return (a.Timestamp or 0) < (b.Timestamp or 0)
+	end)
+	return sorted
+end
+
 -- Les sources gratuites (faille, offres) ne contournent pas le gate : retombe
 -- au meilleur palier débloqué.
 function Sanctuary.ResolveEggTier(tier: string, sanctuaryLevel: number): string

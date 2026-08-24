@@ -78,4 +78,16 @@ return function(t)
 		expect.equal(Sanctuary.ResolveEggTier("EpicEgg", 4), "EpicEgg")
 		expect.equal(Sanctuary.ResolveEggTier("LegendaryEgg", 5), "LegendaryEgg")
 	end)
+
+	t.test("SortEggs : palier croissant puis ancienneté", function()
+		local eggs = {
+			{ Id = "b", Tier = "RareEgg", Timestamp = 10 },
+			{ Id = "a", Tier = "CommonEgg", Timestamp = 20 },
+			{ Id = "c", Tier = "CommonEgg", Timestamp = 5 },
+		}
+		local sorted = Sanctuary.SortEggs(eggs)
+		expect.equal(sorted[1].Id, "c")
+		expect.equal(sorted[2].Id, "a")
+		expect.equal(sorted[3].Id, "b")
+	end)
 end

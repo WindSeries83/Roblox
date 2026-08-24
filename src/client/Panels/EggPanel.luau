@@ -187,7 +187,7 @@ function EggPanel.Refresh(state)
 	RefreshBuyButtons()
 	local stats = state.Stats or {}
 	RefreshPity(stats.HatchesSinceRare or 0)
-	for i, egg in state.Eggs do
+	for i, egg in Sanctuary.SortEggs(state.Eggs) do
 		local row = UiKit.Cell(eggList)
 		row.Name = `EggRow{i}`
 		UiKit.Create("TextLabel", {
