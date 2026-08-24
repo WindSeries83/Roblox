@@ -65,20 +65,40 @@ local function Release(player: Player, eggId: string)
 	end
 end
 
--- Origine des slots : couveuse du monde, sinon nid du spawn, sinon le joueur.
-local function CouveuseOrigin(player: Player): Vector3
+-- Origine des slots : XZ de la couveuse, Y = hauteur du sol par raycast
+-- (la couveuse est partiellement enterrée dans la map actuelle : son pivot est sous le terrain).
+local function GroundedOrigin(player: Player): Vector3
 	local model = Workspace:FindFirstChild("Couveuse")
 	local part = model and (model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true))
+	local base
 	if part then
-		return part.Position
+		base = part.Position
+	elseif Workspace:FindFirstChild("Nest") then
+		local nestPart = Workspace.Nest.PrimaryPart or Workspace.Nest:FindFirstChildWhichIsA("BasePart", true)
+		if nestPart then
+			base = nestPart.Position
+		end
 	end
-	local nest = Workspace:FindFirstChild("Nest")
-	local nestPart = nest and (nest.PrimaryPart or nest:FindFirstChildWhichIsA("BasePart", true))
-	if nestPart then
-		return nestPart.Position
+	if not base then
+		local character = player.Character
+		return if character then character:GetPivot().Position else Vector3.zero
 	end
-	local character = player.Character
-	return if character then character:GetPivot().Position else Vector3.zero
+
+	local from = Vector3.new(base.X, base.Y + 50, base.Z)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local exclude = {}
+	if player.Character then
+		table.insert(exclude, player.Character)
+	end
+	for _, eggs in placed do
+		for _, eggModel in eggs do
+			table.insert(exclude, eggModel)
+		end
+	end
+	params.FilterDescendantsInstances = exclude
+	local hit = Workspace:Raycast(from, Vector3.new(0, -100, 0), params)
+	return if hit then Vector3.new(base.X, hit.Position.Y, base.Z) else base + Vector3.new(0, 4, 0)
 end
 
 local function BuildEggModel(tier: string): Model
@@ -125,7 +145,7 @@ function IncubationService:Place(player: Player, eggId: string, tier: string)
 	slotIndex[player] = ((slotIndex[player] or 0) % Incubation.MAX_PLACED) + 1
 
 	local model = BuildEggModel(tier)
-	local cf = Incubation.SlotCFrame(CouveuseOrigin(player), slotIndex[player])
+	local cf = Incubation.SlotCFrame(GroundedOrigin(player), slotIndex[player])
 	model:PivotTo(cf + Vector3.new(0, 1.2, 0))
 	model.Parent = Workspace
 
@@ -164,7 +184,7 @@ function IncubationService:AutoPlaceAndHatch(player: Player, eggId: string, tier
 	local model = BuildEggModel(tier)
 	local slot = ((slotIndex[player] or 0) % Incubation.MAX_PLACED) + 1
 	slotIndex[player] = slot
-	local cf = Incubation.SlotCFrame(CouveuseOrigin(player), slot)
+	local cf = Incubation.SlotCFrame(GroundedOrigin(player), slot)
 	model:PivotTo(cf + Vector3.new(0, 1.2, 0))
 	model.Parent = Workspace
 	task.delay(1, function()
