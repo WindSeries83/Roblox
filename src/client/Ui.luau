@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local UiKit = require(script.Parent.UiKit)
 local Audio = require(script.Parent.Audio)
@@ -164,6 +165,8 @@ local panelsFrame = UiKit.Create("Frame", {
 
 local panels = {}
 local selectByName: { [string]: (() -> ())? } = {}
+-- Onglet actuellement affiché : permet au bouton de barre d'action de refermer le menu.
+local activeTabName = ""
 local tabCount = 0
 local function AddTab(name: string, panelModule: any)
 	tabCount += 1
@@ -190,6 +193,7 @@ local function AddTab(name: string, panelModule: any)
 			panel.frame.Visible = false
 		end
 		frame.Visible = true
+		activeTabName = name
 		TutorialBridge.SetActive(name)
 	end
 
@@ -254,6 +258,7 @@ do
 			panel.frame.Visible = false
 		end
 		frame.Visible = true
+		activeTabName = "Duels & Classements"
 		TutorialBridge.SetActive("Duels & Classements")
 	end
 
@@ -365,6 +370,25 @@ local function SetMenuOpen(open: boolean)
 	TutorialBridge.Set("MenuOpen", open)
 end
 
+-- Bouton fermer : coin haut-droit du menu, au-dessus des panneaux (même ancrage que questBadge).
+local closeButton = UiKit.Create("TextButton", {
+	Name = "CloseMenu",
+	BackgroundColor3 = TINTS.RED,
+	TextColor3 = TINTS.WHITE,
+	Font = Enum.Font.GothamBold,
+	TextSize = 18,
+	Size = UDim2.fromOffset(32, 32),
+	Position = UDim2.new(1, -6, 0, -6),
+	AnchorPoint = Vector2.new(1, 0),
+	ZIndex = 5,
+	Text = "✕",
+	Parent = content,
+})
+UiKit.Corner(closeButton)
+closeButton.Activated:Connect(function()
+	SetMenuOpen(false)
+end)
+
 SetMenuOpen(false)
 
 local ShowAnnouncement: (string) -> ()
@@ -402,21 +426,39 @@ local function BarButton(text: string, layoutOrder: number, accent: boolean?): T
 	return button
 end
 
+-- Re-cliquer le bouton de l'onglet déjà affiché referme le menu ; sinon ouvre et sélectionne.
+local function ToggleOrSelect(name: string)
+	if menuOpen and activeTabName == name then
+		SetMenuOpen(false)
+	else
+		SetMenuOpen(true)
+		if selectByName[name] then
+			selectByName[name]()
+		end
+	end
+end
+
 local failleButton = BarButton("Faille", 2)
 BarButton("Œufs", 1).Activated:Connect(function()
-	SetMenuOpen(true)
-	if selectByName["Œufs"] then
-		selectByName["Œufs"]()
-	end
+	ToggleOrSelect("Œufs")
 end)
 BarButton("Sanctuaire", 3).Activated:Connect(function()
-	SetMenuOpen(true)
-	if selectByName["Sanctuaire"] then
-		selectByName["Sanctuaire"]()
-	end
+	ToggleOrSelect("Sanctuaire")
 end)
 BarButton("Plus", 4).Activated:Connect(function()
-	SetMenuOpen(true)
+	SetMenuOpen(not menuOpen)
+end)
+
+-- Manette (B) et Échap referment le menu ouvert.
+UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+	if gameProcessedEvent then
+		return
+	end
+	if input.KeyCode == Enum.KeyCode.ButtonB or input.KeyCode == Enum.KeyCode.Escape then
+		if menuOpen then
+			SetMenuOpen(false)
+		end
+	end
 end)
 
 local riftActiveState = false
