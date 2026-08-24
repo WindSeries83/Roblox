@@ -78,6 +78,21 @@ local function DisplayColor(creature): Color3
 	return Rarities[creature.Rarity].Color
 end
 
+-- Le wrapper ProceduralModel verrouille ses parts après génération (PivotTo/CFrame
+-- sans effet) : on déballe le clone dans un Model ordinaire pour garder le mouvement.
+local function UnwrapProcedural(model: Model): Model
+	if not model:IsA("ProceduralModel") then
+		return model
+	end
+	local plain = Instance.new("Model")
+	plain.Name = model.Name
+	for _, child in model:GetChildren() do
+		child.Parent = plain
+	end
+	model:Destroy()
+	return plain
+end
+
 local function PrepareClone(model: Model)
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") then
@@ -179,7 +194,7 @@ function CreatureDisplay.Refresh(state)
 			if not template then
 				continue
 			end
-			model = template:Clone()
+			model = UnwrapProcedural(template:Clone())
 			model.Name = `Display_{creature.SpeciesId}`
 			model:SetAttribute("CreatureId", creature.Id)
 			PrepareClone(model)
