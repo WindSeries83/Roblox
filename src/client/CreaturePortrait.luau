@@ -1,9 +1,4 @@
 local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
-local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
-local CreatureTemplates = require(ReplicatedStorage.Shared.CreatureTemplates)
 
 -- Portrait vivant : ViewportFrame qui fait tourner lentement le modèle 3D
 -- de l'espèce, teinté rareté/mutation. Réutilisable partout où on affiche
@@ -59,52 +54,16 @@ function CreaturePortrait.Create(parent: Instance, position: UDim2, size: UDim2)
 	return state
 end
 
--- Silhouette : teinte sombre mais lisible pour les espèces non découvertes (pokédex).
-local SILHOUETTE_COLOR = Color3.fromRGB(55, 55, 70)
-
-function CreaturePortrait.Show(state: any, speciesId: string?, rarity: string?, mutation: any, silhouette: boolean?)
-	if state.model then
-		state.model:Destroy()
-		state.model = nil
+function CreaturePortrait.Show(_state: any, _speciesId: string?, _rarity: string?, _mutation: any, _silhouette: boolean?)
+	-- ponytail: portraits 3D retirés (assets provisoires jugés moches).
+	-- Restaurer l'ancien corps de Show (git log) quand la vraie DA arrive.
+	if _state and _state.model then
+		_state.model:Destroy()
+		_state.model = nil
 	end
-	if not speciesId then
-		return
+	if _state and _state.vp then
+		_state.vp.BackgroundTransparency = 1
 	end
-	local template = CreatureTemplates.Get(speciesId)
-	if not template then
-		return
-	end
-
-	local model = template:Clone()
-	for _, part in model:GetDescendants() do
-		if part:IsA("BasePart") then
-			part.Anchored = true
-			part.CanCollide = false
-			part.CanQuery = false
-		end
-	end
-	if not model.PrimaryPart then
-		model.PrimaryPart = model:FindFirstChildWhichIsA("BasePart", true)
-	end
-
-	local def = (mutation ~= false and mutation and Mutations[mutation]) or Rarities[rarity or ""]
-	local color = if silhouette then SILHOUETTE_COLOR else (def and def.Color or Color3.new(1, 1, 1))
-	for _, part in model:GetDescendants() do
-		-- En silhouette on teinte aussi les yeux : la forme doit rester illisible.
-		if part:IsA("BasePart") and (silhouette or not part.Name:find("Eye", 1, true)) then
-			part.Color = color
-		end
-	end
-
-	local ext = model:GetExtentsSize()
-	local maxDim = math.max(ext.X, ext.Y, ext.Z, 0.01)
-	pcall(function()
-		model:ScaleTo(3.6 / maxDim)
-	end)
-	model:PivotTo(CFrame.new())
-
-	model.Parent = state.world
-	state.model = model
 end
 
 return CreaturePortrait
