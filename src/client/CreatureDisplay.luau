@@ -111,34 +111,23 @@ local function CreatureById(id: string?)
 	return nil
 end
 
--- Part cliquable : l'Aura (CanQuery=false) et les yeux ne doivent pas porter le clic.
-local function ClickablePart(model: Model): BasePart?
-	local best, bestSize = nil, 0
+-- Un detector par part cliquable : un clic n'atteint que la part visée, une part
+-- interne unique serait occluse par la carapace du modèle.
+local function AttachClickDetector(model: Model, creature)
 	for _, part in model:GetDescendants() do
 		if part:IsA("BasePart") and part.Name ~= "Aura" and not part.Name:find("Eye", 1, true) and part.CanQuery then
-			local size = part.Size.X * part.Size.Y * part.Size.Z
-			if size > bestSize then
-				best, bestSize = part, size
-			end
+			local click = Instance.new("ClickDetector")
+			click.MaxActivationDistance = 40
+			click.MouseClick:Connect(function()
+				local primary = model.PrimaryPart
+				if primary then
+					Fx.Burst(primary, DisplayColor(creature), 26)
+					pops[creature.Id] = os.clock() + 0.5
+				end
+				CreatureHud.Open(creature, lastState)
+			end)
+			click.Parent = part
 		end
-	end
-	return best
-end
-
-local function AttachClickDetector(model: Model, creature)
-	local click = Instance.new("ClickDetector")
-	click.MaxActivationDistance = 40
-	click.MouseClick:Connect(function()
-		local primary = model.PrimaryPart
-		if primary then
-			Fx.Burst(primary, DisplayColor(creature), 26)
-			pops[creature.Id] = os.clock() + 0.5
-		end
-		CreatureHud.Open(creature, lastState)
-	end)
-	local part = ClickablePart(model)
-	if part then
-		click.Parent = part
 	end
 end
 
