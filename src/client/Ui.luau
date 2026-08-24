@@ -10,6 +10,7 @@ local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 
 local SanctuaryPanel = require(script.Parent.Panels.SanctuaryPanel)
 local EggPanel = require(script.Parent.Panels.EggPanel)
@@ -88,7 +89,7 @@ local ui = UiKit.Create("ScreenGui", {
 local topBar = UiKit.Create("Frame", {
 	Name = "TopBar",
 	BackgroundColor3 = TINTS.PANEL,
-	Size = UDim2.fromOffset(if compact then 230 else 300, if compact then 56 else 64),
+	Size = UDim2.fromOffset(if compact then 240 else 320, if compact then 76 else 84),
 	Position = UDim2.fromOffset(12, 64), -- sous les boutons Roblox du topbar (IgnoreGuiInset = true)
 	Parent = ui,
 })
@@ -108,9 +109,9 @@ local essenceLabel = UiKit.Create("TextLabel", {
 	BackgroundTransparency = 1,
 	TextColor3 = TINTS.ACCENT,
 	Font = Enum.Font.GothamBold,
-	TextSize = 24,
+	TextSize = 22,
 	TextXAlignment = Enum.TextXAlignment.Left,
-	Size = UDim2.fromScale(1, 0.55),
+	Size = UDim2.fromScale(1, 0.38),
 	Text = "Essence : 0",
 	Parent = topBar,
 })
@@ -121,9 +122,22 @@ local rateLabel = UiKit.Create("TextLabel", {
 	TextColor3 = TINTS.WHITE,
 	TextSize = 14,
 	TextXAlignment = Enum.TextXAlignment.Left,
-	Position = UDim2.fromScale(0, 0.55),
-	Size = UDim2.fromScale(1, 0.45),
+	Position = UDim2.fromScale(0, 0.38),
+	Size = UDim2.fromScale(1, 0.28),
 	Text = "Rendement : 0 / s",
+	Parent = topBar,
+})
+
+-- Possessions permanentes : places occupées, étoiles et points d'arbre visibles sans ouvrir le menu.
+local possessionsLabel = UiKit.Create("TextLabel", {
+	Name = "PossessionsLabel",
+	BackgroundTransparency = 1,
+	TextColor3 = TINTS.WHITE,
+	TextSize = 13,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	Position = UDim2.fromScale(0, 0.66),
+	Size = UDim2.fromScale(1, 0.34),
+	Text = "🐾 0/0   ★ 0   🌟 0",
 	Parent = topBar,
 })
 
@@ -383,6 +397,30 @@ closeButton.Activated:Connect(function()
 end)
 
 SetMenuOpen(false)
+
+-- Badge points d'arbre : même pattern que questBadge, ouvre l'onglet Arbre au clic.
+local skillBadge = UiKit.Create("TextButton", {
+	Name = "SkillBadge",
+	BackgroundColor3 = TINTS.ACCENT,
+	BackgroundTransparency = 0.1,
+	TextColor3 = TINTS.DARK,
+	Font = Enum.Font.GothamBold,
+	TextSize = 14,
+	Size = UDim2.fromOffset(24, 24),
+	Position = UDim2.new(1, -34, 0, -6),
+	AnchorPoint = Vector2.new(1, 0),
+	ZIndex = 5,
+	Text = "🌟",
+	Visible = false,
+	Parent = topBar,
+})
+UiKit.Corner(skillBadge)
+skillBadge.Activated:Connect(function()
+	SetMenuOpen(true)
+	if selectByName["Arbre"] then
+		selectByName["Arbre"]()
+	end
+end)
 
 local ShowAnnouncement: (string) -> ()
 
@@ -758,6 +796,15 @@ local function RefreshAll(newState)
 		rateLabel.Text ..= ` — Meute ×{state.Meute}`
 	end
 	UpdateQuestBadge(state.Quests)
+	-- Possessions : places du sanctuaire (gamepass inclus), étoiles, points d'arbre à dépenser.
+	local bonusSlots = if state.Entitlements and state.Entitlements.MoreSlots
+		then Config.GAMEPASSES.MoreSlots.BonusSlots
+		else 0
+	local hasSkillPoints = state.SkillPoints > 0
+	possessionsLabel.Text =
+		`🐾 {#state.Creatures}/{Sanctuary.MaxCreatures(state.SanctuaryLevel, bonusSlots)}   ★ {state.Stars}   🌟 {state.SkillPoints}`
+	possessionsLabel.TextColor3 = if hasSkillPoints then TINTS.ACCENT else TINTS.WHITE
+	skillBadge.Visible = hasSkillPoints
 	ObjectiveBanner.Refresh(state)
 	for _, panel in panels do
 		if panel.module.Refresh then
@@ -932,7 +979,7 @@ local function ApplyLayout()
 		return camera.ViewportSize.X
 	end)
 	compact = if ok then width < 700 else false
-	topBar.Size = UDim2.fromOffset(if compact then 230 else 300, if compact then 56 else 64)
+	topBar.Size = UDim2.fromOffset(if compact then 240 else 320, if compact then 76 else 84)
 	menuTargetSize = UDim2.fromScale(if compact then 0.96 else 0.72, if compact then 0.96 else 0.72)
 	if not menuOpen then
 		content.Size = menuTargetSize
