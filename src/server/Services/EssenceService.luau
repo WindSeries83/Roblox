@@ -103,14 +103,17 @@ function EssenceService:Start()
 		accumulator = 0
 
 		for player, profile in pairs(saveService.Profiles) do
-			local rate = EssenceService.GetRate(player)
-			if rate > 0 then
-				profile.Data.Essence += rate
-				profile.Data.Stats.TotalEssenceEarned += rate
-				profile.Data.LastPlayed = os.time()
-				questService:OnEssenceGained(player, rate, "Passive")
-			end
-			dataSync:Send(player)
+			-- Un profil fautif ne doit pas couper la synchro globale : chaque joueur est isolé.
+			pcall(function()
+				local rate = EssenceService.GetRate(player)
+				if rate > 0 then
+					profile.Data.Essence += rate
+					profile.Data.Stats.TotalEssenceEarned += rate
+					profile.Data.LastPlayed = os.time()
+					questService:OnEssenceGained(player, rate, "Passive")
+				end
+				dataSync:Send(player)
+			end)
 		end
 
 		if os.clock() - lastLog > 60 then
