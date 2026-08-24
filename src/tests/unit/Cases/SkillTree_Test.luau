@@ -30,6 +30,24 @@ return function(t)
 		expect.falsy(SkillTree.CanBuy(0, {}, "FarmRate1"))
 	end)
 
+	-- A locked node is refused while its prerequisite sits at rank 0, and the reason names the parent.
+	t.test("canbuy refuses locked node and names required parent", function()
+		local ok, reason = SkillTree.CanBuy(5, {}, "FarmLuck")
+		expect.falsy(ok)
+		expect.truthy(string.find(reason, "Sève lente", 1, true) ~= nil)
+	end)
+
+	-- As soon as the prerequisite reaches rank 1 the node becomes purchasable.
+	t.test("canbuy accepts once prerequisite reaches rank 1", function()
+		expect.truthy(SkillTree.CanBuy(5, { FarmRate1 = 1 }, "FarmLuck"))
+	end)
+
+	-- The Requires helper normalizes root nodes to an empty list (and keeps chain links intact).
+	t.test("requires helper returns empty list without prerequisites", function()
+		expect.deepEqual(SkillTree.Requires(SkillTree.Node("FarmRate1")), {})
+		expect.deepEqual(SkillTree.Requires(SkillTree.Node("SecretOmen")), { "MutOmen" })
+	end)
+
 	-- Effects sum ranks across nodes of the same effect.
 	t.test("effects sum ranks across nodes of same effect", function()
 		local effects = SkillTree.Effects({

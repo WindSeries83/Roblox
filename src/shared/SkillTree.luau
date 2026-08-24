@@ -20,6 +20,11 @@ function SkillTree.Rank(ranks: { [string]: number }, id: string): number
 	return ranks[id] or 0
 end
 
+-- Prerequis d'un noeud : liste d'ids devant etre au rang >= 1 avant lui (racine = vide).
+function SkillTree.Requires(node)
+	return node.Requires or {}
+end
+
 function SkillTree.CanBuy(points: number, ranks: { [string]: number }, id: string): (boolean, string?)
 	local node = SkillTree.Node(id)
 	if not node then
@@ -30,6 +35,12 @@ function SkillTree.CanBuy(points: number, ranks: { [string]: number }, id: strin
 	end
 	if points < 1 then
 		return false, "aucun point d'étoile"
+	end
+	for _, reqId in SkillTree.Requires(node) do
+		if SkillTree.Rank(ranks, reqId) < 1 then
+			local reqNode = SkillTree.Node(reqId)
+			return false, `nécessite {if reqNode then reqNode.Name else reqId}`
+		end
 	end
 	return true
 end

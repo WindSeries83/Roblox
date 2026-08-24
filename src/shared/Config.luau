@@ -169,6 +169,8 @@ return {
 
 	-- Arbre d'Étoiles : +1 point par renaissance, rien n'est vendable (bible §7).
 	-- Valeurs provisionnelles — à valider par EconomySim (spec §2.4) avant live.
+	-- Graphe : Requires = ids à débloquer avant (rang >= 1), Row/Col = position dans le canvas
+	-- (tronc Col 3, branches Ferme Col 1 / Faille Col 5 / Économie Col 7).
 	SKILL_TREE = {
 		{
 			Id = "FarmRate1",
@@ -178,6 +180,9 @@ return {
 			MaxRank = 3,
 			Effect = "EssenceRate",
 			Value = 0.05,
+			Requires = {},
+			Row = 1,
+			Col = 3,
 		},
 		{
 			Id = "FarmRate2",
@@ -187,6 +192,9 @@ return {
 			MaxRank = 1,
 			Effect = "EssenceRate",
 			Value = 0.10,
+			Requires = { "FarmRate1" },
+			Row = 2,
+			Col = 1,
 		},
 		{
 			Id = "FarmLuck",
@@ -196,6 +204,9 @@ return {
 			MaxRank = 3,
 			Effect = "HatchLuck",
 			Value = 0.04,
+			Requires = { "FarmRate1" },
+			Row = 2,
+			Col = 3,
 		},
 		{
 			Id = "FarmOffline",
@@ -205,6 +216,9 @@ return {
 			MaxRank = 2,
 			Effect = "OfflineRate",
 			Value = 0.05,
+			Requires = { "FarmLuck" },
+			Row = 3,
+			Col = 3,
 		},
 		{
 			Id = "RiftReward",
@@ -214,6 +228,9 @@ return {
 			MaxRank = 3,
 			Effect = "RiftRewardMult",
 			Value = 0.10,
+			Requires = { "FarmRate1" },
+			Row = 2,
+			Col = 5,
 		},
 		{
 			Id = "RiftAscend",
@@ -223,6 +240,9 @@ return {
 			MaxRank = 3,
 			Effect = "AscendChanceAdd",
 			Value = 0.01,
+			Requires = { "RiftReward" },
+			Row = 3,
+			Col = 5,
 		},
 		{
 			Id = "MutOmen",
@@ -232,6 +252,9 @@ return {
 			MaxRank = 3,
 			Effect = "MutationBonus",
 			Value = 0.06,
+			Requires = { "RiftAscend" },
+			Row = 4,
+			Col = 5,
 		},
 		{
 			Id = "SecretOmen",
@@ -241,6 +264,9 @@ return {
 			MaxRank = 1,
 			Effect = "SecretOmen",
 			Value = 1,
+			Requires = { "MutOmen" },
+			Row = 5,
+			Col = 5,
 		},
 		{
 			Id = "MarketFeeCut",
@@ -250,6 +276,9 @@ return {
 			MaxRank = 3,
 			Effect = "MarketFeeReduction",
 			Value = 0.01,
+			Requires = { "FarmRate1" },
+			Row = 2,
+			Col = 7,
 		},
 		{
 			Id = "BreedCut",
@@ -259,6 +288,9 @@ return {
 			MaxRank = 2,
 			Effect = "BreedCostReduction",
 			Value = 0.10,
+			Requires = { "MarketFeeCut" },
+			Row = 3,
+			Col = 7,
 		},
 		{
 			Id = "UpgradeCut",
@@ -268,6 +300,9 @@ return {
 			MaxRank = 2,
 			Effect = "UpgradeCostReduction",
 			Value = 0.10,
+			Requires = { "BreedCut" },
+			Row = 4,
+			Col = 7,
 		},
 		{
 			Id = "EggDiscount",
@@ -277,6 +312,9 @@ return {
 			MaxRank = 2,
 			Effect = "EggPriceReduction",
 			Value = 0.05,
+			Requires = { "UpgradeCut" },
+			Row = 5,
+			Col = 7,
 		},
 	},
 
