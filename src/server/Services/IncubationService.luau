@@ -67,7 +67,7 @@ end
 
 -- Origine des slots : XZ de la couveuse, Y = hauteur du sol par raycast
 -- (la couveuse est partiellement enterrée dans la map actuelle : son pivot est sous le terrain).
-local function GroundedOrigin(player: Player): Vector3
+local function GroundedOrigin(player: Player, slot: number): Vector3
 	local model = Workspace:FindFirstChild("Couveuse")
 	local part = model and (model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart", true))
 	local base
@@ -85,14 +85,16 @@ local function GroundedOrigin(player: Player): Vector3
 	end
 
 	-- La couveuse étant partiellement enterrée, on vise son propre dessus :
-	-- raycast vertical restreint AU modèle (sinon on touche le terrain autour).
+	-- raycast vertical restreint AU modèle, au droit du slot (sinon on touche
+	-- l'œuf décoratif posé au centre du socle).
 	if model then
 		local params = RaycastParams.new()
 		params.FilterType = Enum.RaycastFilterType.Include
 		params.FilterDescendantsInstances = { model }
-		local hit = Workspace:Raycast(Vector3.new(base.X, base.Y + 50, base.Z), Vector3.new(0, -200, 0), params)
+		local slotOffset = Incubation.SlotOffset(slot)
+		local hit = Workspace:Raycast(Vector3.new(base.X, base.Y + 50, base.Z) + slotOffset, Vector3.new(0, -200, 0), params)
 		if hit then
-			return Vector3.new(base.X, hit.Position.Y, base.Z)
+			return Vector3.new(base.X + slotOffset.X, hit.Position.Y, base.Z + slotOffset.Z)
 		end
 	end
 
@@ -158,7 +160,7 @@ function IncubationService:Place(player: Player, eggId: string, tier: string)
 	slotIndex[player] = ((slotIndex[player] or 0) % Incubation.MAX_PLACED) + 1
 
 	local model = BuildEggModel(tier)
-	local cf = Incubation.SlotCFrame(GroundedOrigin(player), slotIndex[player])
+	local cf = Incubation.SlotCFrame(GroundedOrigin(player, slotIndex[player]), slotIndex[player])
 	model:PivotTo(cf + Vector3.new(0, 1.2, 0))
 	model.Parent = Workspace
 
@@ -197,7 +199,7 @@ function IncubationService:AutoPlaceAndHatch(player: Player, eggId: string, tier
 	local model = BuildEggModel(tier)
 	local slot = ((slotIndex[player] or 0) % Incubation.MAX_PLACED) + 1
 	slotIndex[player] = slot
-	local cf = Incubation.SlotCFrame(GroundedOrigin(player), slot)
+	local cf = Incubation.SlotCFrame(GroundedOrigin(player, slot), slot)
 	model:PivotTo(cf + Vector3.new(0, 1.2, 0))
 	model.Parent = Workspace
 	task.delay(1, function()

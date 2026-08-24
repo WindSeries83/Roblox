@@ -30,6 +30,13 @@ return function(t)
 		expect.truthy((a - b).Magnitude > 1.4)
 	end)
 
+	t.test("SlotOffset cohérent avec SlotCFrame", function()
+		local origin = Vector3.new(1, 5, 2)
+		for i = 1, Incubation.MAX_PLACED do
+			expect.near((Incubation.SlotCFrame(origin, i).Position - origin - Incubation.SlotOffset(i)).Magnitude, 0, 0.001)
+		end
+	end)
+
 	t.test("index 4 == index 1 (cycle complet)", function()
 		local first = Incubation.SlotCFrame(Vector3.zero, 1).Position
 		local wrapped = Incubation.SlotCFrame(Vector3.zero, Incubation.MAX_PLACED + 1).Position
