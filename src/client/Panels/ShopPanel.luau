@@ -6,7 +6,10 @@ local UiKit = require(script.Parent.Parent.UiKit)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Config = require(ReplicatedStorage.Shared.Config)
 
+-- Boutique dédiée (bible §4.B) : onglet unique, sections claires, valeur affichée.
 local ShopPanel = {}
+
+local TINTS = UiKit.TINTS
 
 local player = Players.LocalPlayer
 
@@ -14,7 +17,7 @@ local potionLabel
 local boostLabel
 local eclipseLabel
 local offerBanner
-local buyButtons: { [string]: TextButton } = {}
+local passRows: { [string]: TextButton } = {}
 local luckPotion
 local boostUntil = 0
 local eclipseActive = false
@@ -61,23 +64,57 @@ local function RefreshTimers()
 	end
 end
 
-local function MakeProductRow(parent, def, key)
+local function SectionTitle(parent, text: string, layoutOrder: number)
+	local title = UiKit.Title(parent, text, 15)
+	title.LayoutOrder = layoutOrder
+	return title
+end
+
+local function ProductRow(parent, def, key, layoutOrder: number)
 	local button = UiKit.Create("TextButton", {
 		Name = `Shop_{key}`,
-		BackgroundColor3 = UiKit.TINTS.DARK,
-		TextColor3 = UiKit.TINTS.WHITE,
+		BackgroundColor3 = TINTS.DARK,
+		TextColor3 = TINTS.WHITE,
 		Font = Enum.Font.GothamBold,
 		TextSize = 12,
 		TextWrapped = true,
-		Size = UDim2.new(0.32, -6, 1, 0),
-		Text = `{def.Name}\n(produit à configurer)`,
+		Size = UDim2.new(0.32, -6, 0, 52),
+		LayoutOrder = layoutOrder,
+		Text = def.Name .. if (def.Id or 0) == 0 then "\n(produit à configurer)" else "",
 		Parent = parent,
 	})
 	UiKit.Corner(button)
-	buyButtons[key] = button
 	button.Activated:Connect(function()
 		Prompt(def.Id)
 	end)
+	return button
+end
+
+local function PassRow(parent, key: string, def, layoutOrder: number)
+	local row = UiKit.Cell(parent)
+	row.LayoutOrder = layoutOrder
+	local label = UiKit.Create("TextLabel", {
+		Name = `PassLabel_{key}`,
+		BackgroundTransparency = 1,
+		TextColor3 = TINTS.WHITE,
+		Font = Enum.Font.GothamBold,
+		TextSize = 12,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextWrapped = true,
+		Size = UDim2.fromScale(0.62, 1),
+		Text = def.Name,
+		Parent = row,
+	})
+	local button = UiKit.Button(row, "Acheter", UDim2.new(0.3, 0, 0, 30), UDim2.new(0.68, 0, 0.5, -15))
+	button.Name = `PassBuy_{key}`
+	button.BackgroundColor3 = TINTS.DARK
+	passRows[key] = button
+	button.Activated:Connect(function()
+		if (def.Id or 0) ~= 0 then
+			MarketplaceService:PromptGamePassPurchase(player, def.Id)
+		end
+	end)
+	return label
 end
 
 function ShopPanel.Create(parent)
@@ -86,117 +123,88 @@ function ShopPanel.Create(parent)
 		Size = UDim2.fromScale(1, 1),
 		Parent = parent,
 	})
-	UiKit.Padding(frame, 10)
 
 	UiKit.Title(frame, "Boutique")
 
+	local scroller = UiKit.Scroller(frame, UDim2.fromOffset(0, 28), UDim2.fromScale(1, 1))
+	scroller.Name = "ShopScroller"
+
+	-- Section Chance
+	SectionTitle(scroller, "Chance", 1)
 	potionLabel = UiKit.Create("TextLabel", {
 		Name = "PotionState",
-		RichText = false,
 		BackgroundTransparency = 1,
-		TextColor3 = UiKit.TINTS.WHITE,
+		TextColor3 = TINTS.WHITE,
 		TextSize = 11,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Position = UDim2.fromScale(0, 0.07),
-		Size = UDim2.fromScale(1, 0.04),
+		Size = UDim2.new(1, 0, 0, 14),
+		LayoutOrder = 2,
 		Text = "Aucune potion active",
-		Parent = frame,
+		Parent = scroller,
 	})
-
 	boostLabel = UiKit.Create("TextLabel", {
 		Name = "BoostState",
-		RichText = false,
 		BackgroundTransparency = 1,
 		TextColor3 = Color3.fromRGB(255, 215, 94),
 		TextSize = 11,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Position = UDim2.fromScale(0, 0.115),
-		Size = UDim2.fromScale(1, 0.04),
+		Size = UDim2.new(1, 0, 0, 14),
+		LayoutOrder = 3,
 		Text = "Pas de boost serveur",
-		Parent = frame,
+		Parent = scroller,
 	})
-
 	eclipseLabel = UiKit.Create("TextLabel", {
 		Name = "EclipseState",
-		RichText = false,
 		BackgroundTransparency = 1,
 		TextColor3 = Color3.fromRGB(178, 132, 255),
 		TextSize = 11,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Position = UDim2.fromScale(0, 0.16),
-		Size = UDim2.fromScale(1, 0.04),
+		Size = UDim2.new(1, 0, 0, 14),
+		LayoutOrder = 4,
 		Text = "",
 		Visible = false,
-		Parent = frame,
+		Parent = scroller,
 	})
-
 	local chanceRow = UiKit.Create("Frame", {
 		Name = "ChanceRow",
 		BackgroundTransparency = 1,
-		Position = UDim2.fromScale(0, 0.21),
-		Size = UDim2.fromScale(1, 0.14),
-		Parent = frame,
+		Size = UDim2.new(1, 0, 0, 52),
+		LayoutOrder = 5,
+		Parent = scroller,
 	})
 	UiKit.Create("UIListLayout", {
 		FillDirection = Enum.FillDirection.Horizontal,
 		Padding = UDim.new(0, 6),
+		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = chanceRow,
-
 	})
-
-	for key, def in Config.DEV_PRODUCTS do
-		if def.Kind == "LuckPotion" or def.Kind == "ServerBoost" then
-			MakeProductRow(chanceRow, def, key)
+	do
+		local i = 0
+		for key, def in Config.DEV_PRODUCTS do
+			if def.Kind == "LuckPotion" or def.Kind == "ServerBoost" then
+				i += 1
+				ProductRow(chanceRow, def, key, i)
+			end
 		end
 	end
 
-	local essenceTitle = UiKit.Create("TextLabel", {
-		BackgroundTransparency = 1,
-		TextColor3 = UiKit.TINTS.WHITE,
-		Font = Enum.Font.GothamBold,
-		TextSize = 13,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Position = UDim2.fromScale(0, 0.36),
-		Size = UDim2.fromScale(1, 0.04),
-		Text = "Essence (confort)",
-		Parent = frame,
-	})
-
-	local essenceRow = UiKit.Create("Frame", {
-		Name = "EssenceRow",
-		BackgroundTransparency = 1,
-		Position = UDim2.fromScale(0, 0.42),
-		Size = UDim2.fromScale(1, 0.14),
-		Parent = frame,
-	})
-	UiKit.Create("UIListLayout", {
-		FillDirection = Enum.FillDirection.Horizontal,
-		Padding = UDim.new(0, 6),
-		Parent = essenceRow,
-	})
-
-	for key, def in Config.DEV_PRODUCTS do
-		if def.Amount then
-			MakeProductRow(essenceRow, def, key)
-		end
-	end
-
-	-- Bannière informative 1er achat : affichée tant que non claimée, pas de popup auto.
+	-- Section Offres
+	SectionTitle(scroller, "Offres", 6)
 	offerBanner = UiKit.Create("Frame", {
 		Name = "FirstOfferBanner",
-		BackgroundColor3 = UiKit.TINTS.ACCENT,
+		BackgroundColor3 = TINTS.ACCENT,
 		BackgroundTransparency = 0.7,
-		Size = UDim2.fromScale(1, 0.08),
-		Position = UDim2.fromScale(0, 0.58),
+		Size = UDim2.new(1, 0, 0, 40),
+		LayoutOrder = 7,
 		Visible = false,
-		Parent = frame,
+		Parent = scroller,
 	})
 	UiKit.Corner(offerBanner)
 	UiKit.Padding(offerBanner, 4)
 	UiKit.Create("TextLabel", {
 		Name = "OfferText",
 		BackgroundTransparency = 1,
-		TextColor3 = UiKit.TINTS.WHITE,
+		TextColor3 = TINTS.WHITE,
 		Font = Enum.Font.GothamBold,
 		TextSize = 12,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -206,8 +214,8 @@ function ShopPanel.Create(parent)
 	})
 	local offerButton = UiKit.Create("TextButton", {
 		Name = "OfferBuy",
-		BackgroundColor3 = UiKit.TINTS.ACCENT,
-		TextColor3 = UiKit.TINTS.WHITE,
+		BackgroundColor3 = TINTS.ACCENT,
+		TextColor3 = TINTS.WHITE,
 		Font = Enum.Font.GothamBold,
 		TextSize = 11,
 		Size = UDim2.fromScale(0.26, 1),
@@ -222,6 +230,63 @@ function ShopPanel.Create(parent)
 			Prompt(def.Id)
 		end
 	end)
+	UiKit.Create("TextLabel", {
+		Name = "OffersHint",
+		BackgroundTransparency = 1,
+		TextColor3 = TINTS.WHITE,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Size = UDim2.new(1, 0, 0, 14),
+		LayoutOrder = 8,
+		Text = "Cadeaux de retour J2/J7 : automatiques à ta prochaine connexion après une absence.",
+		Parent = scroller,
+	})
+
+	-- Section Essence
+	SectionTitle(scroller, "Essence (confort)", 9)
+	local essenceRow = UiKit.Create("Frame", {
+		Name = "EssenceRow",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 52),
+		LayoutOrder = 10,
+		Parent = scroller,
+	})
+	UiKit.Create("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		Padding = UDim.new(0, 6),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = essenceRow,
+	})
+	do
+		local i = 0
+		for key, def in Config.DEV_PRODUCTS do
+			if def.Amount then
+				i += 1
+				ProductRow(essenceRow, def, key, i)
+			end
+		end
+	end
+
+	-- Section Pass & confort
+	SectionTitle(scroller, "Pass & confort", 11)
+	do
+		local i = 0
+		for key, def in Config.GAMEPASSES do
+			i += 1
+			PassRow(scroller, key, def, 11 + i)
+		end
+	end
+	UiKit.Create("TextLabel", {
+		Name = "VipSkuNote",
+		BackgroundTransparency = 1,
+		TextColor3 = TINTS.ACCENT,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Size = UDim2.new(1, 0, 0, 14),
+		LayoutOrder = 30,
+		Text = "Avec le Pass VIP : −10 % sur les SKUs soldés de la boutique.",
+		Parent = scroller,
+	})
 
 	task.spawn(function()
 		while frame.Parent do
@@ -238,6 +303,12 @@ function ShopPanel.Refresh(state)
 	offerBanner.Visible = state.Offers ~= nil
 		and state.Offers.FirstPurchaseEligible == true
 		and state.Offers.FirstPurchaseClaimed == false
+	local entitlements = state.Entitlements
+	for key, button in passRows do
+		local owned = entitlements ~= nil and entitlements[key] == true
+		button.Text = if owned then "Possédé ✓" else "Acheter"
+		button.Active = not owned
+	end
 end
 
 Net.BoostState.OnClientEvent:Connect(function(state)
