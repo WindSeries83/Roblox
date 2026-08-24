@@ -25,7 +25,7 @@ local function ShowRevealCard(anchor: Vector3, result)
 	holder.CanTouch = false
 	holder.Transparency = 1
 	holder.Size = Vector3.new(0.1, 0.1, 0.1)
-	holder.CFrame = CFrame.new(anchor + Vector3.new(0, 3, 0))
+	holder.CFrame = CFrame.new(anchor + Vector3.new(0, 2, 0))
 	holder.Parent = Workspace
 	currentCard = holder
 
@@ -33,7 +33,7 @@ local function ShowRevealCard(anchor: Vector3, result)
 	billboard.Size = UDim2.fromOffset(280, 120)
 	billboard.AlwaysOnTop = true
 	billboard.MaxDistance = 80
-	billboard.StudsOffset = Vector3.new(0, 3, 0)
+	billboard.StudsOffset = Vector3.new(0, 1.5, 0)
 	billboard.Parent = holder
 
 	local card = UiKit.Create("Frame", {
