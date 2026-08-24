@@ -79,7 +79,13 @@ function PurchaseService.PassEffect(passKey: string)
 	if passKey == "StarterBundle" then
 		return { Flag = "StarterBundle", Essence = 2000, Creature = { Rarity = "Rare", Mutation = "Shadow" } }
 	end
-	if passKey == "MoreSlots" or passKey == "PassiveBoost" or passKey == "AutoHatch" or passKey == "SeasonPremium" or passKey == "VIP" then
+	if
+		passKey == "MoreSlots"
+		or passKey == "PassiveBoost"
+		or passKey == "AutoHatch"
+		or passKey == "SeasonPremium"
+		or passKey == "VIP"
+	then
 		return { Flag = passKey, Essence = 0 }
 	end
 	return nil

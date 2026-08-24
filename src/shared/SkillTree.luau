@@ -43,9 +43,17 @@ end
 -- Agrege les rangs en bonus : somme pour les effets numeriques, flag booleen pour SecretOmen.
 function SkillTree.Effects(ranks: { [string]: number })
 	local effects = {
-		EssenceRate = 0, HatchLuck = 0, OfflineRate = 0, EggPriceReduction = 0,
-		RiftRewardMult = 0, AscendChanceAdd = 0, MutationBonus = 0, SecretOmen = false,
-		MarketFeeReduction = 0, BreedCostReduction = 0, UpgradeCostReduction = 0,
+		EssenceRate = 0,
+		HatchLuck = 0,
+		OfflineRate = 0,
+		EggPriceReduction = 0,
+		RiftRewardMult = 0,
+		AscendChanceAdd = 0,
+		MutationBonus = 0,
+		SecretOmen = false,
+		MarketFeeReduction = 0,
+		BreedCostReduction = 0,
+		UpgradeCostReduction = 0,
 	}
 	for _, node in Config.SKILL_TREE do
 		local rank = SkillTree.Rank(ranks, node.Id)

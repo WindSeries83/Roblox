@@ -8,7 +8,7 @@ local UiKit = require(script.Parent.UiKit)
 
 local CouveusePanel = {}
 
-	local TIER_ORDER = { "CommonEgg", "UncommonEgg", "RareEgg", "EpicEgg", "LegendaryEgg" }
+local TIER_ORDER = { "CommonEgg", "UncommonEgg", "RareEgg", "EpicEgg", "LegendaryEgg" }
 
 local lastState = nil
 local panel: Frame? = nil
@@ -120,12 +120,12 @@ function CouveusePanel.Start()
 		Parent = panel,
 	})
 	for i, tier in TIER_ORDER do
-	local button = UiKit.Button(
-		buyRow,
-		`{UiKit.EGG_TIER_NAMES[tier]}\n{Config.EGG_PRICES[tier]}`,
-		UDim2.new(1 / #TIER_ORDER, -4, 1, 0),
-		UDim2.new((i - 1) / #TIER_ORDER, 2, 0, 0)
-	)
+		local button = UiKit.Button(
+			buyRow,
+			`{UiKit.EGG_TIER_NAMES[tier]}\n{Config.EGG_PRICES[tier]}`,
+			UDim2.new(1 / #TIER_ORDER, -4, 1, 0),
+			UDim2.new((i - 1) / #TIER_ORDER, 2, 0, 0)
+		)
 		button.TextSize = 10
 		buyButtons[tier] = button
 		button.Activated:Connect(function()

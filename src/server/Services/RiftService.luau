@@ -221,10 +221,8 @@ local function WinRift(player: Player)
 	)
 	essenceService:Add(player, essence, "RiftCrystal")
 
-	local eggTier = Sanctuary.ResolveEggTier(
-		Gameplay.WeightedRoll(Config.RIFT_EGG_WEIGHTS),
-		profile.Data.SanctuaryLevel
-	)
+	local eggTier =
+		Sanctuary.ResolveEggTier(Gameplay.WeightedRoll(Config.RIFT_EGG_WEIGHTS), profile.Data.SanctuaryLevel)
 	hatchService:GrantEgg(player, eggTier, "Rift", Config.RIFT_ASCEND_CHANCE + eff.AscendChanceAdd)
 
 	local relicRoll = Gameplay.WeightedRoll(Config.RIFT_RELIC_WEIGHTS)

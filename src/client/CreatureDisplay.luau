@@ -219,7 +219,9 @@ function CreatureDisplay.Refresh(state)
 			end
 		end
 
-		local scale = (STAGE_SCALE[creature.Stage or 1] or 1) * (RARITY_SIZE[rank] or 1) * MutationScale(creature.Mutation)
+		local scale = (STAGE_SCALE[creature.Stage or 1] or 1)
+			* (RARITY_SIZE[rank] or 1)
+			* MutationScale(creature.Mutation)
 		if model.PrimaryPart then
 			bases[creature.Id] = GridPosition(index)
 			if not CreatureDisplay.Motion[creature.Id] then

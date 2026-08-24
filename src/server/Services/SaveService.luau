@@ -130,21 +130,23 @@ local MIGRATIONS = {
 	[5] = function(data)
 		data.SkillPoints = data.SkillPoints or 0
 		data.SkillRanks = data.SkillRanks or {}
-		data.Offers = data.Offers or {
-			FirstPurchaseEligible = false,
-			FirstPurchaseClaimed = false,
-			ReturnGifts = {},
-		}
+		data.Offers = data.Offers
+			or {
+				FirstPurchaseEligible = false,
+				FirstPurchaseClaimed = false,
+				ReturnGifts = {},
+			}
 		data.Offers.FirstPurchaseEligible = data.Offers.FirstPurchaseEligible or false
 		data.Offers.FirstPurchaseClaimed = data.Offers.FirstPurchaseClaimed or false
 		data.Offers.ReturnGifts = data.Offers.ReturnGifts or {}
 		data.Stats = data.Stats or {}
-		data.Stats.Funnel = data.Stats.Funnel or {
-			FirstHatchAt = 0,
-			FirstRarePlusAt = 0,
-			FirstEpicPlusAt = 0,
-			FirstPurchaseAt = 0,
-		}
+		data.Stats.Funnel = data.Stats.Funnel
+			or {
+				FirstHatchAt = 0,
+				FirstRarePlusAt = 0,
+				FirstEpicPlusAt = 0,
+				FirstPurchaseAt = 0,
+			}
 		data.VipGiftDate = data.VipGiftDate or ""
 		data.Version = 6
 	end,
