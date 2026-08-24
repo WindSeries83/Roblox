@@ -89,7 +89,7 @@ local topBar = UiKit.Create("Frame", {
 	Name = "TopBar",
 	BackgroundColor3 = TINTS.PANEL,
 	Size = UDim2.fromOffset(if compact then 230 else 300, if compact then 56 else 64),
-	Position = UDim2.fromOffset(12, 12),
+	Position = UDim2.fromOffset(12, 64), -- sous les boutons Roblox du topbar (IgnoreGuiInset = true)
 	Parent = ui,
 })
 UiKit.Corner(topBar)
