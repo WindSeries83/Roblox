@@ -27,10 +27,11 @@ local analyticsService
 local skillService
 local tickerService
 local eclipseService
+local incubationService
 
 local container
 
-local hatchCooldowns: { [Player]: number } = {}
+local hatchCooldowns: { [Player]: { [string]: number } } = {}
 
 function HatchService:GrantEgg(player: Player, tier: string, source: string, ascendChance: number?)
 	local profile = saveService:GetProfile(player)
@@ -111,6 +112,7 @@ function HatchService:Init(cont)
 	boostService = cont:Get("BoostService")
 	skillService = cont:Get("SkillService")
 	analyticsService = cont:Get("AnalyticsService")
+	incubationService = cont:Get("IncubationService")
 end
 
 function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: boolean?): boolean
@@ -131,14 +133,12 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 	end
 
 	if not profile.Data.Entitlements.AutoHatch then
-		local lastHatch = hatchCooldowns[player] or 0
-		if os.clock() - lastHatch < Config.HATCH_COOLDOWN then
+		if not Gameplay.CheckCooldown(hatchCooldowns, player, "Hatch", Config.HATCH_COOLDOWN) then
 			return false
 		end
-		hatchCooldowns[player] = os.clock()
 	end
 
-	local bonusSlots = if profile.Data.Entitlements.MoreSlots then 2 else 0
+	local bonusSlots = if profile.Data.Entitlements.MoreSlots then Config.GAMEPASSES.MoreSlots.BonusSlots else 0
 	local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel, bonusSlots)
 	if #profile.Data.Creatures >= maxCreatures then
 		log:Economy("Hatch", "CapReached", {
@@ -264,6 +264,16 @@ function HatchService:Start()
 			return
 		end
 		self:GrantEgg(player, tier, "Purchase")
+		if profile and profile.Data.Entitlements.AutoHatch then
+			-- Éclosion auto : dernier œuf fraîchement accordé (Source="Purchase").
+			for i = #profile.Data.Eggs, 1, -1 do
+				local fresh = profile.Data.Eggs[i]
+				if fresh.Source == "Purchase" then
+					incubationService:AutoPlaceAndHatch(player, fresh.Id, tier)
+					break
+				end
+			end
+		end
 	end)
 
 	Net.HatchEgg.OnServerEvent:Connect(function(player: Player, eggId: string)

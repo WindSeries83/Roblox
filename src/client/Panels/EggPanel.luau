@@ -8,15 +8,6 @@ local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 
 local EggPanel = {}
 
-local TIER_ORDER = { "CommonEgg", "UncommonEgg", "RareEgg", "EpicEgg", "LegendaryEgg" }
-local TIER_BUTTON_NAMES = {
-	CommonEgg = "BuyCommon",
-	UncommonEgg = "BuyUncommon",
-	RareEgg = "BuyRare",
-	EpicEgg = "BuyEpic",
-	LegendaryEgg = "BuyLegendary",
-}
-
 local eggList
 local shopRow
 local itemShopRow
@@ -94,7 +85,7 @@ function EggPanel.Create(parent)
 		Padding = UDim.new(0, 6),
 		Parent = ratesRow,
 	})
-	for _, tier in TIER_ORDER do
+	for _, tier in Sanctuary.EGG_TIERS do
 		UiKit.Create("TextLabel", {
 			Name = `Rates{tier}`,
 			RichText = true,
@@ -102,7 +93,7 @@ function EggPanel.Create(parent)
 			TextColor3 = UiKit.TINTS.WHITE,
 			TextSize = 9,
 			TextWrapped = true,
-			Size = UDim2.fromScale(1 / #TIER_ORDER, 1),
+			Size = UDim2.fromScale(1 / #Sanctuary.EGG_TIERS, 1),
 			Text = UiKit.DropRatesText(Config.EGG_RARITY_WEIGHTS[tier]),
 			Parent = ratesRow,
 		})
@@ -124,15 +115,29 @@ function EggPanel.Create(parent)
 	eggList = UiKit.Scroller(frame, UDim2.fromScale(0, 0.3), UDim2.fromScale(1, 0.7))
 	eggList.Name = "EggList"
 
-	for _, tier in TIER_ORDER do
+	UiKit.Create("TextLabel", {
+		Name = "PlaceHint",
+		BackgroundTransparency = 1,
+		TextTransparency = 0.3,
+		TextColor3 = UiKit.TINTS.WHITE,
+		Font = Enum.Font.Gotham,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Position = UDim2.fromScale(0, 0.255),
+		Size = UDim2.fromScale(1, 0.04),
+		Text = "Va à la couveuse pour éclore tes œufs",
+		Parent = frame,
+	})
+
+	for _, tier in Sanctuary.EGG_TIERS do
 		local price = Config.EGG_PRICES[tier]
 		local button = UiKit.Create("TextButton", {
-			Name = TIER_BUTTON_NAMES[tier],
+			Name = `Buy{tier}`,
 			BackgroundColor3 = UiKit.TINTS.DARK,
 			TextColor3 = UiKit.TINTS.WHITE,
 			Font = Enum.Font.GothamBold,
 			TextSize = 12,
-			Size = UDim2.fromScale(1 / #TIER_ORDER, 1),
+			Size = UDim2.fromScale(1 / #Sanctuary.EGG_TIERS, 1),
 			Text = `{UiKit.EGG_TIER_NAMES[tier]}\n{price} Essence`,
 			TextWrapped = true,
 			Parent = shopRow,
@@ -190,11 +195,11 @@ function EggPanel.Refresh(state)
 			Text = UiKit.EGG_TIER_NAMES[egg.Tier] or egg.Tier,
 			Parent = row,
 		})
-		local button = UiKit.Button(row, "Éclore", UDim2.new(0.55, 0, 0, 36), UDim2.fromScale(0.45, 0.5))
-		button.Name = `HatchButton{i}`
+		local button = UiKit.Button(row, "Placer", UDim2.new(0.55, 0, 0, 36), UDim2.fromScale(0.45, 0.5))
+		button.Name = `PlaceButton{i}`
 		button.AnchorPoint = Vector2.new(0, 0.5)
 		button.Activated:Connect(function()
-			Net.HatchEgg:FireServer(egg.Id)
+			Net.PlaceEgg:FireServer(egg.Id)
 		end)
 	end
 end

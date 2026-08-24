@@ -17,6 +17,7 @@ end
 
 Net.BuyEgg = Event("BuyEgg")
 Net.HatchEgg = Event("HatchEgg")
+Net.PlaceEgg = Event("PlaceEgg")
 Net.RiftAttack = Event("RiftAttack")
 Net.Sync = Event("Sync")
 Net.HatchResult = Event("HatchResult")
@@ -44,7 +45,6 @@ Net.SkillBuy = Event("SkillBuy")
 Net.FriendsSync = Event("FriendsSync")
 Net.JoinFriend = Event("JoinFriend")
 
-Net.LuckSync = Event("LuckSync")
 Net.BoostState = Event("BoostState")
 Net.EclipseState = Event("EclipseState")
 

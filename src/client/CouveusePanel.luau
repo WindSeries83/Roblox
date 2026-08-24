@@ -8,8 +8,6 @@ local UiKit = require(script.Parent.UiKit)
 
 local CouveusePanel = {}
 
-local TIER_ORDER = { "CommonEgg", "UncommonEgg", "RareEgg", "EpicEgg", "LegendaryEgg" }
-
 local lastState = nil
 local panel: Frame? = nil
 local eggList: ScrollingFrame? = nil
@@ -50,9 +48,9 @@ local function Refresh()
 			Text = UiKit.EGG_TIER_NAMES[egg.Tier] or egg.Tier,
 			Parent = row,
 		})
-		local hatch = UiKit.Button(row, "Éclore", UDim2.fromScale(0.42, 1), UDim2.fromScale(0.56, 0))
+		local hatch = UiKit.Button(row, "Placer", UDim2.fromScale(0.42, 1), UDim2.fromScale(0.56, 0))
 		hatch.Activated:Connect(function()
-			Net.HatchEgg:FireServer(egg.Id)
+			Net.PlaceEgg:FireServer(egg.Id)
 		end)
 	end
 end
@@ -88,6 +86,20 @@ function CouveusePanel.Start()
 	eggList = UiKit.Scroller(panel, UDim2.fromOffset(0, 22), UDim2.new(1, 0, 1, -78))
 	eggList.Name = "EggList"
 
+	UiKit.Create("TextLabel", {
+		Name = "PlaceHint",
+		BackgroundTransparency = 1,
+		TextTransparency = 0.3,
+		TextColor3 = UiKit.TINTS.WHITE,
+		Font = Enum.Font.Gotham,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Position = UDim2.new(0, 0, 1, -74),
+		Size = UDim2.new(1, 0, 0, 12),
+		Text = "Va à la couveuse pour éclore tes œufs",
+		Parent = panel,
+	})
+
 	local ratesRow = UiKit.Create("Frame", {
 		Name = "RatesRow",
 		BackgroundTransparency = 1,
@@ -96,7 +108,7 @@ function CouveusePanel.Start()
 		Size = UDim2.new(1, 0, 0, 14),
 		Parent = panel,
 	})
-	for i, tier in TIER_ORDER do
+	for i, tier in Sanctuary.EGG_TIERS do
 		UiKit.Create("TextLabel", {
 			Name = `Rates{tier}`,
 			RichText = true,
@@ -104,8 +116,8 @@ function CouveusePanel.Start()
 			TextColor3 = UiKit.TINTS.WHITE,
 			TextSize = 9,
 			TextWrapped = true,
-			Position = UDim2.fromScale((i - 1) / #TIER_ORDER, 0),
-			Size = UDim2.fromScale(1 / #TIER_ORDER, 1),
+			Position = UDim2.fromScale((i - 1) / #Sanctuary.EGG_TIERS, 0),
+			Size = UDim2.fromScale(1 / #Sanctuary.EGG_TIERS, 1),
 			Text = UiKit.DropRatesText(Config.EGG_RARITY_WEIGHTS[tier]),
 			Parent = ratesRow,
 		})
@@ -119,12 +131,12 @@ function CouveusePanel.Start()
 		Size = UDim2.new(1, 0, 0, 30),
 		Parent = panel,
 	})
-	for i, tier in TIER_ORDER do
+	for i, tier in Sanctuary.EGG_TIERS do
 		local button = UiKit.Button(
 			buyRow,
 			`{UiKit.EGG_TIER_NAMES[tier]}\n{Config.EGG_PRICES[tier]}`,
-			UDim2.new(1 / #TIER_ORDER, -4, 1, 0),
-			UDim2.new((i - 1) / #TIER_ORDER, 2, 0, 0)
+			UDim2.new(1 / #Sanctuary.EGG_TIERS, -4, 1, 0),
+			UDim2.new((i - 1) / #Sanctuary.EGG_TIERS, 2, 0, 0)
 		)
 		button.TextSize = 10
 		buyButtons[tier] = button
