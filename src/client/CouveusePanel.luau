@@ -15,13 +15,18 @@ local buyButtons: { [string]: TextButton } = {}
 local lockedTiers: { [string]: number? } = {}
 
 local function RefreshBuyButtons()
+	local essence = math.floor(lastState and lastState.Essence or 0)
 	for tier, button in buyButtons do
 		local required = lockedTiers[tier]
+		local price = Config.EGG_PRICES[tier]
 		if required then
 			button.Text = `{UiKit.EGG_TIER_NAMES[tier]} 🔒\nRang {required}`
 			button.TextColor3 = Color3.fromRGB(140, 140, 150)
+		elseif essence < price then
+			button.Text = `{UiKit.EGG_TIER_NAMES[tier]}\n{price} — insuffisant`
+			button.TextColor3 = Color3.fromRGB(255, 120, 120)
 		else
-			button.Text = `{UiKit.EGG_TIER_NAMES[tier]}\n{Config.EGG_PRICES[tier]}`
+			button.Text = `{UiKit.EGG_TIER_NAMES[tier]}\n{price}`
 			button.TextColor3 = UiKit.TINTS.WHITE
 		end
 	end

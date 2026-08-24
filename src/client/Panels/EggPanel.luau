@@ -14,6 +14,7 @@ local itemShopRow
 local pityLabel
 local buyButtons: { [string]: TextButton } = {}
 local lockedTiers: { [string]: number? } = {}
+local currentEssence = 0
 
 local function RefreshPity(hatchesSinceRare: number)
 	local remaining = Config.PITY_THRESHOLD - hatchesSinceRare
@@ -27,11 +28,15 @@ end
 local function RefreshBuyButtons()
 	for tier, button in buyButtons do
 		local required = lockedTiers[tier]
+		local price = Config.EGG_PRICES[tier]
 		if required then
 			button.Text = `{UiKit.EGG_TIER_NAMES[tier]} 🔒\nRang de sanctuaire {required} requis`
 			button.TextColor3 = Color3.fromRGB(140, 140, 150)
+		elseif currentEssence < price then
+			button.Text = `{UiKit.EGG_TIER_NAMES[tier]}\n{price} Essence — insuffisant`
+			button.TextColor3 = Color3.fromRGB(255, 120, 120)
 		else
-			button.Text = `{UiKit.EGG_TIER_NAMES[tier]}\n{Config.EGG_PRICES[tier]} Essence`
+			button.Text = `{UiKit.EGG_TIER_NAMES[tier]}\n{price} Essence`
 			button.TextColor3 = UiKit.TINTS.WHITE
 		end
 	end
@@ -178,6 +183,7 @@ end
 function EggPanel.Refresh(state)
 	UiKit.Clear(eggList)
 	lockedTiers = Sanctuary.EggGate(state.SanctuaryLevel or 1)
+	currentEssence = math.floor(state.Essence or 0)
 	RefreshBuyButtons()
 	local stats = state.Stats or {}
 	RefreshPity(stats.HatchesSinceRare or 0)
