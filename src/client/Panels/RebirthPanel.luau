@@ -79,7 +79,9 @@ end
 Net.RebirthPreview.OnClientEvent:Connect(function(preview)
 	if preview.CanRebirth then
 		previewLabel.Text =
-			`Renaissance disponible !\nÉtoiles : {preview.CurrentStars} → {preview.NextStars}\nMultiplicateur : ×{preview.NextMult}\nCréature la plus forte conservée\nReliques légendaires conservées : {preview.KeptRelics}`
+			`Renaissance disponible !\nÉtoiles : {preview.CurrentStars} → {preview.NextStars}\nMultiplicateur : ×{math.floor(
+				preview.NextMult + 0.5
+			)}\nCréature la plus forte conservée\nReliques légendaires conservées : {preview.KeptRelics}`
 		confirmButton.Visible = true
 	else
 		previewLabel.Text = `Renaissance indisponible : {preview.Reason}`
