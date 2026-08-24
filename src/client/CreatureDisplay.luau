@@ -94,10 +94,14 @@ local function UnwrapProcedural(model: Model): Model
 end
 
 local function PrepareClone(model: Model)
-	for _, part in model:GetDescendants() do
-		if part:IsA("BasePart") then
-			part.Anchored = true
-			part.CanCollide = false
+	for _, descendant in model:GetDescendants() do
+		if descendant:IsA("BaseScript") then
+			-- Les scripts procéduraux régénèrent les parts ~3 s après spawn et peuvent
+			-- dupliquer le visuel : les clones d'affichage doivent rester inertes.
+			descendant:Destroy()
+		elseif descendant:IsA("BasePart") then
+			descendant.Anchored = true
+			descendant.CanCollide = false
 		end
 	end
 	if not model.PrimaryPart then
@@ -190,6 +194,12 @@ function CreatureDisplay.Refresh(state)
 		local displayColor = DisplayColor(creature)
 		local model = spawned[creature.Id]
 		if not model or not model.Parent then
+			-- Garde-fou : un doublon résiduel (ex-régénération procédurale) est recyclé.
+			for _, other in sanctuary:GetChildren() do
+				if other ~= model and other:GetAttribute("CreatureId") == creature.Id then
+					other:Destroy()
+				end
+			end
 			local template = CreatureTemplates.Get(creature.SpeciesId)
 			if not template then
 				continue
