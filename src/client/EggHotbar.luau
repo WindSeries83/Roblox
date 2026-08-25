@@ -55,7 +55,7 @@ function EggHotbar.Start()
 			TextSize = 11,
 			Size = UDim2.fromOffset(0, 20),
 			AutomaticSize = Enum.AutomaticSize.X,
-			Text = if #eggs > 0 then `Œufs ({#eggs}) →` else "",
+			Text = if #eggs > 0 then `Œufs ({#eggs}) →` else "Aucun œuf — achète-en dans le menu Œufs",
 			LayoutOrder = 0,
 			Parent = bar,
 		})

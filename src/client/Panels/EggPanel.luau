@@ -62,6 +62,7 @@ function EggPanel.Create(parent)
 	UiKit.Create("UIListLayout", {
 		FillDirection = Enum.FillDirection.Horizontal,
 		Padding = UDim.new(0, 6),
+		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = shopRow,
 	})
 
@@ -75,6 +76,7 @@ function EggPanel.Create(parent)
 	UiKit.Create("UIListLayout", {
 		FillDirection = Enum.FillDirection.Horizontal,
 		Padding = UDim.new(0, 6),
+		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = itemShopRow,
 	})
 
@@ -88,11 +90,13 @@ function EggPanel.Create(parent)
 	UiKit.Create("UIListLayout", {
 		FillDirection = Enum.FillDirection.Horizontal,
 		Padding = UDim.new(0, 6),
+		SortOrder = Enum.SortOrder.LayoutOrder,
 		Parent = ratesRow,
 	})
-	for _, tier in Sanctuary.EGG_TIERS do
+	for i, tier in Sanctuary.EGG_TIERS do
 		UiKit.Create("TextLabel", {
 			Name = `Rates{tier}`,
+			LayoutOrder = i,
 			RichText = true,
 			BackgroundTransparency = 1,
 			TextColor3 = UiKit.TINTS.WHITE,
@@ -134,10 +138,13 @@ function EggPanel.Create(parent)
 		Parent = frame,
 	})
 
-	for _, tier in Sanctuary.EGG_TIERS do
+	-- LayoutOrder explicite : sans lui l'UIListLayout départage les ex æquo par
+	-- nom (BuyCommonEgg < BuyEpicEgg...) et affiche les raretés dans le désordre.
+	for i, tier in Sanctuary.EGG_TIERS do
 		local price = Config.EGG_PRICES[tier]
 		local button = UiKit.Create("TextButton", {
 			Name = `Buy{tier}`,
+			LayoutOrder = i,
 			BackgroundColor3 = UiKit.TINTS.DARK,
 			TextColor3 = UiKit.TINTS.WHITE,
 			Font = Enum.Font.GothamBold,
@@ -157,10 +164,13 @@ function EggPanel.Create(parent)
 		end)
 	end
 
+	local itemOrder = 0
 	for _, itemType in { "Heart", "Collar" } do
 		for tier, def in Equipment[itemType].Tiers do
+			itemOrder += 1
 			local button = UiKit.Create("TextButton", {
 				Name = `Buy{itemType}{tier}`,
+				LayoutOrder = itemOrder,
 				BackgroundColor3 = UiKit.TINTS.DARK,
 				TextColor3 = UiKit.TINTS.WHITE,
 				Font = Enum.Font.GothamBold,

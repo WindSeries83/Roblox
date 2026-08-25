@@ -138,6 +138,23 @@ local function BuildEggModel(tier: string): Model
 	glow.Shadows = false
 	glow.Parent = shell
 
+	-- Colonne lumineuse au-dessus de l'œuf : repérable de loin, sinon le joueur
+	-- ne sait pas où aller pour éclore.
+	local beacon = Instance.new("Part")
+	beacon.Name = "Beacon"
+	beacon.Shape = Enum.PartType.Cylinder
+	beacon.Size = Vector3.new(14, 0.15, 0.15)
+	beacon.CFrame = shell.CFrame * CFrame.new(0, 8, 0) * CFrame.Angles(0, 0, math.rad(90))
+	beacon.Anchored = true
+	beacon.CanCollide = false
+	beacon.CanQuery = false
+	beacon.CanTouch = false
+	beacon.CastShadow = false
+	beacon.Material = Enum.Material.Neon
+	beacon.Color = shell.Color
+	beacon.Transparency = 0.6
+	beacon.Parent = model
+
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.ActionText = "Éclore"
 	prompt.ObjectText = TIER_NAMES_FR[tier] or tier
