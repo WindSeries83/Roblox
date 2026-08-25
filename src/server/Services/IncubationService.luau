@@ -143,8 +143,8 @@ local function BuildEggModel(tier: string): Model
 	local beacon = Instance.new("Part")
 	beacon.Name = "Beacon"
 	beacon.Shape = Enum.PartType.Cylinder
-	beacon.Size = Vector3.new(14, 0.15, 0.15)
-	beacon.CFrame = shell.CFrame * CFrame.new(0, 8, 0) * CFrame.Angles(0, 0, math.rad(90))
+	beacon.Size = Vector3.new(9, 0.12, 0.12)
+	beacon.CFrame = shell.CFrame * CFrame.new(0, 5.5, 0) * CFrame.Angles(0, 0, math.rad(90))
 	beacon.Anchored = true
 	beacon.CanCollide = false
 	beacon.CanQuery = false
@@ -226,9 +226,33 @@ function IncubationService:AutoPlaceAndHatch(player: Player, eggId: string, tier
 	hatchService:HatchEggById(player, eggId, true)
 end
 
+-- Rapproche la couveuse du spawn : dans la map elle est 12 studs plus bas et
+-- loin du point d'arrivée, le joueur ne la trouve pas (retour playtest 25/08).
+-- Le nid du tutoriel reste à +7 ; la couveuse vient à -5, symétrique et visible.
+local function MoveCouveuseToSpawn()
+	local couveuse = Workspace:FindFirstChild("Couveuse")
+	local spawnLoc = Workspace:FindFirstChildOfClass("SpawnLocation")
+	if not couveuse or not spawnLoc then
+		return
+	end
+	local target = spawnLoc.Position + Vector3.new(-5, 0, 2)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { couveuse }
+	local hit = Workspace:Raycast(target + Vector3.new(0, 20, 0), Vector3.new(0, -40, 0), params)
+	if not hit then
+		return
+	end
+	local pivot = couveuse:GetPivot()
+	-- Le pivot est le centre du Socle (h 1.2) : on pose son bas sur le sol trouvé.
+	couveuse:PivotTo(CFrame.new(target.X, hit.Position.Y + 0.6, target.Z) * (pivot - pivot.Position))
+	log:Economy("Egg", "CouveuseRelocated", { Position = string.format("%.1f, %.1f, %.1f", target.X, hit.Position.Y + 0.6, target.Z) })
+end
+
 function IncubationService:Start()
 	-- Convention repo : dépendances enregistrées après nous se résolvent au Start.
 	hatchService = container:Get("HatchService")
+	MoveCouveuseToSpawn()
 
 	Net.PlaceEgg.OnServerEvent:Connect(function(player: Player, eggId: unknown)
 		if typeof(eggId) ~= "string" then
