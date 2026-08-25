@@ -978,7 +978,6 @@ end
 
 RequireWithRetry(script.Parent.CreatureDisplay)
 RequireWithRetry(script.Parent.CouveusePanel)
-RequireWithRetry(script.Parent.EggHotbar)
 local followController = RequireWithRetry(script.Parent.FollowController)
 if followController then
 	followController.Start()

@@ -226,16 +226,16 @@ function IncubationService:AutoPlaceAndHatch(player: Player, eggId: string, tier
 	hatchService:HatchEggById(player, eggId, true)
 end
 
--- Rapproche la couveuse du spawn : dans la map elle est 12 studs plus bas et
--- loin du point d'arrivée, le joueur ne la trouve pas (retour playtest 25/08).
--- Le nid du tutoriel reste à +7 ; la couveuse vient à -5, symétrique et visible.
+-- La couveuse principale EST le spot du tutoriel : à la place du nid de départ
+-- (retour playtest 25/08 — le joueur confondait nid et couveuse). Le nid visuel
+-- n'est plus construit, la couveuse prend sa place à côté du spawn.
 local function MoveCouveuseToSpawn()
 	local couveuse = Workspace:FindFirstChild("Couveuse")
 	local spawnLoc = Workspace:FindFirstChildOfClass("SpawnLocation")
 	if not couveuse or not spawnLoc then
 		return
 	end
-	local target = spawnLoc.Position + Vector3.new(-5, 0, 2)
+	local target = spawnLoc.Position + Vector3.new(7, 0, 4)
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	params.FilterDescendantsInstances = { couveuse }

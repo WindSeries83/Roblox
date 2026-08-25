@@ -13,7 +13,7 @@ local TINTS = UiKit.TINTS
 
 local STEPS = {
 	{
-		Text = "Approche-toi de l'œuf du nid et touche-le pour éclore ta première créature.",
+		Text = "Approche-toi de l'œuf posé sur la couveuse et maintiens E pour éclore ta première créature.",
 		Need = "Hatch",
 	},
 	{

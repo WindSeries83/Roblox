@@ -1,43 +1,52 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 
 local UiKit = require(script.Parent.Parent.UiKit)
 local Net = require(ReplicatedStorage.Shared.Net)
 local SkillTree = require(ReplicatedStorage.Shared.SkillTree)
 
+-- Liste linéaire (retour playtest 25/08) : les talents se suivent dans l'ordre
+-- de déblocage. Chaque ligne montre sans ambiguïté verrouillé / achetable /
+-- possédé / au maximum — pas de graphe, ça se lit de haut en bas.
 local SkillPanel = {}
 
--- Géométrie du graphe : marge de canvas et pas fixes entre lignes/colonnes.
-local CANVAS_PAD = 56
-local COL_STEP = 130
-local ROW_STEP = 110
-local NODE_SIZE = 56
-
--- Palette des états de nœud (verrouillé / possédé / au maximum).
 local COLOR_LOCKED = Color3.fromRGB(45, 45, 58)
 local COLOR_LOCKED_TEXT = Color3.fromRGB(120, 120, 135)
-local COLOR_OWNED = Color3.fromRGB(70, 70, 90)
 local COLOR_MAX = Color3.fromRGB(255, 215, 94)
-local COLOR_LINE_OWNED = Color3.fromRGB(150, 150, 190)
-local COLOR_LINE_LOCKED = Color3.fromRGB(85, 85, 110)
 
 local pointsLabel
-local canvas
-local detail
-local selectedId
+local list
 
-local function nodeCenter(node: any): (number, number)
-	return CANVAS_PAD + (node.Col - 1) * COL_STEP, CANVAS_PAD + (node.Row - 1) * ROW_STEP
-end
-
--- Un nœud est verrouillé tant qu'un de ses prerequis est au rang 0.
-local function isLocked(node, ranks: { [string]: number }): boolean
+-- Profondeur de dépendance : les racines d'abord, chaque palier après ses prerequis.
+local depthCache: { [string]: number } = {}
+local function depthOf(node): number
+	local cached = depthCache[node.Id]
+	if cached then
+		return cached
+	end
+	local max = 0
 	for _, reqId in SkillTree.Requires(node) do
-		if SkillTree.Rank(ranks, reqId) < 1 then
-			return true
+		local req = SkillTree.Node(reqId)
+		if req then
+			max = math.max(max, depthOf(req) + 1)
 		end
 	end
-	return false
+	depthCache[node.Id] = max
+	return max
+end
+
+local function sortedNodes()
+	local nodes = table.clone(SkillTree.Nodes())
+	table.sort(nodes, function(a, b)
+		local da, db = depthOf(a), depthOf(b)
+		if da ~= db then
+			return da < db
+		end
+		if a.Branch ~= b.Branch then
+			return a.Branch < b.Branch
+		end
+		return (a.Row or 0) < (b.Row or 0)
+	end)
+	return nodes
 end
 
 local function effectText(node, rank: number): string
@@ -47,187 +56,124 @@ local function effectText(node, rank: number): string
 	return ` · +{string.format("%g", node.Value * rank * 100)} %`
 end
 
-local function fillDetail(node, ranks: { [string]: number }, points: number)
-	UiKit.Clear(detail)
+local function AddSkillRow(parent, node, ranks: { [string]: number }, points: number, order: number)
 	local rank = SkillTree.Rank(ranks, node.Id)
+	local maxed = rank >= node.MaxRank
+	local locked = false
+	local prereqName = nil
+	for _, reqId in SkillTree.Requires(node) do
+		if SkillTree.Rank(ranks, reqId) < 1 then
+			locked = true
+			local req = SkillTree.Node(reqId)
+			prereqName = req and req.Name or reqId
+			break
+		end
+	end
 	local ok, reason = SkillTree.CanBuy(points, ranks, node.Id)
 
+	local cell = UiKit.Cell(parent)
+	cell.Name = `Skill_{node.Id}`
+	cell.LayoutOrder = order
+	cell.Size = UDim2.new(1, -8, 0, 64)
+
+	-- Pastille d'état : ★ max / 🔒 verrouillé / ●● possédé / + achetable
+	local circle = UiKit.Create("Frame", {
+		Name = "State",
+		BackgroundColor3 = if maxed
+			then COLOR_MAX
+			elseif locked then COLOR_LOCKED
+			elseif rank > 0 then Color3.fromRGB(70, 70, 90)
+			else UiKit.TINTS.ACCENT,
+		Size = UDim2.fromOffset(36, 36),
+		Position = UDim2.fromOffset(4, 14),
+		Parent = cell,
+	})
+	UiKit.Corner(circle)
 	UiKit.Create("TextLabel", {
-		Name = "DetailName",
+		Name = "StateGlyph",
 		BackgroundTransparency = 1,
-		TextColor3 = UiKit.TINTS.WHITE,
+		TextColor3 = if locked then COLOR_LOCKED_TEXT else UiKit.TINTS.DARK,
+		Font = Enum.Font.GothamBold,
+		TextSize = 14,
+		Size = UDim2.fromScale(1, 1),
+		Text = if maxed then "★" elseif locked then "🔒" elseif rank > 0 then string.rep("●", math.min(rank, 3)) else "+",
+		Parent = circle,
+	})
+
+	-- Nom + branche, puis description avec l'effet du rang actuel.
+	UiKit.Create("TextLabel", {
+		Name = "Name",
+		BackgroundTransparency = 1,
+		TextColor3 = if locked then COLOR_LOCKED_TEXT else UiKit.TINTS.WHITE,
 		Font = Enum.Font.GothamBold,
 		TextSize = 14,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Size = UDim2.new(1, -120, 0, 18),
-		Text = `{node.Name} ({node.Branch})`,
-		Parent = detail,
+		Position = UDim2.fromOffset(50, 7),
+		Size = UDim2.new(1, -220, 0, 18),
+		Text = `{node.Name}  ·  {node.Branch}`,
+		Parent = cell,
 	})
 	UiKit.Create("TextLabel", {
-		Name = "DetailDesc",
+		Name = "Desc",
 		BackgroundTransparency = 1,
 		TextColor3 = UiKit.TINTS.WHITE,
-		Font = Enum.Font.Gotham,
-		TextSize = 12,
-		TextXAlignment = Enum.TextXAlignment.Left,
+		TextTransparency = if locked then 0.5 else 0.15,
+		TextSize = 11,
 		TextWrapped = true,
-		Position = UDim2.fromOffset(0, 20),
-		Size = UDim2.new(1, -120, 0, 34),
-		Text = node.Desc,
-		Parent = detail,
-	})
-	local infoText = `Rang {rank}/{node.MaxRank}{effectText(node, rank)}`
-	if not ok and reason then
-		infoText ..= ` · {reason}`
-	end
-	UiKit.Create("TextLabel", {
-		Name = "DetailInfo",
-		BackgroundTransparency = 1,
-		TextColor3 = if ok then UiKit.TINTS.GREEN else UiKit.TINTS.RED,
-		Font = Enum.Font.Gotham,
-		TextSize = 12,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Position = UDim2.new(0, 0, 1, -16),
-		Size = UDim2.new(1, -120, 0, 14),
-		Text = infoText,
-		Parent = detail,
+		Position = UDim2.fromOffset(50, 27),
+		Size = UDim2.new(1, -220, 0, 32),
+		Text = node.Desc .. effectText(node, rank),
+		Parent = cell,
+	})
+	UiKit.Create("TextLabel", {
+		Name = "Rank",
+		BackgroundTransparency = 1,
+		TextColor3 = if maxed then COLOR_MAX else UiKit.TINTS.WHITE,
+		Font = Enum.Font.Gotham,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Right,
+		Position = UDim2.new(1, -160, 0, 10),
+		Size = UDim2.fromOffset(150, 14),
+		Text = `Rang {rank}/{node.MaxRank}`,
+		Parent = cell,
 	})
 
-	local buyButton = UiKit.Button(detail, "Acheter", UDim2.fromOffset(104, 32), UDim2.new(1, -112, 0.5, -16))
-	buyButton.Name = "BuyButton"
-	if not ok then
-		buyButton.AutoButtonColor = false
-		buyButton.Active = false
-		buyButton.BackgroundColor3 = COLOR_OWNED
-	end
-	buyButton.Activated:Connect(function()
-		if ok then
-			Net.SkillBuy:FireServer(node.Id)
-		end
-	end)
-end
-
-local function buildGraph(ranks: { [string]: number }, points: number)
-	UiKit.Clear(canvas)
-
-	-- En-têtes de branches : une colonne = une branche, nommée d'après son premier nœud.
-	local seenCols = {}
-	for _, node in SkillTree.Nodes() do
-		if not seenCols[node.Col] then
-			seenCols[node.Col] = true
-			UiKit.Create("TextLabel", {
-				Name = `ColHeader_{node.Col}`,
-				BackgroundTransparency = 1,
-				TextColor3 = UiKit.TINTS.ACCENT,
-				Font = Enum.Font.GothamBold,
-				TextSize = 12,
-				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.fromOffset(nodeCenter(node), 8),
-				Size = UDim2.fromOffset(COL_STEP - 10, 16),
-				Text = node.Branch,
-				ZIndex = 2,
-				Parent = canvas,
-			})
-		end
-	end
-
-	-- Traits de connexion d'abord : ancrés au centre du parent, pivotés vers l'enfant, sous les nœuds.
-	for _, node in SkillTree.Nodes() do
-		local x, y = nodeCenter(node)
-		for _, reqId in SkillTree.Requires(node) do
-			local parentNode = SkillTree.Node(reqId)
-			if parentNode then
-				local px, py = nodeCenter(parentNode)
-				local dx, dy = x - px, y - py
-				local length = math.sqrt(dx * dx + dy * dy)
-				UiKit.Create("Frame", {
-					Name = "Link",
-					BackgroundColor3 = if SkillTree.Rank(ranks, reqId) >= 1
-						then COLOR_LINE_OWNED
-						else COLOR_LINE_LOCKED,
-					BorderSizePixel = 0,
-					AnchorPoint = Vector2.new(0, 0.5),
-					Position = UDim2.fromOffset(px, py),
-					Size = UDim2.fromOffset(length, 4),
-					Rotation = math.deg(math.atan2(dy, dx)),
-					ZIndex = 1,
-					Parent = canvas,
-				})
-			end
-		end
-	end
-
-	for _, node in SkillTree.Nodes() do
-		local x, y = nodeCenter(node)
-		local rank = SkillTree.Rank(ranks, node.Id)
-		local maxed = rank >= node.MaxRank
-		local locked = isLocked(node, ranks)
-		local backgroundColor, textColor, glyph
-		if maxed then
-			backgroundColor, textColor, glyph = COLOR_MAX, UiKit.TINTS.DARK, "★"
-		elseif locked then
-			backgroundColor, textColor, glyph = COLOR_LOCKED, COLOR_LOCKED_TEXT, "🔒"
-		elseif rank > 0 then
-			backgroundColor, textColor, glyph = COLOR_OWNED, UiKit.TINTS.WHITE, string.rep("●", math.min(rank, 3))
-		elseif points > 0 then
-			backgroundColor, textColor, glyph = UiKit.TINTS.ACCENT, UiKit.TINTS.WHITE, "+"
-		else
-			backgroundColor, textColor, glyph = COLOR_LOCKED, COLOR_LOCKED_TEXT, "+"
-		end
-
-		local nodeButton = UiKit.Create("TextButton", {
-			Name = `Node_{node.Id}`,
-			BackgroundColor3 = backgroundColor,
-			TextColor3 = textColor,
-			BorderSizePixel = 0,
-			Font = Enum.Font.GothamBold,
-			TextSize = 18,
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.fromOffset(x, y),
-			Size = UDim2.fromOffset(NODE_SIZE, NODE_SIZE),
-			Text = glyph,
-			ZIndex = 2,
-			Parent = canvas,
-		})
-		local corner = Instance.new("UICorner")
-		corner.CornerRadius = UDim.new(0, NODE_SIZE / 2)
-		corner.Parent = nodeButton
-
+	-- Action ou raison, alignée à droite.
+	if maxed then
 		UiKit.Create("TextLabel", {
-			Name = `NodeLabel_{node.Id}`,
+			Name = "Maxed",
 			BackgroundTransparency = 1,
-			TextColor3 = if maxed then COLOR_MAX elseif locked then COLOR_LOCKED_TEXT else UiKit.TINTS.WHITE,
-			Font = Enum.Font.Gotham,
-			TextSize = 10,
-			TextWrapped = true,
-			AnchorPoint = Vector2.new(0.5, 0),
-			Position = UDim2.fromOffset(x, y + NODE_SIZE / 2 + 2),
-			Size = UDim2.fromOffset(COL_STEP - 20, 24),
-			Text = node.Name,
-			ZIndex = 2,
-			Parent = canvas,
+			TextColor3 = COLOR_MAX,
+			Font = Enum.Font.GothamBold,
+			TextSize = 14,
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -10, 0.5, 6),
+			Size = UDim2.fromOffset(90, 20),
+			Text = "Max ★",
+			Parent = cell,
 		})
-
-		-- Pulse discret sur les nœuds achetables pour attirer l'œil.
-		if not maxed and not locked and points > 0 then
-			local pulse = Instance.new("UIScale")
-			pulse.Parent = nodeButton
-			local pulseTween = TweenService:Create(
-				pulse,
-				TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
-				{ Scale = 1.06 }
-			)
-			pulseTween:Play()
-			-- Un tween infini survit au Destroy : on le coupe explicitement à la destruction du bouton.
-			nodeButton.Destroying:Once(function()
-				pulseTween:Cancel()
-			end)
-		end
-
-		nodeButton.Activated:Connect(function()
-			selectedId = node.Id
-			fillDetail(node, ranks, points)
+	elseif ok then
+		local buy = UiKit.Button(cell, "Acheter", UDim2.fromOffset(96, 34), UDim2.new(1, -106, 0.5, -17))
+		buy.Name = `Buy_{node.Id}`
+		buy.AnchorPoint = Vector2.new(1, 0)
+		buy.Activated:Connect(function()
+			Net.SkillBuy:FireServer(node.Id)
 		end)
+	else
+		UiKit.Create("TextLabel", {
+			Name = "LockedReason",
+			BackgroundTransparency = 1,
+			TextColor3 = if locked then Color3.fromRGB(255, 150, 150) else Color3.fromRGB(160, 160, 170),
+			Font = Enum.Font.Gotham,
+			TextSize = 11,
+			TextWrapped = true,
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -10, 0.5, -8),
+			Size = UDim2.fromOffset(150, 32),
+			Text = if locked then `🔒 {prereqName}` else reason,
+			Parent = cell,
+		})
 	end
 end
 
@@ -253,28 +199,13 @@ function SkillPanel.Create(parent)
 		Parent = frame,
 	})
 
-	-- Graphe en positions absolues : le Scroller générique pose un UIListLayout qui gênerait.
-	local maxCol, maxRow = 0, 0
-	for _, node in SkillTree.Nodes() do
-		maxCol = math.max(maxCol, node.Col or 0)
-		maxRow = math.max(maxRow, node.Row or 0)
+	list = UiKit.Scroller(frame, UDim2.fromScale(0, 0.08), UDim2.fromScale(1, 0.92))
+	list.Name = "SkillList"
+	-- Les lignes se suivent dans l'ordre de déblocage : tri explicite par LayoutOrder.
+	local layout = list:FindFirstChildOfClass("UIListLayout")
+	if layout then
+		layout.SortOrder = Enum.SortOrder.LayoutOrder
 	end
-	canvas = UiKit.Create("ScrollingFrame", {
-		Name = "NodeGraph",
-		BackgroundTransparency = 1,
-		ScrollBarThickness = 4,
-		BorderSizePixel = 0,
-		CanvasSize = UDim2.fromOffset(
-			CANVAS_PAD + maxCol * COL_STEP + CANVAS_PAD,
-			CANVAS_PAD + maxRow * ROW_STEP + CANVAS_PAD
-		),
-		Position = UDim2.fromScale(0, 0.08),
-		Size = UDim2.new(1, 0, 0.92, -98),
-		Parent = frame,
-	})
-
-	detail = UiKit.Card(frame, UDim2.new(1, 0, 0, 90))
-	detail.Position = UDim2.new(0, 0, 1, -90)
 	return frame
 end
 
@@ -283,15 +214,12 @@ function SkillPanel.Refresh(state)
 	local ranks = state.SkillRanks or {}
 	pointsLabel.Text = `Points d'étoile : {points}`
 
-	buildGraph(ranks, points)
-	if selectedId then
-		local node = SkillTree.Node(selectedId)
-		if node then
-			fillDetail(node, ranks, points)
-			return
-		end
+	UiKit.Clear(list)
+	local order = 0
+	for _, node in sortedNodes() do
+		order += 1
+		AddSkillRow(list, node, ranks, points, order)
 	end
-	UiKit.Clear(detail)
 end
 
 return SkillPanel
