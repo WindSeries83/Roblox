@@ -57,7 +57,7 @@ function RebirthPanel.Create(parent)
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Position = UDim2.fromScale(0, 0.2),
 		Size = UDim2.fromScale(1, 0.4),
-		Text = "Perdu : œufs, Essence, niveau du sanctuaire.\nConservé : créature la plus forte, Index, Reliques légendaires.",
+		Text = "Perdu : œufs, Essence, niveau du sanctuaire.\nConservé : toutes tes créatures et ton équipement.",
 		TextWrapped = true,
 		Parent = frame,
 	})
@@ -81,7 +81,7 @@ Net.RebirthPreview.OnClientEvent:Connect(function(preview)
 		previewLabel.Text =
 			`Renaissance disponible !\nÉtoiles : {preview.CurrentStars} → {preview.NextStars}\nMultiplicateur : ×{math.floor(
 				preview.NextMult + 0.5
-			)}\nCréature la plus forte conservée\nReliques légendaires conservées : {preview.KeptRelics}`
+			)}\nTu gardes toutes tes créatures et ton équipement ({preview.KeptRelics} objets).`
 		confirmButton.Visible = true
 	else
 		previewLabel.Text = `Renaissance indisponible : {preview.Reason}`

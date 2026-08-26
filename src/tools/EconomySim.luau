@@ -117,12 +117,12 @@ local function TryEvolve(profile, creature)
 	return true
 end
 
-local function TryRebirth(profile, keepCreature)
+local function TryRebirth(profile)
 	local threshold = profile.Thresholds[profile.Stars + 1]
 	if not threshold or profile.TotalEarned < threshold then
 		return false
 	end
-	profile.Creatures = keepCreature and Rebirth.KeepBestCreature(profile.Creatures) or {}
+	-- Renaissance = conservation totale (rév. 26/08) : créatures et objets intacts.
 	profile.Eggs = {}
 	profile.SanctuaryLevel = 1
 	profile.Stars += 1
@@ -171,7 +171,6 @@ end
 
 local function Simulate(strategy: string?, options)
 	options = options or {}
-	local keepCreature = options.keepCreature ~= false
 	local thresholds = options.thresholds or Config.REBIRTH_THRESHOLDS
 	local kind = options.profileKind or "f2p"
 	local baseLuck = PROFILE_LUCK[kind] or PROFILE_LUCK.f2p
@@ -245,7 +244,7 @@ local function Simulate(strategy: string?, options)
 			end
 		end
 
-		if TryRebirth(profile, keepCreature) then
+		if TryRebirth(profile) then
 			table.insert(milestones, { Rebirth = profile.Rebirths, At = time })
 			if options.debug then
 				local top = profile.Creatures[1]

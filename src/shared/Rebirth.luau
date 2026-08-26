@@ -1,5 +1,4 @@
 local Config = require(script.Parent.Config)
-local Equipment = require(script.Parent.Data.Equipment)
 
 local Rebirth = {}
 
@@ -23,34 +22,13 @@ function Rebirth.StarEssenceMult(stars: number): number
 end
 
 function Rebirth.KeepItems(items: { any }): { any }
-	local kept = {}
-	for _, item in items do
-		if item.Type == "Relic" then
-			local def = Equipment.Relic.Tiers[item.Tier]
-			if def and def.Legendary then
-				table.insert(kept, item)
-			end
-		end
-	end
-	return kept
-end
-
-function Rebirth.KeepBestCreature(creatures: { any }): { any }
-	if #creatures == 0 then
-		return {}
-	end
-	local best = creatures[1]
-	for _, creature in creatures do
-		if creature.Power > best.Power then
-			best = creature
-		end
-	end
-	return { best }
+	-- Tout l'équipement est permanent (bible §3.8) : reliques, cœurs, colliers.
+	return table.clone(items or {})
 end
 
 function Rebirth.ApplyReset(data: any)
-	data.Creatures = Rebirth.KeepBestCreature(data.Creatures)
-	data.CompanionId = nil
+	-- Conservation actée (rév. 26/08) : TOUTES les créatures, tous les objets,
+	-- compagnon inclus. Perte limitée : Essence, sanctuaire, œufs (consommables).
 	data.Eggs = {}
 	data.SanctuaryLevel = 1
 	data.Items = Rebirth.KeepItems(data.Items)

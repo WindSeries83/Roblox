@@ -28,43 +28,29 @@ return function(t)
 		expect.near(Rebirth.StarEssenceMult(2), 1 + 2 * Config.STAR_ESSENCE_BONUS)
 	end)
 
-	-- Only legendary relics survive a rebirth.
-	t.test("only legendary relics survive a rebirth", function()
-		local items = {
-			{ Id = "h1", Type = "Heart", Tier = 3 },
-			{ Id = "c1", Type = "Collar", Tier = 3 },
-			{ Id = "r1", Type = "Relic", Tier = 1 },
-			{ Id = "r2", Type = "Relic", Tier = 2 },
-			{ Id = "r3", Type = "Relic", Tier = 3 },
-		}
-		local kept = Rebirth.KeepItems(items)
-		expect.equal(#kept, 1)
-		expect.equal(kept[1].Id, "r3")
-	end)
-
-	-- Reset keeps the strongest creature, wipes eggs and essence but keeps the index.
-	t.test("reset keeps strongest creature and wipes eggs and essence", function()
+	-- Conservation totale actée (rév. 26/08) : seuls les consommables et l'Essence sont perdus.
+	t.test("ApplyReset conserve toutes les créatures et tous les objets", function()
 		local data = {
-			Essence = 99999,
-			Creatures = { { Id = "c1", Power = 10 }, { Id = "c2", Power = 50 } },
-			Eggs = { { Id = "e1" } },
+			Creatures = { { Id = "a", Power = 10 }, { Id = "b", Power = 50 } },
+			Items = { { Type = "Relic", Tier = 1 }, { Type = "Relic", Tier = 3 }, { Type = "Collar", Tier = 2 } },
+			CompanionId = "b",
+			Eggs = { { Id = "e" } },
 			SanctuaryLevel = 4,
-			Index = { ["Riftling|Common|false"] = true },
-			Items = { { Id = "r3", Type = "Relic", Tier = 3 }, { Id = "h1", Type = "Heart", Tier = 1 } },
-			Stars = 0,
+			Stars = 1,
 			Rebirths = 0,
+			SkillPoints = 0,
+			Essence = 99999,
 		}
 		Rebirth.ApplyReset(data)
-		expect.equal(#data.Creatures, 1)
-		expect.equal(data.Creatures[1].Id, "c2")
+		expect.equal(#data.Creatures, 2)
+		expect.equal(#data.Items, 3)
+		expect.equal(data.CompanionId, "b")
 		expect.equal(#data.Eggs, 0)
 		expect.equal(data.SanctuaryLevel, 1)
-		expect.equal(data.Essence, Config.STARTER_ESSENCE)
-		expect.equal(data.Stars, 1)
+		expect.equal(data.Stars, 2)
 		expect.equal(data.Rebirths, 1)
-		expect.truthy(data.Index["Riftling|Common|false"])
-		expect.equal(#data.Items, 1)
-		expect.equal(data.Items[1].Id, "r3")
+		expect.equal(data.SkillPoints, 1)
+		expect.equal(data.Essence, Config.STARTER_ESSENCE)
 	end)
 
 	-- Reset with no creatures leaves an empty sanctuary.
