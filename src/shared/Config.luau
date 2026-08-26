@@ -264,7 +264,7 @@ return {
 			Id = "SecretOmen",
 			Branch = "Faille",
 			Name = "Chuchotement",
-			Desc = "Pendant une Éclipse, l'œuf Épique peut aussi déclencher le Secret (relique T3)",
+			Desc = "Écoute ce que la faille murmure quand la nuit se fait rare.",
 			MaxRank = 1,
 			Effect = "SecretOmen",
 			Value = 1,
