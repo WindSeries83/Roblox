@@ -78,6 +78,22 @@ function MarketService.CanBuy(
 	return true
 end
 
+function MarketService.CanClaim(listing: any, buyerUserId: number): (boolean, string?)
+	if not listing then
+		return false, "Listing introuvable"
+	end
+	if listing.SellerUserId == buyerUserId then
+		return false, "Tu ne peux pas acheter ta propre créature"
+	end
+	if listing.SoldAt then
+		return false, "Déjà vendu"
+	end
+	if listing.WithdrawAt then
+		return false, "Retrait en cours"
+	end
+	return true
+end
+
 function MarketService.CanList(
 	price: any,
 	creature: any,
@@ -99,16 +115,9 @@ function MarketService.CanList(
 	return true
 end
 
---[[ Persistence (best-effort, cache mémoire source de vérité de session) ]]
+--[[ Persistance par-listing (DataStore source de vérité) ]]
 
-local function PersistListings()
-	local snapshot = {}
-	for _, listing in listings do
-		table.insert(snapshot, listing)
-	end
-	pcall(function()
-		Store:SetAsync(ListingsKey, snapshot)
-	end)
+local function notifyOtherServers()
 	-- propagation live aux autres serveurs (guard Studio : PublishAsync bloque non publié)
 	if not RunService:IsStudio() then
 		pcall(function()
@@ -117,18 +126,56 @@ local function PersistListings()
 	end
 end
 
-local function LoadListings(replace: boolean?)
-	local ok, data = pcall(function()
-		return Store:GetAsync(ListingsKey)
+local function IndexIds(): { string }
+	local data
+	pcall(function()
+		data = Store:GetAsync("Index")
 	end)
-	if ok and type(data) == "table" then
-		if replace then
-			table.clear(listings)
-		end
-		for _, listing in data do
-			if type(listing.Id) == "string" then
-				listings[listing.Id] = listing
-			end
+	return if type(data) == "table" and type(data.Ids) == "table" then data.Ids else {}
+end
+
+local function WriteIndex(ids: { string })
+	pcall(function()
+		Store:SetAsync("Index", { Ids = ids })
+	end)
+end
+
+local function PersistListing(listing: any)
+	pcall(function()
+		Store:SetAsync(`Listing_{listing.Id}`, listing)
+	end)
+	local ids = IndexIds()
+	if not table.find(ids, listing.Id) then
+		table.insert(ids, listing.Id)
+		WriteIndex(ids)
+	end
+	notifyOtherServers()
+end
+
+local function RemoveListing(id: string)
+	pcall(function()
+		Store:SetAsync(`Listing_{id}`, nil)
+	end)
+	local ids = IndexIds()
+	local pos = table.find(ids, id)
+	if pos then
+		table.remove(ids, pos)
+		WriteIndex(ids)
+	end
+	notifyOtherServers()
+end
+
+local function LoadListings(replace: boolean?)
+	if replace then
+		table.clear(listings)
+	end
+	for _, id in IndexIds() do
+		local data
+		pcall(function()
+			data = Store:GetAsync(`Listing_{id}`)
+		end)
+		if type(data) == "table" and type(data.Id) == "string" and not data.SettledAt then
+			listings[data.Id] = data
 		end
 	end
 end
@@ -229,7 +276,7 @@ local function OnMarketList(player: Player, creatureId: any, price: any)
 		ListedAt = os.time(),
 	}
 	listings[listing.Id] = listing
-	PersistListings()
+	PersistListing(listing)
 
 	for i, owned in profile.Data.Creatures do
 		if owned.Id == creatureId then
@@ -280,23 +327,60 @@ local function OnMarketBuy(player: Player, listingId: any)
 		return
 	end
 
-	if not essenceService:Spend(player, listing.Price, `MarketBuy_{listing.Id}`) then
+	-- 1) Claim atomique cross-serveur : un seul acheteur peut marquer SoldAt.
+	local claimed
+	local okClaim = pcall(function()
+		claimed = Store:UpdateAsync(`Listing_{listingId}`, function(old)
+			local claimable, _reason = MarketService.CanClaim(old, player.UserId)
+			if not claimable then
+				return nil -- abandonne l'écriture
+			end
+			local updated = table.clone(old)
+			updated.SoldAt = os.time()
+			updated.SoldBy = player.UserId
+			return updated
+		end)
+	end)
+	if not okClaim or type(claimed) ~= "table" or claimed.SoldBy ~= player.UserId then
+		log:Economy("Market", "BuyRejected", { Player = player.Name, Reason = "Listing déjà pris" })
+		LoadListings(true)
+		BroadcastListings()
 		return
 	end
-	listings[listing.Id] = nil
-	PersistListings()
 
-	table.insert(profile.Data.Creatures, listing.Creature)
+	-- 2) Créature d'abord, débit ensuite, règlement enfin (ordre le moins perdeur).
+	table.insert(profile.Data.Creatures, claimed.Creature)
+	if not essenceService:Spend(player, claimed.Price, `MarketBuy_{claimed.Id}`) then
+		table.remove(profile.Data.Creatures)
+		pcall(function()
+			Store:UpdateAsync(`Listing_{claimed.Id}`, function(old)
+				old.SoldAt = nil
+				old.SoldBy = nil
+				return old
+			end)
+		end)
+		return
+	end
 	profile.Data.LastPlayed = os.time()
 	dataSync:Send(player)
-	CreditSeller(listing)
+
+	-- 3) Règlement vendeur puis suppression du listing.
+	pcall(function()
+		Store:UpdateAsync(`Listing_{claimed.Id}`, function(old)
+			old.SettledAt = os.time()
+			return old
+		end)
+	end)
+	listings[claimed.Id] = nil
+	RemoveListing(claimed.Id)
+	CreditSeller(claimed)
 
 	log:Economy("Market", "Buy", {
 		Player = player.Name,
-		Listing = listing.Id,
-		Seller = listing.SellerName,
-		Species = listing.Creature.SpeciesId,
-		Price = listing.Price,
+		Listing = claimed.Id,
+		Seller = claimed.SellerName,
+		Species = claimed.Creature.SpeciesId,
+		Price = claimed.Price,
 	})
 	BroadcastListings()
 end
@@ -319,7 +403,7 @@ local function OnMarketRemove(player: Player, listingId: any)
 
 	if not listing.WithdrawAt then
 		listing.WithdrawAt = os.time() + Config.MARKET_WITHDRAW_DELAY
-		PersistListings()
+		PersistListing(listing)
 		BroadcastListings()
 		return
 	end
@@ -328,7 +412,7 @@ local function OnMarketRemove(player: Player, listingId: any)
 	end
 
 	listings[listing.Id] = nil
-	PersistListings()
+	RemoveListing(listing.Id)
 	table.insert(profile.Data.Creatures, listing.Creature)
 	profile.Data.LastPlayed = os.time()
 	dataSync:Send(player)
@@ -360,6 +444,22 @@ function MarketService:Init(container)
 end
 
 function MarketService:Start()
+	-- Migration v1 -> par-listing : l'ancien snapshot unique devient des clés individuelles.
+	local legacy
+	pcall(function()
+		legacy = Store:GetAsync(ListingsKey)
+	end)
+	if type(legacy) == "table" then
+		for _, listing in legacy do
+			if type(listing.Id) == "string" and not listing.SoldAt then
+				PersistListing(listing)
+			end
+		end
+		pcall(function()
+			Store:SetAsync(ListingsKey, nil)
+		end)
+	end
+
 	LoadListings()
 
 	-- sync live : les autres serveurs notifient chaque mutation
@@ -376,12 +476,21 @@ function MarketService:Start()
 		end)
 	end
 
-	-- ponytail: filet de sécurité 60 s + race double-vente cross-serveur acceptée
-	-- en v1 (trading coopératif, faible incitation à la fraude). Fix dur si
-	-- exploité : claim par listing via UpdateAsync.
+	-- ponytail: refresh périodique depuis le store (source de vérité) + balayage crash post-claim.
 	task.spawn(function()
 		while true do
 			task.wait(60)
+			-- ponytail: crash entre claim et règlement -> on règle le vendeur
+			-- (fenêtre minuscule, favorable acheteur ; à durcir seulement si exploité).
+			for _, listing in listings do
+				if listing.SoldAt and not listing.SettledAt and os.time() - listing.SoldAt > 120 then
+					listing.SettledAt = os.time()
+					PersistListing(listing)
+					CreditSeller(listing)
+					listings[listing.Id] = nil
+					RemoveListing(listing.Id)
+				end
+			end
 			LoadListings(true)
 			BroadcastListings()
 		end
