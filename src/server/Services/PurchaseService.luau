@@ -214,10 +214,13 @@ function PurchaseService:Start()
 				return "done"
 			end)
 		end)
-		LogPurchase(
-			"Receipt",
-			{ PlayerId = receiptInfo.PlayerId, ProductId = receiptInfo.ProductId, Kind = product.Kind or "Essence" }
-		)
+		LogPurchase("Receipt", {
+			PlayerId = receiptInfo.PlayerId,
+			ProductId = receiptInfo.ProductId,
+			Kind = product.Kind or "Essence",
+			Amount = product.Amount,
+			PurchaseId = receiptInfo.PurchaseId,
+		})
 		analyticsService:Event("purchase", { ProductId = receiptInfo.ProductId, Kind = product.Kind or "Essence" })
 		analyticsService:Funnel(profile, "FirstPurchaseAt")
 		return Enum.ProductPurchaseDecision.PurchaseGranted
