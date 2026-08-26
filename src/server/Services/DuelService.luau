@@ -22,9 +22,11 @@ local cooldowns: { [Player]: { [string]: number } } = {}
 local EscrowStore = SafeStore.Get("RiftBeastsDuels_v1", 0)
 
 -- Clé partagée Escrow_{userId} : plusieurs défis simultanés d'un même joueur
--- s'additionnent dans la même clé (somme exacte) — ne pas passer à une clé par défi.
--- L'escrow vit dans le DataStore : un challenger qui quitte le jeu est
--- remboursé exactement une fois, même hors ligne (AUD-P0-03).
+-- (cooldown 10 s < timeout 60 s) y cumulent leurs mises. Le décompte est PAR DÉFI :
+-- TakeEscrowAmount ne retire que la mise du défi en cours — pas de clé par défi,
+-- pas de drain entier qui sur-créditerait/pillerait les autres défis.
+-- L'escrow vit dans le DataStore : un challenger qui quitte est remboursé
+-- exactement une fois, même hors ligne (AUD-P0-03).
 local function EscrowAdjust(userId: number, delta: number)
 	local ok, err = pcall(function()
 		EscrowStore:UpdateAsync(`Escrow_{userId}`, function(old)
@@ -36,12 +38,12 @@ local function EscrowAdjust(userId: number, delta: number)
 	end
 end
 
-local function TakeEscrow(userId: number): number
+local function TakeEscrowAmount(userId: number, amount: number): number
 	local taken = 0
 	local ok, err = pcall(function()
 		EscrowStore:UpdateAsync(`Escrow_{userId}`, function(old)
-			taken = old or 0
-			return 0
+			taken = math.min(old or 0, amount)
+			return math.max(0, (old or 0) - amount)
 		end)
 	end)
 	if not ok then
@@ -51,23 +53,21 @@ local function TakeEscrow(userId: number): number
 	return taken
 end
 
-local function CreditEscrowIfOnline(userId: number, source: string)
+-- Crédite le joueur (profil requis : sinon rien ne sort du store) du montant demandé ;
+-- amount = math.huge draine tout le solde restant (rejoin).
+local function CreditEscrowIfOnline(userId: number, source: string, amount: number)
 	local player = Players:GetPlayerByUserId(userId)
-	if not player then
+	if not player or not saveService:GetProfile(player) then
 		return
 	end
-	-- Profil pas encore chargé : ne PAS drainer le store, l'escrow reste disponible.
-	if not saveService:GetProfile(player) then
+	local taken = TakeEscrowAmount(userId, amount)
+	if taken <= 0 then
 		return
 	end
-	local amount = TakeEscrow(userId)
-	if amount <= 0 then
-		return
-	end
-	local gained = essenceService:Add(player, amount, source) or 0
-	if gained < amount then
+	local gained = essenceService:Add(player, taken, source) or 0
+	if gained < taken then
 		-- Crédit partiel/échoué : différence remise en escrow, rien n'est perdu.
-		EscrowAdjust(userId, amount - gained)
+		EscrowAdjust(userId, taken - gained)
 	end
 	if gained > 0 then
 		dataSync:Send(player)
@@ -76,9 +76,9 @@ end
 
 local function ReleaseEscrow(challenge: any)
 	challenges[challenge.Id] = nil
-	-- En ligne : remboursement immédiat. Hors ligne : l'escrow reste en store,
-	-- crédité à la reconnexion (PlayerAdded).
-	CreditEscrowIfOnline(challenge.ChallengerUserId, "DuelRefund")
+	-- En ligne : remboursement immédiat de la mise de CE défi. Hors ligne :
+	-- la mise reste en store, crédité à la reconnexion (PlayerAdded).
+	CreditEscrowIfOnline(challenge.ChallengerUserId, "DuelRefund", challenge.Wager)
 end
 
 local function TeamCreatures(player: Player, teamIds: { string }): { any }
@@ -197,7 +197,7 @@ function DuelService:Start()
 		local attackerWon = DuelSim.Resolve(challenge.AttackPower, defensePower, challenge.Seed)
 		local winner = if attackerWon then attacker else player
 		essenceService:Add(winner, challenge.Wager * 2, "DuelWin")
-		TakeEscrow(challenge.ChallengerUserId) -- escrow soldée par le pot, sans re-crédit
+		TakeEscrowAmount(challenge.ChallengerUserId, challenge.Wager) -- solde la mise de CE défi (pot), sans re-crédit
 
 		local attackerProfile = saveService:GetProfile(attacker)
 		if attackerWon then
@@ -280,7 +280,8 @@ function DuelService:Start()
 				return
 			end
 			if saveService:GetProfile(player) then
-				CreditEscrowIfOnline(userId, "DuelEscrowRejoin")
+				-- Rejoin : aucun défi actif ne survit au départ → drain du solde restant.
+				CreditEscrowIfOnline(userId, "DuelEscrowRejoin", math.huge)
 				return
 			end
 			task.wait(0.5)
