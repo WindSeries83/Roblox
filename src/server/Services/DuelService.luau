@@ -21,32 +21,55 @@ local cooldowns: { [Player]: { [string]: number } } = {}
 
 local EscrowStore = SafeStore.Get("RiftBeastsDuels_v1", 0)
 
+-- Clé partagée Escrow_{userId} : plusieurs défis simultanés d'un même joueur
+-- s'additionnent dans la même clé (somme exacte) — ne pas passer à une clé par défi.
 -- L'escrow vit dans le DataStore : un challenger qui quitte le jeu est
 -- remboursé exactement une fois, même hors ligne (AUD-P0-03).
 local function EscrowAdjust(userId: number, delta: number)
-	pcall(function()
+	local ok, err = pcall(function()
 		EscrowStore:UpdateAsync(`Escrow_{userId}`, function(old)
 			return math.max(0, (old or 0) + delta)
 		end)
 	end)
+	if not ok then
+		warn("[Duel] Escrow store failure:", err) -- flux d'argent : on veut le voir
+	end
 end
 
 local function TakeEscrow(userId: number): number
 	local taken = 0
-	pcall(function()
+	local ok, err = pcall(function()
 		EscrowStore:UpdateAsync(`Escrow_{userId}`, function(old)
 			taken = old or 0
 			return 0
 		end)
 	end)
+	if not ok then
+		warn("[Duel] Escrow store failure:", err)
+		return 0 -- échec store : rien pris, l'escrow reste intacte et sera créditée plus tard
+	end
 	return taken
 end
 
 local function CreditEscrowIfOnline(userId: number, source: string)
 	local player = Players:GetPlayerByUserId(userId)
+	if not player then
+		return
+	end
+	-- Profil pas encore chargé : ne PAS drainer le store, l'escrow reste disponible.
+	if not saveService:GetProfile(player) then
+		return
+	end
 	local amount = TakeEscrow(userId)
-	if player and amount > 0 then
-		essenceService:Add(player, amount, source)
+	if amount <= 0 then
+		return
+	end
+	local gained = essenceService:Add(player, amount, source) or 0
+	if gained < amount then
+		-- Crédit partiel/échoué : différence remise en escrow, rien n'est perdu.
+		EscrowAdjust(userId, amount - gained)
+	end
+	if gained > 0 then
 		dataSync:Send(player)
 	end
 end
@@ -247,13 +270,28 @@ function DuelService:Start()
 		end
 	end)
 
+	-- Rejoin : attendre le profil (chargement async) avant de créditer l'escrow,
+	-- ~10 s max. Départ ou profil toujours absent → abandon, l'escrow reste au
+	-- store et sera créditée au prochain join.
+	local function CreditWhenProfileReady(userId: number)
+		for _ = 1, 20 do
+			local player = Players:GetPlayerByUserId(userId)
+			if not player then
+				return
+			end
+			if saveService:GetProfile(player) then
+				CreditEscrowIfOnline(userId, "DuelEscrowRejoin")
+				return
+			end
+			task.wait(0.5)
+		end
+	end
+
 	for _, player in Players:GetPlayers() do
-		task.defer(CreditEscrowIfOnline, player.UserId, "DuelEscrowRejoin")
+		task.spawn(CreditWhenProfileReady, player.UserId)
 	end
 	Players.PlayerAdded:Connect(function(player)
-		task.defer(function()
-			CreditEscrowIfOnline(player.UserId, "DuelEscrowRejoin")
-		end)
+		task.spawn(CreditWhenProfileReady, player.UserId)
 	end)
 
 	task.spawn(function()
