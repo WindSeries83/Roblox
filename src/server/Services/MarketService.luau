@@ -154,7 +154,8 @@ end
 
 local function RemoveListing(id: string)
 	pcall(function()
-		Store:SetAsync(`Listing_{id}`, nil)
+		-- SetAsync(key, nil) ne supprime pas sur le DataStore réel (tombstone requis).
+		Store:RemoveAsync(`Listing_{id}`)
 	end)
 	local ids = IndexIds()
 	local pos = table.find(ids, id)
@@ -372,8 +373,8 @@ local function OnMarketBuy(player: Player, listingId: any)
 		end)
 	end)
 	listings[claimed.Id] = nil
-	RemoveListing(claimed.Id)
 	CreditSeller(claimed)
+	RemoveListing(claimed.Id)
 
 	log:Economy("Market", "Buy", {
 		Player = player.Name,
@@ -399,6 +400,9 @@ local function OnMarketRemove(player: Player, listingId: any)
 	local listing = listings[listingId]
 	if not listing or listing.SellerUserId ~= player.UserId then
 		return
+	end
+	if listing.SoldAt then
+		return -- déjà claimé (cache périmé), le retrait écraserait SoldAt dans le store
 	end
 
 	if not listing.WithdrawAt then
@@ -456,7 +460,7 @@ function MarketService:Start()
 			end
 		end
 		pcall(function()
-			Store:SetAsync(ListingsKey, nil)
+			Store:RemoveAsync(ListingsKey)
 		end)
 	end
 

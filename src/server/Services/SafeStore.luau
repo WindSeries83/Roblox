@@ -28,6 +28,9 @@ function SafeStore.Get(name: string, fallback: any)
 		SetAsync = function(_, key, value)
 			stored[key] = value -- value nil supprime la clé
 		end,
+		RemoveAsync = function(_, key)
+			stored[key] = nil
+		end,
 		UpdateAsync = function(_, key, transform)
 			local old = stored[key] or fallback
 			local new = transform(old)
