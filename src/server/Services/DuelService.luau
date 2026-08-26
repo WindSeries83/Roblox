@@ -7,6 +7,8 @@ local DuelSim = require(ReplicatedStorage.Shared.DuelSim)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Net = require(ReplicatedStorage.Shared.Net)
 
+local SafeStore = require(script.Parent.SafeStore)
+
 local DuelService = {}
 
 local log
@@ -17,9 +19,43 @@ local dataSync
 local challenges: { [string]: any } = {}
 local cooldowns: { [Player]: { [string]: number } } = {}
 
-local function Refund(challenge: any)
-	essenceService:Add(Players:GetPlayerByUserId(challenge.ChallengerUserId), challenge.Wager, "DuelRefund")
+local EscrowStore = SafeStore.Get("RiftBeastsDuels_v1", 0)
+
+-- L'escrow vit dans le DataStore : un challenger qui quitte le jeu est
+-- remboursé exactement une fois, même hors ligne (AUD-P0-03).
+local function EscrowAdjust(userId: number, delta: number)
+	pcall(function()
+		EscrowStore:UpdateAsync(`Escrow_{userId}`, function(old)
+			return math.max(0, (old or 0) + delta)
+		end)
+	end)
+end
+
+local function TakeEscrow(userId: number): number
+	local taken = 0
+	pcall(function()
+		EscrowStore:UpdateAsync(`Escrow_{userId}`, function(old)
+			taken = old or 0
+			return 0
+		end)
+	end)
+	return taken
+end
+
+local function CreditEscrowIfOnline(userId: number, source: string)
+	local player = Players:GetPlayerByUserId(userId)
+	local amount = TakeEscrow(userId)
+	if player and amount > 0 then
+		essenceService:Add(player, amount, source)
+		dataSync:Send(player)
+	end
+end
+
+local function ReleaseEscrow(challenge: any)
 	challenges[challenge.Id] = nil
+	-- En ligne : remboursement immédiat. Hors ligne : l'escrow reste en store,
+	-- crédité à la reconnexion (PlayerAdded).
+	CreditEscrowIfOnline(challenge.ChallengerUserId, "DuelRefund")
 end
 
 local function TeamCreatures(player: Player, teamIds: { string }): { any }
@@ -89,6 +125,7 @@ function DuelService:Start()
 			log:Economy("Duel", "ChallengeRejected", { Player = player.Name, Reason = "Fonds insuffisants" })
 			return
 		end
+		EscrowAdjust(player.UserId, wager)
 
 		local challenge = {
 			Id = HttpService:GenerateGUID(false),
@@ -124,7 +161,7 @@ function DuelService:Start()
 			return
 		end
 		if not essenceService:Spend(player, challenge.Wager, "DuelWager") then
-			Refund(challenge)
+			ReleaseEscrow(challenge)
 			log:Economy("Duel", "AcceptRejected", { Player = player.Name, Reason = "Fonds insuffisants" })
 			return
 		end
@@ -137,6 +174,7 @@ function DuelService:Start()
 		local attackerWon = DuelSim.Resolve(challenge.AttackPower, defensePower, challenge.Seed)
 		local winner = if attackerWon then attacker else player
 		essenceService:Add(winner, challenge.Wager * 2, "DuelWin")
+		TakeEscrow(challenge.ChallengerUserId) -- escrow soldée par le pot, sans re-crédit
 
 		local attackerProfile = saveService:GetProfile(attacker)
 		if attackerWon then
@@ -182,7 +220,7 @@ function DuelService:Start()
 		if not challenge or challenge.TargetUserId ~= player.UserId then
 			return
 		end
-		Refund(challenge)
+		ReleaseEscrow(challenge)
 		local attacker = Players:GetPlayerByUserId(challenge.ChallengerUserId)
 		if attacker then
 			Net.DuelResult:FireClient(attacker, {
@@ -203,13 +241,19 @@ function DuelService:Start()
 		cooldowns[player] = nil
 		for _, challenge in challenges do
 			if challenge.TargetUserId == player.UserId or challenge.ChallengerUserId == player.UserId then
-				if challenge.ChallengerUserId == player.UserId then
-					challenges[challenge.Id] = nil
-				else
-					Refund(challenge)
-				end
+				-- Challenger parti : escrow libérée (AUD-P0-03). Cible partie : défi mort, remboursement.
+				ReleaseEscrow(challenge)
 			end
 		end
+	end)
+
+	for _, player in Players:GetPlayers() do
+		task.defer(CreditEscrowIfOnline, player.UserId, "DuelEscrowRejoin")
+	end
+	Players.PlayerAdded:Connect(function(player)
+		task.defer(function()
+			CreditEscrowIfOnline(player.UserId, "DuelEscrowRejoin")
+		end)
 	end)
 
 	task.spawn(function()
@@ -218,7 +262,7 @@ function DuelService:Start()
 			local now = os.time()
 			for _, challenge in challenges do
 				if now > challenge.ExpiresAt then
-					Refund(challenge)
+					ReleaseEscrow(challenge)
 					log:Economy("Duel", "Expired", {
 						Challenger = challenge.ChallengerName,
 						Wager = challenge.Wager,
