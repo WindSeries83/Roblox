@@ -33,7 +33,11 @@ return function(t)
 	t.test("SlotOffset cohérent avec SlotCFrame", function()
 		local origin = Vector3.new(1, 5, 2)
 		for i = 1, Incubation.MAX_PLACED do
-			expect.near((Incubation.SlotCFrame(origin, i).Position - origin - Incubation.SlotOffset(i)).Magnitude, 0, 0.001)
+			expect.near(
+				(Incubation.SlotCFrame(origin, i).Position - origin - Incubation.SlotOffset(i)).Magnitude,
+				0,
+				0.001
+			)
 		end
 	end)
 

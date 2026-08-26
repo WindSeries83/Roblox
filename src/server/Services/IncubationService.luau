@@ -246,7 +246,11 @@ local function MoveCouveuseToSpawn()
 	local pivot = couveuse:GetPivot()
 	-- Le pivot est le centre du Socle (h 1.2) : on pose son bas sur le sol trouvé.
 	couveuse:PivotTo(CFrame.new(target.X, hit.Position.Y + 0.6, target.Z) * (pivot - pivot.Position))
-	log:Economy("Egg", "CouveuseRelocated", { Position = string.format("%.1f, %.1f, %.1f", target.X, hit.Position.Y + 0.6, target.Z) })
+	log:Economy(
+		"Egg",
+		"CouveuseRelocated",
+		{ Position = string.format("%.1f, %.1f, %.1f", target.X, hit.Position.Y + 0.6, target.Z) }
+	)
 end
 
 function IncubationService:Start()

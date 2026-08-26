@@ -54,7 +54,13 @@ function CreaturePortrait.Create(parent: Instance, position: UDim2, size: UDim2)
 	return state
 end
 
-function CreaturePortrait.Show(_state: any, _speciesId: string?, _rarity: string?, _mutation: any, _silhouette: boolean?)
+function CreaturePortrait.Show(
+	_state: any,
+	_speciesId: string?,
+	_rarity: string?,
+	_mutation: any,
+	_silhouette: boolean?
+)
 	-- ponytail: portraits 3D retirés (assets provisoires jugés moches).
 	-- Restaurer l'ancien corps de Show (git log) quand la vraie DA arrive.
 	if _state and _state.model then

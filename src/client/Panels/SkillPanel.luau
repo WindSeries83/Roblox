@@ -96,7 +96,11 @@ local function AddSkillRow(parent, node, ranks: { [string]: number }, points: nu
 		Font = Enum.Font.GothamBold,
 		TextSize = 14,
 		Size = UDim2.fromScale(1, 1),
-		Text = if maxed then "★" elseif locked then "🔒" elseif rank > 0 then string.rep("●", math.min(rank, 3)) else "+",
+		Text = if maxed
+			then "★"
+			elseif locked then "🔒"
+			elseif rank > 0 then string.rep("●", math.min(rank, 3))
+			else "+",
 		Parent = circle,
 	})
 
