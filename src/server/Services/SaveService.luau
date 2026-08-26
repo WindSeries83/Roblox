@@ -6,7 +6,7 @@ local SaveService = {}
 
 SaveService.Profiles = {}
 
-local DATA_VERSION = 7
+local DATA_VERSION = 8
 
 local Store = ProfileStore.New("RiftBeastsData_v1", {
 	Essence = 0,
@@ -56,6 +56,7 @@ local Store = ProfileStore.New("RiftBeastsData_v1", {
 		StarterBundle = false,
 		SeasonPremium = false,
 	},
+	PurchaseReceipts = {},
 	SkillPoints = 0,
 	SkillRanks = {},
 	Offers = {
@@ -153,6 +154,10 @@ local MIGRATIONS = {
 	[6] = function(data)
 		data.CompanionId = data.CompanionId or nil
 		data.Version = 7
+	end,
+	[7] = function(data)
+		data.PurchaseReceipts = data.PurchaseReceipts or {}
+		data.Version = 8
 	end,
 }
 

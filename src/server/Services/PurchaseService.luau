@@ -165,62 +165,61 @@ function PurchaseService:Start()
 	end)
 
 	MarketplaceService.ProcessReceipt = function(receiptInfo)
-		local playerId = receiptInfo.PlayerId
-		local productId = receiptInfo.ProductId
-		local receiptKey = PurchaseService.ReceiptKey(playerId, receiptInfo.PurchaseId)
+		local receiptKey = PurchaseService.ReceiptKey(receiptInfo.PlayerId, receiptInfo.PurchaseId)
 
-		-- Idempotence : déjà accordé ?
-		local granted = false
-		local okGet = pcall(function()
-			granted = ReceiptsStore:GetAsync(receiptKey)
+		-- Claim atomique AVANT tout effet : deux replays concurrents -> un seul passage.
+		local state
+		local okClaim = pcall(function()
+			state = ReceiptsStore:UpdateAsync(receiptKey, function(old)
+				return if old == "done" then "done" else "pending"
+			end)
 		end)
-		if okGet and granted then
+		if okClaim and state == "done" then
 			return Enum.ProductPurchaseDecision.PurchaseGranted
 		end
-		if not okGet then
+
+		local product = PurchaseService.ResolveProduct(receiptInfo.ProductId)
+		local player = Players:GetPlayerByUserId(receiptInfo.PlayerId)
+		local profile = if player then saveService:GetProfile(player) else nil
+		if not product or not player or not profile then
+			-- Claim conservé ("pending") : retry Roblox reprendra le traitement.
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		end
 
-		local product = PurchaseService.ResolveProduct(productId)
-		if not product then
-			LogPurchase("ReceiptUnknown", { PlayerId = playerId, ProductId = productId })
-			return Enum.ProductPurchaseDecision.NotProcessedYet
+		-- Garde-fou durable : si l'effet est déjà dans le profil (crash après
+		-- grant, avant le flag "done"), on ne re-grante pas.
+		if not Gameplay.ConsumeOnce(profile.Data.PurchaseReceipts, receiptKey) then
+			pcall(function()
+				ReceiptsStore:UpdateAsync(receiptKey, function()
+					return "done"
+				end)
+			end)
+			return Enum.ProductPurchaseDecision.PurchaseGranted
 		end
 
-		local player = Players:GetPlayerByUserId(playerId)
-		if not player then
-			return Enum.ProductPurchaseDecision.NotProcessedYet
-		end
-
-		-- Grant-then-ack (SE-3) : persistance du receipt AVANT PurchaseGranted.
-		-- GrantProduct false = refus propre -> NotProcessedYet (remboursement auto).
 		local okGrant, grantedOk = pcall(function()
-			return PurchaseService.GrantProduct(player, product, productId)
+			return PurchaseService.GrantProduct(player, product, receiptInfo.ProductId)
 		end)
-		if not okGrant then
-			LogPurchase("ReceiptGrantFailed", { PlayerId = playerId, ProductId = productId })
+		if not okGrant or not grantedOk then
+			LogPurchase("ReceiptGrantFailed", { PlayerId = receiptInfo.PlayerId, ProductId = receiptInfo.ProductId })
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		end
-		if not grantedOk then
-			return Enum.ProductPurchaseDecision.NotProcessedYet
-		end
+		dataSync:Send(player)
 
-		local okSet = pcall(function()
-			ReceiptsStore:SetAsync(receiptKey, true)
+		-- ponytail: fenêtre résiduelle crash grant-mémoire -> sauvegarde profil :
+		-- double-grant borné, détectable au log "Receipt" dupliqué ; fermer via
+		-- flush profil avant ack si ça se produit en prod.
+		pcall(function()
+			ReceiptsStore:UpdateAsync(receiptKey, function()
+				return "done"
+			end)
 		end)
-		if not okSet then
-			LogPurchase("ReceiptHistorySaveFailed", { PlayerId = playerId, ProductId = productId })
-		end
-
-		LogPurchase("Receipt", {
-			PlayerId = playerId,
-			ProductId = productId,
-			Kind = product.Kind or "Essence",
-			Amount = product.Amount,
-			PurchaseId = receiptInfo.PurchaseId,
-		})
-		analyticsService:Event("purchase", { ProductId = productId, Kind = product.Kind or "Essence" })
-		analyticsService:Funnel(saveService:GetProfile(player), "FirstPurchaseAt")
+		LogPurchase(
+			"Receipt",
+			{ PlayerId = receiptInfo.PlayerId, ProductId = receiptInfo.ProductId, Kind = product.Kind or "Essence" }
+		)
+		analyticsService:Event("purchase", { ProductId = receiptInfo.ProductId, Kind = product.Kind or "Essence" })
+		analyticsService:Funnel(profile, "FirstPurchaseAt")
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end
 end

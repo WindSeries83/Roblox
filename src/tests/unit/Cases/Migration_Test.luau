@@ -3,7 +3,7 @@ return function(t)
 	local SaveService = require(game.ServerScriptService.Services.SaveService)
 
 	-- A v1 profile gains every new field through migration.
-	t.test("migration v1 to v7 completes creature fields", function()
+	t.test("migration v1 to v8 completes creature fields", function()
 		local data = {
 			Essence = 100,
 			Creatures = {
@@ -16,7 +16,7 @@ return function(t)
 			Version = 1,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 7)
+		expect.equal(data.Version, 8)
 		expect.equal(data.CompanionId, nil)
 		expect.truthy(data.Index ~= nil)
 		expect.truthy(data.Items ~= nil)
@@ -49,7 +49,7 @@ return function(t)
 	end)
 
 	-- A v2 profile gains quest fields and keeps its data.
-	t.test("migration v2 to v7 keeps data", function()
+	t.test("migration v2 to v8 keeps data", function()
 		local data = {
 			Essence = 50,
 			Creatures = {},
@@ -62,7 +62,7 @@ return function(t)
 			Version = 2,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 7)
+		expect.equal(data.Version, 8)
 		expect.equal(data.Stars, 3)
 		expect.equal(data.Rebirths, 2)
 		expect.equal(#data.Items, 1)
@@ -74,7 +74,7 @@ return function(t)
 	end)
 
 	-- A v3 profile gains social/monetization fields and keeps its data.
-	t.test("migration v3 to v7 keeps data", function()
+	t.test("migration v3 to v8 keeps data", function()
 		local data = {
 			Essence = 50,
 			Creatures = {},
@@ -89,7 +89,7 @@ return function(t)
 			Version = 3,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 7)
+		expect.equal(data.Version, 8)
 		expect.equal(data.Stats.TotalBred, 1)
 		expect.equal(data.Quests.Day, "2026-01-01")
 		expect.truthy(data.Quests.Achievements.FirstHatch)
@@ -106,7 +106,7 @@ return function(t)
 	end)
 
 	-- A v4 profile gains the streak/pity fields and keeps its data.
-	t.test("migration v4 to v7 keeps data", function()
+	t.test("migration v4 to v8 keeps data", function()
 		local data = {
 			Essence = 50,
 			Creatures = {},
@@ -132,7 +132,7 @@ return function(t)
 			Version = 4,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 7)
+		expect.equal(data.Version, 8)
 		expect.equal(data.LoginStreak, 0)
 		expect.equal(data.LastLoginDate, "")
 		expect.equal(data.Stats.HatchesSinceRare, 0)
@@ -143,10 +143,10 @@ return function(t)
 	end)
 
 	-- A v5 profile gains the lot2 fields through migration.
-	t.test("migration v5 to v7 adds lot2 fields", function()
+	t.test("migration v5 to v8 adds lot2 fields", function()
 		local data = { Version = 5 }
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 7)
+		expect.equal(data.Version, 8)
 		expect.equal(data.SkillPoints, 0)
 		expect.truthy(data.SkillRanks ~= nil)
 		expect.equal(data.Offers.FirstPurchaseEligible, false)
@@ -166,11 +166,29 @@ return function(t)
 			CompanionId = "comp_9",
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 7)
+		expect.equal(data.Version, 8)
 		expect.equal(data.Stats.TotalHatched, 12)
 		expect.equal(data.SkillRanks.FarmRate1, 2)
 		expect.equal(data.Offers.FirstPurchaseClaimed, true)
 		expect.equal(data.Stats.Funnel.FirstHatchAt, 0)
 		expect.equal(data.CompanionId, "comp_9")
+	end)
+
+	-- Un profil v7 gagne la table PurchaseReceipts (garde-fou anti double-grant).
+	t.test("migration v7 to v8 adds purchase receipts", function()
+		local data = { Version = 7, CompanionId = "comp_1" }
+		SaveService.Migrate(data)
+		expect.equal(data.Version, 8)
+		expect.truthy(data.PurchaseReceipts ~= nil)
+		expect.equal(next(data.PurchaseReceipts), nil)
+		expect.equal(data.CompanionId, "comp_1")
+	end)
+
+	-- Un profil déjà en v8 garde ses receipts existants.
+	t.test("migration preserves existing purchase receipts", function()
+		local data = { Version = 8, PurchaseReceipts = { ["42_abc"] = true } }
+		SaveService.Migrate(data)
+		expect.equal(data.Version, 8)
+		expect.equal(data.PurchaseReceipts["42_abc"], true)
 	end)
 end
