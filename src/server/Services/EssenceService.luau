@@ -102,12 +102,14 @@ function EssenceService:Start()
 		end
 		accumulator = 0
 
+		local appliedRates: { [Player]: number } = {}
 		for player, profile in pairs(saveService.Profiles) do
 			-- Un profil fautif ne doit pas couper la synchro globale : chaque joueur est isolé.
 			pcall(function()
 				-- Aucune essence passive pendant un combat de faille (bible §5, B5.3).
 				local inRift = player:GetAttribute("InRiftCombat") == true
 				local rate = if inRift then 0 else EssenceService.GetRate(player)
+				appliedRates[player] = rate
 				if rate > 0 then
 					profile.Data.Essence += rate
 					profile.Data.Stats.TotalEssenceEarned += rate
@@ -123,7 +125,7 @@ function EssenceService:Start()
 			for player in pairs(saveService.Profiles) do
 				log:Economy("Essence", "PassiveMinute", {
 					Player = player.Name,
-					Rate = EssenceService.GetRate(player),
+					Rate = appliedRates[player] or 0,
 				})
 			end
 		end

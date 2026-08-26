@@ -126,30 +126,28 @@ local function notifyOtherServers()
 	end
 end
 
-local function IndexIds(): { string }
-	local data
+-- UpdateAsync : read-modify-write atomique cross-serveur (GetAsync+SetAsync écraserait les ajouts concurrents).
+local function UpdateIndex(id: string, add: boolean)
 	pcall(function()
-		data = Store:GetAsync("Index")
+		Store:UpdateAsync("Index", function(old)
+			local ids = if type(old) == "table" and type(old.Ids) == "table" then table.clone(old.Ids) else {}
+			local pos = table.find(ids, id)
+			if add and not pos then
+				table.insert(ids, id)
+			elseif not add and pos then
+				table.remove(ids, pos)
+			end
+			return { Ids = ids }
+		end)
 	end)
-	return if type(data) == "table" and type(data.Ids) == "table" then data.Ids else {}
-end
-
-local function WriteIndex(ids: { string })
-	pcall(function()
-		Store:SetAsync("Index", { Ids = ids })
-	end)
+	notifyOtherServers()
 end
 
 local function PersistListing(listing: any)
 	pcall(function()
 		Store:SetAsync(`Listing_{listing.Id}`, listing)
 	end)
-	local ids = IndexIds()
-	if not table.find(ids, listing.Id) then
-		table.insert(ids, listing.Id)
-		WriteIndex(ids)
-	end
-	notifyOtherServers()
+	UpdateIndex(listing.Id, true)
 end
 
 local function RemoveListing(id: string)
@@ -157,20 +155,19 @@ local function RemoveListing(id: string)
 		-- SetAsync(key, nil) ne supprime pas sur le DataStore réel (tombstone requis).
 		Store:RemoveAsync(`Listing_{id}`)
 	end)
-	local ids = IndexIds()
-	local pos = table.find(ids, id)
-	if pos then
-		table.remove(ids, pos)
-		WriteIndex(ids)
-	end
-	notifyOtherServers()
+	UpdateIndex(id, false)
 end
 
 local function LoadListings(replace: boolean?)
 	if replace then
 		table.clear(listings)
 	end
-	for _, id in IndexIds() do
+	local index
+	pcall(function()
+		index = Store:GetAsync("Index")
+	end)
+	local ids = if type(index) == "table" and type(index.Ids) == "table" then index.Ids else {}
+	for _, id in ids do
 		local data
 		pcall(function()
 			data = Store:GetAsync(`Listing_{id}`)

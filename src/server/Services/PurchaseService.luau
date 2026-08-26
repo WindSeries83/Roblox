@@ -179,9 +179,13 @@ function PurchaseService:Start()
 		end
 
 		local product = PurchaseService.ResolveProduct(receiptInfo.ProductId)
+		if not product then
+			LogPurchase("ReceiptUnknown", { PlayerId = receiptInfo.PlayerId, ProductId = receiptInfo.ProductId })
+			return Enum.ProductPurchaseDecision.NotProcessedYet
+		end
 		local player = Players:GetPlayerByUserId(receiptInfo.PlayerId)
 		local profile = if player then saveService:GetProfile(player) else nil
-		if not product or not player or not profile then
+		if not player or not profile then
 			-- Claim conservé ("pending") : retry Roblox reprendra le traitement.
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		end
