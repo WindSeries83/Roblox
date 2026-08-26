@@ -28,15 +28,4 @@ function Ascension.ClampToSource(rarity: string, source: string): string
 	return "Legendary"
 end
 
--- Déclenche le Secret : RareEgg pendant l'Éclipse avec relique T3 ; l'omen (arbre d'Étoiles) élargit aux œufs Épiques et Légendaires.
-function Ascension.SecretTrigger(eggTier: string, eclipseActive: boolean, relicTier: string?, omen: boolean?): boolean
-	if eclipseActive ~= true or relicTier ~= "T3" then
-		return false
-	end
-	if eggTier == "RareEgg" then
-		return true
-	end
-	return omen == true and (eggTier == "EpicEgg" or eggTier == "LegendaryEgg")
-end
-
 return Ascension

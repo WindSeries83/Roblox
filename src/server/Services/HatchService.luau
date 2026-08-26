@@ -29,6 +29,7 @@ local tickerService
 local eclipseService
 local incubationService
 local dataSync
+local secretGate
 
 local container
 
@@ -114,6 +115,7 @@ function HatchService:Init(cont)
 	skillService = cont:Get("SkillService")
 	analyticsService = cont:Get("AnalyticsService")
 	incubationService = cont:Get("IncubationService")
+	secretGate = cont:Get("SecretGate")
 end
 
 function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: boolean?): boolean
@@ -175,7 +177,7 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 	-- Bride l'ascension : Mythique+ réservé aux œufs de la Faille.
 	roll.Rarity = Ascension.ClampToSource(roll.Rarity, egg.Source or "Purchase")
 	if
-		Ascension.SecretTrigger(
+		secretGate.Triggered(
 			egg.Tier,
 			Workspace:GetAttribute("EclipseActive") == true,
 			EquippedRelicTier(profile),

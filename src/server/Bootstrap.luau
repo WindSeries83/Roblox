@@ -37,6 +37,7 @@ local ORDER = {
 	"EvolutionService",
 	"ItemService",
 	"IncubationService",
+	"SecretGate",
 	"HatchService",
 	"TickerService",
 	"NestService",
