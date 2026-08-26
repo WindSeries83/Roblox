@@ -75,6 +75,12 @@ local function CreditEscrowIfOnline(userId: number, source: string, amount: numb
 end
 
 local function ReleaseEscrow(challenge: any)
+	-- Garde anti double-release : le même défi ne libère son escrow qu'une fois
+	-- (double DuelDecline, ou decline ∥ PlayerRemoving) — sinon on re-drainerait
+	-- une mise sur la clé partagée.
+	if not challenges[challenge.Id] then
+		return
+	end
 	challenges[challenge.Id] = nil
 	-- En ligne : remboursement immédiat de la mise de CE défi. Hors ligne :
 	-- la mise reste en store, crédité à la reconnexion (PlayerAdded).
