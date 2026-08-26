@@ -99,6 +99,13 @@ return function(t)
 		end
 	end)
 
+	-- Aucune table d'œuf achetable ne doit proposer Mythic (exclusif Faille).
+	t.test("aucune table d'œuf achetable ne propose Mythic", function()
+		for _tier, weights in Config.EGG_RARITY_WEIGHTS do
+			expect.equal(weights.Mythic, nil)
+		end
+	end)
+
 	-- The announce threshold is a known rarity.
 	t.test("announce threshold is a known rarity", function()
 		expect.truthy(Rarities[Config.ANNOUNCE_MIN_RARITY] ~= nil)

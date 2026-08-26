@@ -17,6 +17,17 @@ function Ascension.RollFrom(baseRarity: string, luck: number?, chanceOverride: n
 	return baseRarity
 end
 
+-- Mythique et au-delà : source Faille exclusive (bible §3.11, B3.41).
+function Ascension.ClampToSource(rarity: string, source: string): string
+	if Gameplay.RarityRank(rarity) <= Gameplay.RarityRank("Legendary") then
+		return rarity
+	end
+	if source == "Rift" then
+		return rarity
+	end
+	return "Legendary"
+end
+
 -- Déclenche le Secret : RareEgg pendant l'Éclipse avec relique T3 ; l'omen (arbre d'Étoiles) élargit aux œufs Épiques et Légendaires.
 function Ascension.SecretTrigger(eggTier: string, eclipseActive: boolean, relicTier: string?, omen: boolean?): boolean
 	if eclipseActive ~= true or relicTier ~= "T3" then

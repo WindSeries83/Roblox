@@ -18,8 +18,8 @@ return {
 		CommonEgg = { Common = 75, Uncommon = 20, Rare = 5 },
 		UncommonEgg = { Uncommon = 80, Rare = 20 },
 		RareEgg = { Rare = 100 },
-		EpicEgg = { Epic = 78, Legendary = 20, Mythic = 2 },
-		LegendaryEgg = { Legendary = 76, Mythic = 24 },
+		EpicEgg = { Epic = 80, Legendary = 20 },
+		LegendaryEgg = { Legendary = 100 },
 	},
 
 	FIRST_HATCH_WEIGHTS = { Common = 40, Uncommon = 40, Rare = 20 },

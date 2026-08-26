@@ -172,6 +172,8 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 	if egg.AscendChance then
 		roll.Rarity = Ascension.RollFrom(roll.Rarity, luck, egg.AscendChance)
 	end
+	-- Bride l'ascension : Mythique+ réservé aux œufs de la Faille.
+	roll.Rarity = Ascension.ClampToSource(roll.Rarity, egg.Source or "Purchase")
 	if
 		Ascension.SecretTrigger(
 			egg.Tier,

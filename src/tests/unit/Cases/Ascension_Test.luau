@@ -70,6 +70,13 @@ return function(t)
 		end
 	end)
 
+	t.test("ClampToSource plafonne à Legendary hors Faille", function()
+		expect.equal(Ascension.ClampToSource("Legendary", "Purchase"), "Legendary")
+		expect.equal(Ascension.ClampToSource("Mythic", "Purchase"), "Legendary")
+		expect.equal(Ascension.ClampToSource("Mythic", "Rift"), "Mythic")
+		expect.equal(Ascension.ClampToSource("Rare", "Purchase"), "Rare")
+	end)
+
 	t.test("ascension config values exist", function()
 		expect.equal(Config.ASCEND_CHANCE, 0.03)
 		expect.equal(Config.RIFT_ASCEND_CHANCE, 0.08)
