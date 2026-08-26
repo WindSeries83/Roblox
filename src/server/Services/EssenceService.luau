@@ -105,7 +105,9 @@ function EssenceService:Start()
 		for player, profile in pairs(saveService.Profiles) do
 			-- Un profil fautif ne doit pas couper la synchro globale : chaque joueur est isolé.
 			pcall(function()
-				local rate = EssenceService.GetRate(player)
+				-- Aucune essence passive pendant un combat de faille (bible §5, B5.3).
+				local inRift = player:GetAttribute("InRiftCombat") == true
+				local rate = if inRift then 0 else EssenceService.GetRate(player)
 				if rate > 0 then
 					profile.Data.Essence += rate
 					profile.Data.Stats.TotalEssenceEarned += rate

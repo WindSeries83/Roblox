@@ -27,6 +27,8 @@ local worldEndsAt = 0
 local nextAt = 0
 
 local Combat = {}
+-- Joueur -> instant de fin de blocage (os.clock) : couvre Win/Lose/Quit via CleanupCombat.
+local reentryBlocked: { [Player]: number } = {}
 local nextGuardianTick = 0
 
 local function TeamPower(player: Player): number
@@ -193,6 +195,9 @@ local function CleanupCombat(player: Player)
 	if not combat then
 		return
 	end
+	-- Point unique de sortie : bloque la réentrée et coupe l'essence passive (AUD-P1-06/B5.3).
+	reentryBlocked[player] = os.clock() + Config.RIFT_REENTRY_COOLDOWN
+	player:SetAttribute("InRiftCombat", nil)
 	Combat[player] = nil
 	if combat.GuardianPart and combat.GuardianPart.Parent then
 		combat.GuardianPart:Destroy()
@@ -241,17 +246,31 @@ local function WinRift(player: Player)
 		Essence = essence,
 		EggTier = eggTier,
 		RelicTier = relicTier,
+		Duration = os.time() - combat.StartedAt,
 		Total = profile.Data.Stats.RiftsCompleted,
 	})
-	analyticsService:Event("rift_complete", { Win = true, Duration = 0 })
+	analyticsService:Event("rift_complete", { Win = true, Duration = os.time() - combat.StartedAt })
 
 	CleanupCombat(player)
 end
 
 local function LoseRift(player: Player)
-	Net.RiftEnded:FireClient(player, { Win = false })
-	log:Economy("Rift", "Defeat", { Player = player.Name })
-	analyticsService:Event("rift_complete", { Win = false, Duration = 0 })
+	local combat = Combat[player]
+	if not combat then
+		return
+	end
+	-- Défaite non punitive (décision bible 26/08) : roll de relique réduit.
+	local defeatRoll = Gameplay.WeightedRoll(Config.RIFT_RELIC_WEIGHTS_DEFEAT)
+	local defeatTier = nil
+	if defeatRoll and defeatRoll ~= "None" then
+		defeatTier = tonumber(defeatRoll:sub(2))
+		if defeatTier then
+			itemService:GrantItem(player, "Relic", defeatTier, "RiftDefeat")
+		end
+	end
+	Net.RiftEnded:FireClient(player, { Win = false, RelicTier = defeatTier })
+	log:Economy("Rift", "Defeat", { Player = player.Name, Duration = os.time() - combat.StartedAt })
+	analyticsService:Event("rift_complete", { Win = false, Duration = os.time() - combat.StartedAt })
 	CleanupCombat(player)
 end
 
@@ -263,12 +282,18 @@ local function JoinRift(player: Player, _character: Model?)
 	if Combat[player] then
 		return
 	end
+	-- Anti-réentrée (AUD-P1-06) : pas de nouveau combat pendant le cooldown.
+	if (reentryBlocked[player] or 0) > os.clock() then
+		return
+	end
+	player:SetAttribute("InRiftCombat", true)
 
 	local power = TeamPower(player)
 	local maxHp = Config.RIFT_GUARDIAN_BASE_HP + power * Config.RIFT_GUARDIAN_HP_PER_POWER
 
 	Combat[player] = {
 		Phase = "Fight",
+		StartedAt = os.time(),
 		GuardianHP = maxHp,
 		GuardianMaxHP = maxHp,
 		PlayerHP = Config.RIFT_PLAYER_MAX_HP,
@@ -347,6 +372,7 @@ function RiftService:Start()
 
 	Players.PlayerRemoving:Connect(function(player)
 		CleanupCombat(player)
+		reentryBlocked[player] = nil
 	end)
 
 	-- Arche permanente, construite une seule fois

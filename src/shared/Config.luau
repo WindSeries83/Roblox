@@ -57,6 +57,10 @@ return {
 	RIFT_GUARDIAN_DAMAGE = 12,
 
 	RIFT_RELIC_WEIGHTS = { None = 88, T1 = 8, T2 = 3, T3 = 1 },
+	-- Défaite non punitive (bible 26/08) : roll de relique à 25 % du taux victoire.
+	RIFT_RELIC_WEIGHTS_DEFEAT = { None = 97, T1 = 2, T2 = 0.75, T3 = 0.25 },
+	-- Anti-réentrée : délai après un combat avant de pouvoir re-rentrer.
+	RIFT_REENTRY_COOLDOWN = 6,
 
 	ORB_INTERVAL = 45,
 	ORB_MAX_CONCURRENT = 3,
