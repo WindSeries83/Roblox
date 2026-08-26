@@ -135,4 +135,11 @@ return function(t)
 			expect.truthy(Rarities[id] ~= nil)
 		end
 	end)
+
+	t.test("ConsumeOnce : premier appel true, replay false", function()
+		local map = {}
+		expect.truthy(Gameplay.ConsumeOnce(map, "a_b"))
+		expect.falsy(Gameplay.ConsumeOnce(map, "a_b"))
+		expect.truthy(Gameplay.ConsumeOnce(map, "a_c"))
+	end)
 end

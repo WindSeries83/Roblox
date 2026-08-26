@@ -165,4 +165,13 @@ function Gameplay.CheckCooldown(
 	return true
 end
 
+-- Consomme une clé une seule fois : true au premier appel, false aux replays.
+function Gameplay.ConsumeOnce(map: { [string]: boolean }, key: string): boolean
+	if map[key] then
+		return false
+	end
+	map[key] = true
+	return true
+end
+
 return Gameplay
