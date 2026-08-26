@@ -1,7 +1,7 @@
 # RIFT BEASTS — Bible de design
 
 > Jeu Roblox de collection de créatures, orienté idle/optimisation, ciblant le public adulte.
-> **Document unique** — le *quoi* et le *comment*. Dernière révision : 23/08/2026.
+> **Document unique** — le *quoi* et le *comment*. Dernière révision : 26/08/2026.
 > Consolide les specs antérieures (18–23/08) et remplace le plan de production — source unique du design.
 
 ---
@@ -24,6 +24,9 @@
 | FTUE | « Le monde d'abord » — boucle complète vécue en < 5 min sans tutoriel lu |
 | Population | Vivante garantie à toute échelle : jamais de faux joueurs, données globales réelles rendues visibles |
 | Cadence | ~10 h/semaine → hebdo léger data-driven + un gros chantier mensuel |
+| Cadence Faille (26/08) | La bible suit le code : cycle 10 min (`RIFT_INTERVAL = 600`), fenêtre active 180 s. Le « 2–4 min » désigne la durée d'une session, pas la cadence. Première Faille FTUE accélérée séparément (`FIRST_RIFT_DELAY`) |
+| Action facultative (26/08) | « Action » = grind actif intensif ; participer à une Faille de 2–4 min reste compatible avec un jeu AFK/travail. Défaite non punitive : roll de relique à taux réduit (~25 % du taux victoire) même perdant → l'évolution finale est accessible en participant simplement |
+| Exclusives saisonnières (26/08) | Variante visuelle d'une espèce existante (stats clonées) + confort. Aucun pouvoir exclusif vendu → « le F2P fait 100 % du contenu » est vrai littéralement ; l'Index distingue la variante |
 
 ---
 
@@ -44,7 +47,7 @@ Tu es un Dompteur. Tes créatures farment de l'Essence dans ton sanctuaire penda
 ## 2. Boucle de jeu
 
 1. **Sanctuaire (AFK)** — Zone du joueur, les créatures génèrent de l'Essence en continu. Rendement réduit hors ligne.
-2. **Faille (action, 2–4 min)** — portail toutes les ~3-4 min. Combat simple contre gardiens + cristal. Drop : œufs, reliques, éclats de mutation.
+2. **Faille (action, sessions de 2–4 min)** — portail toutes les ~10 min (`RIFT_INTERVAL = 600`, fenêtre active 180 s). Combat simple contre gardiens + cristal. Drop : œufs, reliques, éclats de mutation — un roll de relique à taux réduit (~25 %) même en défaite.
 3. **Éclosion / fusion** — dépense d'Essence, tirage rareté × mutation.
 4. **Élevage** — croisement de deux créatures, héritage des mutations.
 5. **Optimisation** — équipement, arbre de compétence, évolution, remplacement des vieilles créatures.
@@ -53,7 +56,7 @@ Tu es un Dompteur. Tes créatures farment de l'Essence dans ton sanctuaire penda
 **Ratio cible : 80 % passif / 20 % actif.**
 
 Règles absolues :
-- L'action ne doit **jamais** être obligatoire pour progresser. Elle multiplie. Le joueur y va parce que c'est rentable, pas parce qu'il est puni s'il n'y va pas.
+- L'action ne doit **jamais** être obligatoire pour progresser. Elle multiplie. Le joueur y va parce que c'est rentable, pas parce qu'il est puni s'il n'y va pas. Périmètre acté (26/08) : « action » = grind actif intensif ; entrer dans une Faille de 2–4 min toutes les 10 min reste compatible avec un jeu AFK/travail, et la défaite donne quand même un roll de relique réduit — personne n'est bloqué de l'évolution finale pour avoir raté un combat.
 - Le joueur qui ne dépense pas de sous ne doit **en aucun cas** se sentir inutile face à ceux qui paient : le F2P fait tout le contenu, il va juste plus lentement sur le haut de la courbe.
 
 ---
@@ -96,7 +99,7 @@ Slots par créature : 1 au départ, +1 par palier d'évolution.
 | Colliers | Chance de mutation à l'éclosion |
 | Reliques | Débloquent l'évolution finale — **drop uniquement en Faille** |
 
-> Les Reliques sont la carotte qui justifie l'action. Ne pas les rendre achetables.
+> Les Reliques sont la carotte qui justifie la Faille. Ne pas les rendre achetables, jamais. Défaite en Faille = roll à ~25 % du taux victoire : participer suffit, gagner accélère.
 
 ### 3.5 Évolution partout
 Créatures (4 stades) · Reliques (fusion 3→1) · Sanctuaire (capacité, vitesse, slots d'équipe) · Arbre de compétence · Rang joueur · Paliers d'Index.
@@ -250,7 +253,7 @@ Principe : **jamais de faux joueurs** (ToS + détection). Des données globales 
 | **????** (zone publique, débloquée par Renaissance) | AFK, rendement aléatoire, risqué (mais aucune perte) |
 | **Failles** | Pas de revenu passif dedans, mais ×8 sur les drops → choix actif de sacrifier l'AFK |
 | **Éclipse** | Évènement serveur toutes les 2 h, 10 min : ciel modifié, annonce serveur, mutation boostée ×10, créature exclusive — horloge serveur, **jamais conditionnée à la population** (réutilise les patterns OrbService/RiftService) |
-| **Zone saisonnière** | 2 semaines, créature exclusive jamais rééditée → pic de revenus et de retours |
+| **Zone saisonnière** | 2 semaines, variante visuelle exclusive jamais rééditée → pic de revenus et de retours |
 
 ---
 
@@ -277,7 +280,7 @@ Principe : **jamais de faux joueurs** (ToS + détection). Des données globales 
 > **Objectif n°1 du jeu : les revenus.** Pas en forçant — en **donnant envie**. Le joueur doit avoir envie de payer *avant* que l'achat ne soit proposé.
 
 **Principe : vendre du temps, du confort et de la chance. Jamais l'accès au contenu.**
-Le F2P fait 100 % du contenu. Ce qu'on vend, c'est d'aller plus vite, plus confortablement, avec plus de chance — jamais de la progression bloquée.
+Le F2P fait 100 % du contenu — littéralement : toute créature exclusive (saison, événement) est une **variante visuelle aux stats clonées**, jamais un pouvoir unique (décision 26/08). Ce qu'on vend, c'est d'aller plus vite, plus confortablement, avec plus de chance — jamais de la progression bloquée.
 
 ### La gamme de produits (23/08 — prix indicatifs, validés par sim avant code)
 
@@ -292,7 +295,7 @@ Le F2P fait 100 % du contenu. Ce qu'on vend, c'est d'aller plus vite, plus confo
 | Offre 1er achat | −50 % une fois | Déclenchée après le 1er drop Épic+ OU au retour J2 |
 | Offres de retour | J2/J7 | Cadeau + bundle temporaire |
 | Packs Essence | — | Valve de confort |
-| Season Premium | — | Existant : 20 niveaux, 2 pistes, créature exclusive CinderSeraph+Shadow au sommet premium, XP par éclosion/faille/rebirth/quêtes/élevage |
+| Season Premium | — | Existant : 20 niveaux, 2 pistes, **variante visuelle exclusive** CinderSeraph+Shadow (stats clonées d'une espèce existante — aucun pouvoir exclusif vendu, décision 26/08) au sommet premium, XP par éclosion/faille/rebirth/quêtes/élevage |
 | Rename ticket | 49 R$ | Renommer une créature — cosmétique pur |
 | Titres rotatifs | 49–99 R$ | Titres cosmétiques en rotation hebdo — statut pur, réutilise le système de titres existant |
 | Cosmétiques purs | 49–199 R$ | Skins/recolors créatures, effets de particules, déco sanctuaire — zéro gameplay, rotation hebdo alignée FOMO léger |
@@ -300,7 +303,7 @@ Le F2P fait 100 % du contenu. Ce qu'on vend, c'est d'aller plus vite, plus confo
 | Mur des soutiens (tip jar) | 99 / 499 / 999 R$ | Don volontaire unique, nom gravé en permanence sur le vrai mur de la zone d'accueil (plateau de spawn, visible par tous — pas une zone séparée). Pur statut social |
 | Bonus Roblox Premium natifs | gratuit (pour eux) | Petit cadeau quotidien aux membres Premium Roblox (`PlayerMembershipType`, check serveur mis en cache) — reversement Roblox sur leur engagement |
 
-FOMO léger : boutique rotative (1 œuf limité/semaine jamais réédité à l'identique, créature exclusive saisonnière 2 semaines), timers informatifs jamais menaçants, modal d'offre max 1×/session.
+FOMO léger : boutique rotative (1 œuf limité/semaine jamais réédité à l'identique, variante visuelle exclusive saisonnière 2 semaines), timers informatifs jamais menaçants, modal d'offre max 1×/session.
 Sinks ajoutés : reroll de mutation (objet Essence), fusion d'œufs (3 communs → 1 supérieur), décor de sanctuaire (Essence ET Robux cosmétique), `MARKET_MAX_PRICE` relevé.
 
 **Validation obligatoire :** extension `tools/EconomySim.luau` — simuler F2P / Starter seul / whale léger sur 14 jours ×3 runs avec le panier complet (multiplicateurs empilés inclus, plafond global borné). **Aucun prix ni multiplicateur codé avant la sim.**
@@ -324,7 +327,7 @@ Sinks ajoutés : reroll de mutation (objet Essence), fusion d'œufs (3 communs �
 **Zone VIP — îlot flottant de luxe, contraste volontaire avec l'île crépusculaire sombre : or poli, marbre, néons chauds, tapis doré depuis le portail, statues de créatures légendaires, aura de particules — scintillante et visible depuis le sol ; accès par portail doré, barrière validée serveur (jamais client)** :
 
 1. **Coffre journalier** — le cadeau quotidien devient un coffre physique à ouvrir dans la zone : Essence + potion chance courte + petit drop aléatoire. 1×/jour calendaire (réutilise `VipGiftDate`)
-2. **Œuf VIP** — mêmes espèces que le jeu (pool des meilleurs œufs accessibles), taux ~×1,5 sur Rare+, prix Essence élevé. On vend de la chance, **zéro espèce exclusive** — les exclusives restent l'apanage du Season Premium (règle : F2P fait 100 % du contenu)
+2. **Œuf VIP** — mêmes espèces que le jeu (pool des meilleurs œufs accessibles), taux ~×1,5 sur Rare+, prix Essence élevé. On vend de la chance, **zéro espèce ni pouvoir exclusif** — les exclusives saisonnières sont des variantes visuelles, accessibles au F2P par définition (décision 26/08)
 3. **Statut** — piédestal d'aura, déco sanctuaire exclusive, titre « VIP »
 
 Le non-VIP voit la zone depuis le sol (levier « le statut se regarde ») avec panneau listant le contenu.
@@ -369,8 +372,8 @@ Deux classements pour deux ambitions, **un plafond de dépense clairement commun
 
 ## 9. Checklist design
 
-- [ ] L'action n'est jamais obligatoire, seulement rentable
-- [ ] Le F2P fait 100 % du contenu ; on vend du temps, du confort, de la chance
+- [ ] L'action n'est jamais obligatoire, seulement rentable (défaite en Faille = roll relique réduit, participer suffit)
+- [ ] Le F2P fait 100 % du contenu ; on vend du temps, du confort, de la chance (exclusives = variantes visuelles)
 - [ ] Les taux de drop sont affichés partout
 - [ ] Le rusher finit mondes + renaissance en quelques heures ; l'Index est le contenu long
 - [ ] Le joueur tranquille n'est jamais puni
