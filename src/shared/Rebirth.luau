@@ -6,13 +6,16 @@ function Rebirth.NextThreshold(stars: number): number?
 	return Config.REBIRTH_THRESHOLDS[stars + 1]
 end
 
-function Rebirth.CanRebirth(totalEssenceEarned: number, stars: number): (boolean, string?)
+function Rebirth.CanRebirth(totalEssenceEarned: number, stars: number, bossDefeated: boolean): (boolean, string?)
 	local threshold = Rebirth.NextThreshold(stars)
 	if not threshold then
 		return false, "toutes les renaissances sont atteintes"
 	end
+	if not bossDefeated then
+		return false, "le boss du monde doit être vaincu"
+	end
 	if totalEssenceEarned < threshold then
-		return false, `il manque {threshold - totalEssenceEarned} d'Essence gagnée`
+		return false, `il manque {math.ceil(threshold - totalEssenceEarned)} d'Essence gagnée`
 	end
 	return true
 end
@@ -30,6 +33,7 @@ function Rebirth.ApplyReset(data: any)
 	-- Conservation actée (rév. 26/08) : TOUTES les créatures, tous les objets,
 	-- compagnon inclus. Perte limitée : Essence, sanctuaire, œufs (consommables).
 	data.Eggs = {}
+	data.Incubators = {}
 	data.SanctuaryLevel = 1
 	data.Items = Rebirth.KeepItems(data.Items)
 	data.Stars += 1

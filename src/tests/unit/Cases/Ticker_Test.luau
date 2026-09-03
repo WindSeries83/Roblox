@@ -40,4 +40,9 @@ return function(t)
 		expect.equal(Ticker.WeekKey(604800 - 1), "W0")
 		expect.equal(Ticker.WeekKey(604800), "W1")
 	end)
+
+	t.test("week rollover is detected for persisted global state", function()
+		expect.falsy(Ticker.IsNewWeek("W0", 604800 - 1))
+		expect.truthy(Ticker.IsNewWeek("W0", 604800))
+	end)
 end

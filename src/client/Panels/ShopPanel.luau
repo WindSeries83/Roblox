@@ -1,3 +1,5 @@
+--!strict
+
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -5,28 +7,33 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UiKit = require(script.Parent.Parent.UiKit)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Offers = require(ReplicatedStorage.Shared.Offers)
 
--- Boutique dédiée (bible §4.B) : onglet unique, sections claires, valeur affichée.
 local ShopPanel = {}
-
 local TINTS = UiKit.TINTS
-
 local player = Players.LocalPlayer
 
-local potionLabel
-local boostLabel
-local eclipseLabel
-local offerBanner
-local passRows: { [string]: TextButton } = {}
+local potionLabel: TextLabel
+local boostLabel: TextLabel
+local vipLabel: TextLabel
+local eclipseLabel: TextLabel
+local offerList: Frame
+local offerRows: { [string]: Frame } = {}
 local luckPotion
 local boostUntil = 0
 local eclipseActive = false
 local eclipseUntil = 0
 local eclipseBonus = 0
+local vipExpiresAt = 0
 
-local function Prompt(productId)
-	if productId and productId ~= 0 then
-		MarketplaceService:PromptProductPurchase(player, productId)
+local function Prompt(offer)
+	if not Config.PURCHASES_ENABLED or not Offers.IsAvailable(offer) then
+		return
+	end
+	if offer.Kind == "GamePass" then
+		MarketplaceService:PromptGamePassPurchase(player, offer.Sku)
+	else
+		MarketplaceService:PromptProductPurchase(player, offer.Sku)
 	end
 end
 
@@ -54,7 +61,7 @@ local function RefreshTimers()
 			serverLeft
 		)
 	else
-		boostLabel.Text = "Pas de boost serveur — achetez-en un, tout le serveur en profite !"
+		boostLabel.Text = "Pas de boost serveur"
 	end
 
 	local eclipseLeft = if eclipseActive then RemainingText(eclipseUntil) else nil
@@ -62,59 +69,69 @@ local function RefreshTimers()
 	if eclipseLeft then
 		eclipseLabel.Text = string.format("Éclipse ! Mutations ×%d — %s restant", 1 + eclipseBonus, eclipseLeft)
 	end
+	local vipLeft = RemainingText(vipExpiresAt)
+	if vipLeft then
+		vipLabel.Text = `VIP actif — {vipLeft} restant`
+		vipLabel.TextColor3 = TINTS.ACCENT
+	else
+		vipLabel.Text = "VIP inactif — aucun contenu de base n'est verrouillé"
+		vipLabel.TextColor3 = TINTS.WHITE
+	end
 end
 
-local function SectionTitle(parent, text: string, layoutOrder: number)
-	local title = UiKit.Title(parent, text, 15)
-	title.LayoutOrder = layoutOrder
-	return title
+local function OfferDurationText(duration: number): string
+	if duration <= 0 then
+		return ""
+	end
+	local days = math.floor(duration / 86400)
+	if days > 0 and duration % 86400 == 0 then
+		return `Durée : {days} jour(s)`
+	end
+	return `Durée : {math.floor(duration / 60)} min`
 end
 
-local function ProductRow(parent, def, key, layoutOrder: number)
-	local button = UiKit.Create("TextButton", {
-		Name = `Shop_{key}`,
-		BackgroundColor3 = TINTS.DARK,
-		TextColor3 = TINTS.WHITE,
-		Font = Enum.Font.GothamBold,
-		TextSize = 12,
-		TextWrapped = true,
-		Size = UDim2.new(0.32, -6, 0, 52),
-		LayoutOrder = layoutOrder,
-		Text = def.Name .. if (def.Id or 0) == 0 then "\n(produit à configurer)" else "",
-		Parent = parent,
-	})
-	UiKit.Corner(button)
-	button.Activated:Connect(function()
-		Prompt(def.Id)
-	end)
-	return button
-end
-
-local function PassRow(parent, key: string, def, layoutOrder: number)
+local function OfferRow(parent: Instance, key: string, offer, layoutOrder: number): Frame
 	local row = UiKit.Cell(parent)
 	row.LayoutOrder = layoutOrder
-	local label = UiKit.Create("TextLabel", {
-		Name = `PassLabel_{key}`,
+	local duration = OfferDurationText(offer.Duration)
+	UiKit.Create("TextLabel", {
+		Name = `OfferLabel_{key}`,
 		BackgroundTransparency = 1,
 		TextColor3 = TINTS.WHITE,
 		Font = Enum.Font.GothamBold,
 		TextSize = 12,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextWrapped = true,
-		Size = UDim2.fromScale(0.62, 1),
-		Text = def.Name,
+		Size = UDim2.fromScale(0.64, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Text = `{offer.ValueText}\n{offer.PriceText}` .. if duration ~= "" then `\n{duration}` else "",
 		Parent = row,
 	})
-	local button = UiKit.Button(row, "Acheter", UDim2.new(0.3, 0, 0, 30), UDim2.new(0.68, 0, 0.5, -15))
-	button.Name = `PassBuy_{key}`
+	local button = UiKit.Button(row, "Acheter", UDim2.new(0.28, 0, 0, 44), UDim2.new(0.7, 0, 0.5, -22))
+	button.Name = `OfferBuy_{key}`
 	button.BackgroundColor3 = TINTS.DARK
-	passRows[key] = button
 	button.Activated:Connect(function()
-		if (def.Id or 0) ~= 0 then
-			MarketplaceService:PromptGamePassPurchase(player, def.Id)
-		end
+		Prompt(offer)
 	end)
-	return label
+	return row
+end
+
+local function RenderOffers(catalog)
+	for _, row in offerRows do
+		row:Destroy()
+	end
+	table.clear(offerRows)
+	local keys = {}
+	for key, offer in catalog or {} do
+		if Offers.IsAvailable(offer) then
+			table.insert(keys, key)
+		end
+	end
+	table.sort(keys)
+	for order, key in keys do
+		offerRows[key] = OfferRow(offerList, key, catalog[key], order)
+	end
+	offerList.Visible = #keys > 0
 end
 
 function ShopPanel.Create(parent)
@@ -125,12 +142,22 @@ function ShopPanel.Create(parent)
 	})
 
 	UiKit.Title(frame, "Boutique")
-
 	local scroller = UiKit.Scroller(frame, UDim2.fromOffset(0, 28), UDim2.fromScale(1, 1))
 	scroller.Name = "ShopScroller"
+	vipLabel = UiKit.Create("TextLabel", {
+		Name = "VipState",
+		BackgroundTransparency = 1,
+		TextColor3 = TINTS.WHITE,
+		TextSize = 12,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Size = UDim2.new(1, 0, 0, 18),
+		LayoutOrder = 0,
+		Text = "VIP inactif",
+		Parent = scroller,
+	})
 
-	-- Section Chance
-	SectionTitle(scroller, "Chance", 1)
+	local stateTitle = UiKit.SectionTitle(scroller, "État des bonus")
+	stateTitle.LayoutOrder = 1
 	potionLabel = UiKit.Create("TextLabel", {
 		Name = "PotionState",
 		BackgroundTransparency = 1,
@@ -165,126 +192,34 @@ function ShopPanel.Create(parent)
 		Visible = false,
 		Parent = scroller,
 	})
-	local chanceRow = UiKit.Create("Frame", {
-		Name = "ChanceRow",
-		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 0, 52),
-		LayoutOrder = 5,
-		Parent = scroller,
-	})
-	UiKit.Create("UIListLayout", {
-		FillDirection = Enum.FillDirection.Horizontal,
-		Padding = UDim.new(0, 6),
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = chanceRow,
-	})
-	do
-		local i = 0
-		for key, def in Config.DEV_PRODUCTS do
-			if def.Kind == "LuckPotion" or def.Kind == "ServerBoost" then
-				i += 1
-				ProductRow(chanceRow, def, key, i)
-			end
-		end
-	end
 
-	-- Section Offres
-	SectionTitle(scroller, "Offres", 6)
-	offerBanner = UiKit.Create("Frame", {
-		Name = "FirstOfferBanner",
-		BackgroundColor3 = TINTS.ACCENT,
-		BackgroundTransparency = 0.7,
-		Size = UDim2.new(1, 0, 0, 40),
-		LayoutOrder = 7,
+	local offerTitle = UiKit.SectionTitle(scroller, "Offres disponibles")
+	offerTitle.LayoutOrder = 5
+	offerList = UiKit.Create("Frame", {
+		Name = "OfferList",
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		LayoutOrder = 6,
 		Visible = false,
 		Parent = scroller,
+	}) :: Frame
+	UiKit.Create("UIListLayout", {
+		Padding = UDim.new(0, 6),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = offerList,
 	})
-	UiKit.Corner(offerBanner)
-	UiKit.Padding(offerBanner, 4)
-	UiKit.Create("TextLabel", {
-		Name = "OfferText",
-		BackgroundTransparency = 1,
-		TextColor3 = TINTS.WHITE,
-		Font = Enum.Font.GothamBold,
-		TextSize = 12,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Size = UDim2.fromScale(0.72, 1),
-		Text = "Offre 1re fois : pack de départ −50 %",
-		Parent = offerBanner,
-	})
-	local offerButton = UiKit.Create("TextButton", {
-		Name = "OfferBuy",
-		BackgroundColor3 = TINTS.ACCENT,
-		TextColor3 = TINTS.WHITE,
-		Font = Enum.Font.GothamBold,
-		TextSize = 11,
-		Size = UDim2.fromScale(0.26, 1),
-		Position = UDim2.fromScale(0.73, 0),
-		Text = "Profiter de l'offre",
-		Parent = offerBanner,
-	})
-	UiKit.Corner(offerButton)
-	offerButton.Activated:Connect(function()
-		local def = Config.DEV_PRODUCTS.FirstPurchaseOffer
-		if def then
-			Prompt(def.Id)
-		end
-	end)
 	UiKit.Create("TextLabel", {
 		Name = "OffersHint",
 		BackgroundTransparency = 1,
 		TextColor3 = TINTS.WHITE,
 		TextSize = 11,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Size = UDim2.new(1, 0, 0, 14),
-		LayoutOrder = 8,
-		Text = "Cadeaux de retour J2/J7 : automatiques à ta prochaine connexion après une absence.",
-		Parent = scroller,
-	})
-
-	-- Section Essence
-	SectionTitle(scroller, "Essence (confort)", 9)
-	local essenceRow = UiKit.Create("Frame", {
-		Name = "EssenceRow",
-		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 0, 52),
-		LayoutOrder = 10,
-		Parent = scroller,
-	})
-	UiKit.Create("UIListLayout", {
-		FillDirection = Enum.FillDirection.Horizontal,
-		Padding = UDim.new(0, 6),
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = essenceRow,
-	})
-	do
-		local i = 0
-		for key, def in Config.DEV_PRODUCTS do
-			if def.Amount then
-				i += 1
-				ProductRow(essenceRow, def, key, i)
-			end
-		end
-	end
-
-	-- Section Pass & confort
-	SectionTitle(scroller, "Pass & confort", 11)
-	do
-		local i = 0
-		for key, def in Config.GAMEPASSES do
-			i += 1
-			PassRow(scroller, key, def, 11 + i)
-		end
-	end
-	UiKit.Create("TextLabel", {
-		Name = "VipSkuNote",
-		BackgroundTransparency = 1,
-		TextColor3 = TINTS.ACCENT,
-		TextSize = 11,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Size = UDim2.new(1, 0, 0, 14),
-		LayoutOrder = 30,
-		Text = "Avec le Pass VIP : −10 % sur les SKUs soldés de la boutique.",
+		TextWrapped = true,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		LayoutOrder = 7,
+		Text = "Les offres apparaissent uniquement après leur validation et lorsque leur condition est remplie. Aucun contenu de base n'est verrouillé.",
 		Parent = scroller,
 	})
 
@@ -300,15 +235,9 @@ end
 
 function ShopPanel.Refresh(state)
 	luckPotion = state.LuckPotion
-	offerBanner.Visible = state.Offers ~= nil
-		and state.Offers.FirstPurchaseEligible == true
-		and state.Offers.FirstPurchaseClaimed == false
-	local entitlements = state.Entitlements
-	for key, button in passRows do
-		local owned = entitlements ~= nil and entitlements[key] == true
-		button.Text = if owned then "Possédé ✓" else "Acheter"
-		button.Active = not owned
-	end
+	boostUntil = state.ServerBoostUntil or boostUntil
+	vipExpiresAt = state.VipExpiresAt or 0
+	RenderOffers(state.Offers and state.Offers.Catalog)
 end
 
 Net.BoostState.OnClientEvent:Connect(function(state)

@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
 local Evolution = require(ReplicatedStorage.Shared.Evolution)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local FeatureUnlocks = require(ReplicatedStorage.Shared.FeatureUnlocks)
 local Net = require(ReplicatedStorage.Shared.Net)
 
 local ItemService = {}
@@ -62,6 +63,16 @@ end
 
 function ItemService:Start()
 	Net.BuyItem.OnServerEvent:Connect(function(player: Player, itemType: string, tier: number)
+		local profile = saveService:GetProfile(player)
+		local unlocked = false
+		local unlockReason = "Profil indisponible"
+		if profile then
+			unlocked, unlockReason = FeatureUnlocks.Require(profile.Data, "Equipment")
+		end
+		if not unlocked then
+			Net.ActionResult:FireClient(player, { Action = "BuyItem", Success = false, Reason = unlockReason })
+			return
+		end
 		local def = ItemDef(itemType, tier)
 		if not def or def.DropOnly or Equipment[itemType].DropOnly then
 			return
@@ -79,6 +90,11 @@ function ItemService:Start()
 	Net.EquipItem.OnServerEvent:Connect(function(player: Player, creatureId: string, itemId: string)
 		local profile = saveService:GetProfile(player)
 		if not profile then
+			return
+		end
+		local unlocked, unlockReason = FeatureUnlocks.Require(profile.Data, "Equipment")
+		if not unlocked then
+			Net.ActionResult:FireClient(player, { Action = "EquipItem", Success = false, Reason = unlockReason })
 			return
 		end
 		local creature = Gameplay.FindCreature(profile.Data.Creatures, creatureId)
@@ -104,6 +120,11 @@ function ItemService:Start()
 	Net.UnequipItem.OnServerEvent:Connect(function(player: Player, creatureId: string, itemId: string)
 		local profile = saveService:GetProfile(player)
 		if not profile then
+			return
+		end
+		local unlocked, unlockReason = FeatureUnlocks.Require(profile.Data, "Equipment")
+		if not unlocked then
+			Net.ActionResult:FireClient(player, { Action = "UnequipItem", Success = false, Reason = unlockReason })
 			return
 		end
 		local creature = Gameplay.FindCreature(profile.Data.Creatures, creatureId)

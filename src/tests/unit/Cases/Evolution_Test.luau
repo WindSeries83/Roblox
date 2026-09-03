@@ -63,6 +63,12 @@ return function(t)
 		expect.equal(Evolution.MaxLevelFor(creature), Config.BASE_MAX_LEVEL + 5 + 50)
 	end)
 
+	t.test("evolution stage exposes the matching equipment slot count", function()
+		expect.equal(Evolution.SlotsForStage(1), 1)
+		expect.equal(Evolution.SlotsForStage(4), 4)
+		expect.equal(Evolution.SlotsForStage(0), 1)
+	end)
+
 	-- Stage multiplies power.
 	t.test("stage multiplies power", function()
 		local base = MakeCreature({})

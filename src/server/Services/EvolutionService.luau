@@ -5,6 +5,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Evolution = require(ReplicatedStorage.Shared.Evolution)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local FeatureUnlocks = require(ReplicatedStorage.Shared.FeatureUnlocks)
 local Net = require(ReplicatedStorage.Shared.Net)
 
 local EvolutionService = {}
@@ -25,6 +26,12 @@ function EvolutionService:Start()
 	Net.EvolveCreature.OnServerEvent:Connect(function(player: Player, creatureId: string)
 		local profile = saveService:GetProfile(player)
 		if not profile then
+			return
+		end
+		local unlocked, unlockReason = FeatureUnlocks.Require(profile.Data, "Evolution")
+		if not unlocked then
+			log:Economy("Evolution", "Reject", { Player = player.Name, Creature = creatureId, Reason = unlockReason })
+			Net.ActionResult:FireClient(player, { Action = "EvolveCreature", Success = false, Reason = unlockReason })
 			return
 		end
 		local creature = Gameplay.FindCreature(profile.Data.Creatures, creatureId)

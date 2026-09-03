@@ -1,6 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Rebirth = require(ReplicatedStorage.Shared.Rebirth)
+local Worlds = require(ReplicatedStorage.Shared.Worlds)
 local Net = require(ReplicatedStorage.Shared.Net)
 
 local RebirthService = {}
@@ -9,6 +10,7 @@ local log
 local saveService
 local dataSync
 local questService
+local incubationService
 
 local container
 
@@ -18,15 +20,28 @@ function RebirthService:Init(cont)
 	saveService = cont:Get("SaveService")
 	dataSync = cont:Get("DataSync")
 	questService = cont:Get("QuestService")
+	incubationService = cont:Get("IncubationService")
 end
 
 function RebirthService:Start()
+	local function canRebirth(data)
+		-- Le boss débloque la Renaissance; l'étoile est accordée par son reset.
+		-- Le monde requis suit donc le nombre de renaissances déjà effectuées.
+		local world = Worlds.All[math.min((data.Rebirths or 0) + 1, #Worlds.All)]
+		local progress = data.WorldProgress and data.WorldProgress[world.Id]
+		return Rebirth.CanRebirth(
+			data.Stats.TotalEssenceEarned,
+			data.Stars,
+			progress ~= nil and progress.BossDefeated == true
+		)
+	end
 	Net.RebirthRequest.OnServerEvent:Connect(function(player: Player)
 		local profile = saveService:GetProfile(player)
 		if not profile then
+			Net.ActionResult:FireClient(player, { Action = "Rebirth", Success = false, Reason = "Profil indisponible" })
 			return
 		end
-		local ok, reason = Rebirth.CanRebirth(profile.Data.Stats.TotalEssenceEarned, profile.Data.Stars)
+		local ok, reason = canRebirth(profile.Data)
 		Net.RebirthPreview:FireClient(player, {
 			CanRebirth = ok,
 			Reason = reason,
@@ -40,11 +55,13 @@ function RebirthService:Start()
 	Net.RebirthConfirm.OnServerEvent:Connect(function(player: Player)
 		local profile = saveService:GetProfile(player)
 		if not profile then
+			Net.ActionResult:FireClient(player, { Action = "Rebirth", Success = false, Reason = "Profil indisponible" })
 			return
 		end
-		local ok, reason = Rebirth.CanRebirth(profile.Data.Stats.TotalEssenceEarned, profile.Data.Stars)
+		local ok, reason = canRebirth(profile.Data)
 		if not ok then
 			log:Economy("Rebirth", "Reject", { Player = player.Name, Reason = reason })
+			Net.ActionResult:FireClient(player, { Action = "Rebirth", Success = false, Reason = reason })
 			return
 		end
 
@@ -60,6 +77,7 @@ function RebirthService:Start()
 		end
 
 		Rebirth.ApplyReset(profile.Data)
+		incubationService:ClearPlayer(player)
 		profile.Data.LastPlayed = os.time()
 		questService:OnRebirth(player)
 		container:Get("SeasonService"):OnRebirth(player)
@@ -71,6 +89,7 @@ function RebirthService:Start()
 			Previous = previous,
 		})
 		dataSync:Send(player)
+		Net.ActionResult:FireClient(player, { Action = "Rebirth", Success = true, Stars = profile.Data.Stars })
 	end)
 end
 

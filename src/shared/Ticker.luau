@@ -31,4 +31,8 @@ function Ticker.WeekKey(now: number): string
 	return "W" .. math.floor(now / 604800)
 end
 
+function Ticker.IsNewWeek(previousKey: string, now: number): boolean
+	return previousKey ~= Ticker.WeekKey(now)
+end
+
 return Ticker

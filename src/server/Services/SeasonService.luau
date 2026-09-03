@@ -17,6 +17,7 @@ local function Sync(player: Player)
 	if not profile then
 		return
 	end
+	Season.ResetIfVersionChanged(profile.Data.Season, Config.SEASON_VERSION)
 	Net.SeasonSync:FireClient(player, {
 		Season = profile.Data.Season,
 		HasPremium = profile.Data.Entitlements.SeasonPremium,
@@ -29,6 +30,7 @@ function SeasonService:AddXP(player: Player, amount: number, source: string)
 		return
 	end
 	local season = profile.Data.Season
+	Season.ResetIfVersionChanged(season, Config.SEASON_VERSION)
 	local before = season.Level
 	season.XP += amount
 	season.Level = Season.LevelFromXP(season.XP)

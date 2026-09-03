@@ -14,18 +14,18 @@
 | Genre | Collection de créatures + idle/AFK + optimisation |
 | Cible | Adultes (18+), joueurs à pouvoir d'achat ; les mineurs doivent rester jouables sans être ciblés |
 | Direction artistique | Low poly stylisé, crépuscule nocturne, **pas** de pastel enfantin |
-| Multijoueur | Serveurs partagés, sanctuaires visitables, trading |
+| Multijoueur | Serveurs partagés, plot privé visitable sur invitation, sanctuaires AFK communs, parcours coopératifs, trading |
 | Objectif n°1 | **Revenus** — donner envie, jamais forcer |
 | Rythme | Rush fort = mondes + renaissance en quelques heures ; Index = très long |
-| Statut | P4/P5 — social & monétisation implémentés, pré-lancement |
+| Statut | Rebaselining pré-lancement du 28/08 — socle large livré, verticale Monde 1 et cartes à reconstruire |
 | Positionnement | **Hybride** — surface « brain rot » virale (dopamine rapide, drops visibles, moments clippables) sur cœur profond (élevage, index, mutations). La cible adulte reste servie par la profondeur |
 | Ton | Humour en surface, data-driven (répliques absurdes) ; fond crépuscule/mystère inchangé |
 | Monétisation | **Aggressive soft** — potions, Server Boost social, offres timées, VIP Pass, FOMO léger informatif. Jamais de paywall, jamais de compteur agressif |
 | FTUE | « Le monde d'abord » — boucle complète vécue en < 5 min sans tutoriel lu |
 | Population | Vivante garantie à toute échelle : jamais de faux joueurs, données globales réelles rendues visibles |
 | Cadence | ~10 h/semaine → hebdo léger data-driven + un gros chantier mensuel |
-| Cadence Faille (26/08) | La bible suit le code : cycle 10 min (`RIFT_INTERVAL = 600`), fenêtre active 180 s. Le « 2–4 min » désigne la durée d'une session, pas la cadence. Première Faille FTUE accélérée séparément (`FIRST_RIFT_DELAY`) |
-| Action facultative (26/08) | « Action » = grind actif intensif ; participer à une Faille de 2–4 min reste compatible avec un jeu AFK/travail. Défaite non punitive : roll de relique à taux réduit (~25 % du taux victoire) même perdant → l'évolution finale est accessible en participant simplement |
+| Cadence parcours (28/08) | Fenêtre d'entrée coop toutes les 5 min, ouverte 60–90 s. La fenêtre limite l'entrée seulement ; checkpoints persistants après chaque étape. Première entrée FTUE accélérée séparément. |
+| Action non punitive (28/08) | Vaincre le boss courant est requis pour changer de monde, mais une défaite ne détruit ni progression ni récompenses acquises. L'AFK produit la puissance nécessaire ; l'action valide la maîtrise sans imposer de grind intensif. |
 | Exclusives saisonnières (26/08) | Variante visuelle d'une espèce existante (stats clonées) + confort. Aucun pouvoir exclusif vendu → « le F2P fait 100 % du contenu » est vrai littéralement ; l'Index distingue la variante |
 
 ---
@@ -47,7 +47,7 @@ Tu es un Dompteur. Tes créatures farment de l'Essence dans ton sanctuaire penda
 ## 2. Boucle de jeu
 
 1. **Sanctuaire (AFK)** — Zone du joueur, les créatures génèrent de l'Essence en continu. Rendement réduit hors ligne.
-2. **Faille (action, sessions de 2–4 min)** — portail toutes les ~10 min (`RIFT_INTERVAL = 600`, fenêtre active 180 s). Combat simple contre gardiens + cristal. Drop : œufs, reliques, éclats de mutation — un roll de relique à taux réduit (~25 %) même en défaite.
+2. **Parcours (action coopérative)** — fenêtre d'entrée toutes les 5 min, cinq étapes checkpointées puis boss. Combat auto-tactique, récompense individuelle : œufs, reliques et éclats de mutation.
 3. **Éclosion / fusion** — dépense d'Essence, tirage rareté × mutation.
 4. **Élevage** — croisement de deux créatures, héritage des mutations.
 5. **Optimisation** — équipement, arbre de compétence, évolution, remplacement des vieilles créatures.
@@ -56,7 +56,7 @@ Tu es un Dompteur. Tes créatures farment de l'Essence dans ton sanctuaire penda
 **Ratio cible : 80 % passif / 20 % actif.**
 
 Règles absolues :
-- L'action ne doit **jamais** être obligatoire pour progresser. Elle multiplie. Le joueur y va parce que c'est rentable, pas parce qu'il est puni s'il n'y va pas. Périmètre acté (26/08) : « action » = grind actif intensif ; entrer dans une Faille de 2–4 min toutes les 10 min reste compatible avec un jeu AFK/travail, et la défaite donne quand même un roll de relique réduit — personne n'est bloqué de l'évolution finale pour avoir raté un combat.
+- L'action ne doit jamais détruire une progression AFK acquise. Le boss est une porte de monde, mais les checkpoints persistent et la défaite reste non punitive.
 - Le joueur qui ne dépense pas de sous ne doit **en aucun cas** se sentir inutile face à ceux qui paient : le F2P fait tout le contenu, il va juste plus lentement sur le haut de la courbe.
 
 ---
@@ -83,7 +83,7 @@ Règles absolues :
 - Une Mythique Céleste ≠ une Ultra Rare normale. C'est ce qui fait rouvrir un œuf déjà obtenu.
 - **Système le plus rentable du jeu** : c'est là que se vend la chance.
 
-### 3.3 Élevage génétique — différenciateur n°1
+### 3.3 Élevage génétique — couche de maîtrise endgame
 - Croisement de deux créatures → descendance héritant des mutations parentales selon probabilités.
 - Chance de mutation nouvelle à chaque génération.
 - **Version adulte assumée** : pourcentages visibles, arbres généalogiques, stats détaillées, export des données.
@@ -127,21 +127,24 @@ Ce n'est **pas** une collection cosmétique — c'est la source des bonus perman
 | **Faille** | Dégâts, chance de drop, reliques |
 | **Économie** | Frais de marché réduits, mises de duel, XP season, bonus de revente |
 
-### 3.8 Renaissance & Mondes
+### 3.8 Renaissance, Mondes & parcours
 - Perte : Essence, améliorations de sanctuaire.
 - Conservation : Index, reliques légendaires, objets multiplicateurs, créatures, **arbre de compétence**.
 - Gain : **Étoiles** = multiplicateur permanent + déblocage du monde suivant.
-- **Chaque renaissance débloque un monde** : une zone propre (sanctuaire + faille + quêtes) **et un Mode Rush**.
-- **Mondes = thèmes, pas nouvelles cartes** : Monde N+1 = même île recolorée via `DecorTemplates`, multiplicateurs ×N, espèces exclusives. Mode Rush : objectif chronométré simple par monde (ex. « faille < 90 s »), récompense unique + bonus Index.
+- Les Renaissances 1, 2 et 3 débloquent respectivement les Mondes 2, 3 et 4 après victoire du boss du monde courant.
+- Les quatre mondes sont des régions distinctes du même place : Bosquet du Crépuscule, Fournaise de Cendre, Cimes des Bourrasques et Abîme de Nyx.
+- Chaque monde possède cinq étapes, trois gabarits d'affrontement réutilisés et un boss alpha dérivé d'une créature existante.
+- Les fenêtres coop ouvrent toutes les 5 minutes pendant 60–90 s et limitent seulement l'entrée. Chaque étape terminée crée un checkpoint persistant.
+- Combat auto-tactique : les créatures combattent ; le joueur choisit ponctuellement une cible ou un bonus.
 
 **Mode Rush** — le défi chronométré de chaque monde :
 - Objectif propre au monde (ex. « terminer la faille en moins de 2 min », « 3 éclosions d'affilée »).
 - Récompense : créature/relique/insigne liée au monde + bonus d'Index.
 - C'est le terrain des rushers : un but clair, chrono visible, rejouable.
 
-**Rythme cible (courbe P3) :** Renaissance 1 ≈ 15 min · 2 ≈ 35 min · 3 ≈ 1 h 15 · 4 ≈ 3 h. En rushant fort, les 4 mondes + la 4ᵉ renaissance se finissent en **une session de quelques heures**. Ensuite : l'Index.
+**Rythme cible à valider par sim/playtest :** première créature < 15 s · boss Monde 1 ≈ 15–20 min · Renaissance 1 médiane ≈ 30–40 min. Les autres paliers sont réglés après preuve, sans temps mort artificiel.
 
-### 3.9 Duel de sanctuaires — différenciateur n°2
+### 3.9 Duel de sanctuaires — système social avancé
 Version adulte du raid : **consentie et avec mise**.
 
 - Les deux joueurs acceptent, misent quelque chose, le gagnant prend.
@@ -178,10 +181,10 @@ Problème racine acté : la boucle est complète mais l'abandon se joue dans les
 
 Séquence cible :
 - **T+0 s** — Naissance dans un monde vivant : spawn sans panneau bloquant, œuf dans un nid près du spawn, prompt contextuel unique (« Approche-toi de l'œuf »).
-- **T+10 s** — Première éclosion spectaculaire : cinématique courte (tremblement, lumière, craquement), créature qui suit le joueur. Pity `FIRST_HATCH_WEIGHTS` conservé. Première récompense < 15 s.
+- **T+5–15 s** — L'œuf initial passe par la vraie couveuse avec une durée tutorielle de 5 s ; première créature visible < 15 s.
 - **T+20 s** — Le farm devient visible sous les yeux (creuse/ramasse/patrouille selon rôle), « +N Essence » flottant. Zéro menu ouvert jusque-là.
-- **T+60-90 s** — Première faille accélérée pour les nouveaux (`FIRST_RIFT_DELAY`), cadence normale ensuite ; combat juteux, victoire → récompenses ×8.
-- **T+2-3 min** — Les menus arrivent en dernier : tutoriel 6 étapes d'UI remplacé par 3 prompts monde + auto-ouverture unique onglet Œufs. L'expert peut tout ignorer.
+- **T+60-90 s** — Première fenêtre de parcours accélérée ; étapes auto-tactiques, progression checkpointée et boss visible comme objectif.
+- **Après boss** — `Plus` révèle Objectifs, Boutique, première offre et Renaissance. Les systèmes suivants apparaissent seulement à leur palier.
 
 **Critère d'acceptation :** un nouveau joueur voit sa créature travailler, éclot 1-2 œufs en monde, gagne une faille et sait quoi faire ensuite — sans jamais lire un tutoriel, en moins de 5 minutes.
 
@@ -193,7 +196,7 @@ Pincée active (sans casser le ratio 80/20) :
 ### 3.15 Vivant à toutes les échelles de population
 Principe : **jamais de faux joueurs** (ToS + détection). Des données globales réelles rendues visibles.
 
-- **Densité avant volume** : MaxPlayers 12-16 — Roblox remplit les serveurs existants avant d'en ouvrir ; sanctuaires visibles les uns des autres.
+- **Densité avant volume** : MaxPlayers 12-16 — plots privés isolés dans la même session, équipes visibles dans les sanctuaires partagés et parcours coopératifs opportunistes.
 - **Quand il y a peu de joueurs** : ticker de drops global (Rare+ agrégé MessagingService, pattern LeaderboardService), compteurs mondiaux (« X œufs éclos cette semaine »), créatures sauvages PNJ qui farment visiblement, marché cross-serveur, Éclipse sur horloge serveur.
 - **Quand il y en a beaucoup** : ticker throttlé (~10/min max, priorité hauts rangs), UltraRare+ plein écran, Server Boost en jauge partagée, duels/marché/visites s'activent naturellement.
 - Boucles anti-solitude conservées : streak quotidien, quêtes journalières, pity counter, season pass.
@@ -222,14 +225,14 @@ Principe : **jamais de faux joueurs** (ToS + détection). Des données globales 
 
 ### 4.A Hubs dans le monde & pouvoir visible
 - **Couveuse = LE hub d'éclosion** : objet 3D dans l'enclos. Les œufs achetés/gagnés vont dans l'inventaire ; le joueur les **place physiquement** autour de la couveuse (max 3 posés) ; chaque œuf posé porte un prompt « Éclore » in-world. L'éclosion déclenche une **cinématique dans le monde** ET une **carte de révélation** lisible (portrait de la créature + nom + rareté, visible ≥ 4 s). Le gamepass AutoHatch place et éclore automatiquement.
-- **Arche de faille permanente** construite au démarrage serveur : brille quand la faille est active, compte à rebours « Faille dans X:XX ». Rythme inchangé (`RIFT_INTERVAL = 600`, actif 180 s).
+- **Portail de parcours permanent** : brille pendant la fenêtre d'entrée, compte à rebours « Parcours dans X:XX », cadence 5 min et première ouverture FTUE accélérée.
 - **Créatures cliquables** : panneau contextuel équiper / évoluer / vendre avec prix suggéré pré-rempli modifiable (passe par `MarketList`).
 - **Feedbacks** : `Fx.FloatText` (+N Essence au tick), saut + burst au clic.
 - **ObjectiveBanner** (bandeau bas d'écran) : priorité faille active > quêtes prêtes > premier œuf > Renaissance, + état « teasing » vers le contenu verrouillé le plus proche.
 - **Pouvoir visible** : taille/aura des créatures étendues au niveau, socles physiques par +2 emplacements de sanctuaire, puissance d'équipe en topbar, renaissance cinématique avec bascule immédiate du thème du nouveau monde.
 
 ### 4.B UI mobile-first
-- **Barre d'action permanente en bas** : Œufs · Faille · Sanctuaire — les 3 gestes du jeu, jamais à chercher.
+- **Barre d'action permanente en bas** : Œufs · Parcours · Sanctuaires · Plus. `Parcours` apparaît après la première créature et `Plus` après le premier boss.
 - Onglets avancés (Marché, Duels, Index, Quêtes, Saison, Renaissance, Boutique) derrière un bouton « Plus ».
 - Fix connu : re-layout dynamique au redimensionnement du viewport ; audit Device Simulator complet (safe areas, TextScaled, cibles tactiles ≥ 44 px).
 - **Boucle visuelle de récompense** : ticker global coin haut-droit, pyramide de célébration (Épic = burst + son · Légendaire+ = slow-mo · UltraRare+ = plein écran + annonce), jauges visibles (pity, Éclipse, Server Boost).
@@ -249,9 +252,9 @@ Principe : **jamais de faux joueurs** (ToS + détection). Des données globales 
 
 | Zone | Rôle |
 |---|---|
-| **Sanctuaires** (3–4, un par monde débloqué par Renaissance) | AFK, rendement stable, safe |
-| **????** (zone publique, débloquée par Renaissance) | AFK, rendement aléatoire, risqué (mais aucune perte) |
-| **Failles** | Pas de revenu passif dedans, mais ×8 sur les drops → choix actif de sacrifier l'AFK |
+| **Plot privé** | Base personnelle du joueur dans le serveur ; visites sur invitation, lecture seule |
+| **Sanctuaires partagés** (3) | Déploiement AFK personnel, équipes visibles, aucun poste compétitif, production hors ligne bornée |
+| **Mondes** (4 régions) | Cinq étapes + boss ; parcours coop à fenêtres d'entrée, checkpoints persistants |
 | **Éclipse** | Évènement serveur toutes les 2 h, 10 min : ciel modifié, annonce serveur, mutation boostée ×10, créature exclusive — horloge serveur, **jamais conditionnée à la population** (réutilise les patterns OrbService/RiftService) |
 | **Zone saisonnière** | 2 semaines, variante visuelle exclusive jamais rééditée → pic de revenus et de retours |
 
@@ -372,7 +375,7 @@ Deux classements pour deux ambitions, **un plafond de dépense clairement commun
 
 ## 9. Checklist design
 
-- [ ] L'action n'est jamais obligatoire, seulement rentable (défaite en Faille = roll relique réduit, participer suffit)
+- [ ] L'action ne détruit jamais la progression acquise ; les checkpoints persistent et le boss valide seulement l'accès au monde suivant
 - [ ] Le F2P fait 100 % du contenu ; on vend du temps, du confort, de la chance (exclusives = variantes visuelles)
 - [ ] Les taux de drop sont affichés partout
 - [ ] Le rusher finit mondes + renaissance en quelques heures ; l'Index est le contenu long

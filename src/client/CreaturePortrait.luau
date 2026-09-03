@@ -1,4 +1,8 @@
 local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
+local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
+local CreatureTemplates = require(ReplicatedStorage.Shared.CreatureTemplates)
 
 -- Portrait vivant : ViewportFrame qui fait tourner lentement le modèle 3D
 -- de l'espèce, teinté rareté/mutation. Réutilisable partout où on affiche
@@ -61,15 +65,53 @@ function CreaturePortrait.Show(
 	_mutation: any,
 	_silhouette: boolean?
 )
-	-- ponytail: portraits 3D retirés (assets provisoires jugés moches).
-	-- Restaurer l'ancien corps de Show (git log) quand la vraie DA arrive.
 	if _state and _state.model then
 		_state.model:Destroy()
 		_state.model = nil
 	end
-	if _state and _state.vp then
-		_state.vp.BackgroundTransparency = 1
+	if not _state or not _state.vp then
+		return
 	end
+	_state.vp.BackgroundTransparency = 0.2
+	local model = CreatureTemplates.Get(_speciesId or "")
+	if model then
+		model = model:Clone()
+	else
+		model = Instance.new("Model")
+		local body = Instance.new("Part")
+		body.Name = "Body"
+		body.Shape = Enum.PartType.Ball
+		body.Size = Vector3.new(2.4, 2.4, 2.4)
+		body.Position = Vector3.new(0, 0, 0)
+		body.Parent = model
+		local eye = Instance.new("Part")
+		eye.Name = "EyeL"
+		eye.Shape = Enum.PartType.Ball
+		eye.Size = Vector3.new(0.28, 0.28, 0.18)
+		eye.Position = Vector3.new(-0.42, 0.35, -1.05)
+		eye.Parent = model
+		local eye2 = eye:Clone()
+		eye2.Name = "EyeR"
+		eye2.Position = Vector3.new(0.42, 0.35, -1.05)
+		eye2.Parent = model
+	end
+	local definition = if _mutation and Mutations[_mutation]
+		then Mutations[_mutation]
+		else if _rarity then Rarities[_rarity] else nil
+	local color = if _silhouette
+		then Color3.fromRGB(20, 18, 28)
+		else if definition then definition.Color else Color3.fromRGB(150, 155, 160)
+	for _, part in model:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Anchored = true
+			part.CanCollide = false
+			part.Color = if part.Name:find("Eye") then Color3.new(1, 1, 1) else color
+			part.Material = Enum.Material.SmoothPlastic
+		end
+	end
+	model:PivotTo(CFrame.new())
+	model.Parent = _state.world
+	_state.model = model
 end
 
 return CreaturePortrait

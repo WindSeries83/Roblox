@@ -1,4 +1,4 @@
-local Audio = require(script.Parent.Audio)
+local Audio = require(script.Parent:WaitForChild("Audio"))
 local Gameplay = require(game:GetService("ReplicatedStorage").Shared.Gameplay)
 local Rarities = require(game:GetService("ReplicatedStorage").Shared.Data.Rarities)
 
@@ -53,6 +53,11 @@ function UiKit.Create(className: string, props: { [string]: any }): Instance
 		inst[key] = value
 	end
 	if className == "TextButton" or className == "ImageButton" then
+		(inst :: GuiButton).Selectable = true
+		local touchTarget = Instance.new("UISizeConstraint")
+		touchTarget.Name = "TouchTarget"
+		touchTarget.MinSize = Vector2.new(44, 44)
+		touchTarget.Parent = inst
 		inst.Activated:Connect(function()
 			Audio.Play("UiClick")
 		end)
@@ -168,12 +173,16 @@ function UiKit.Badge(parent: Instance, text: string, color: Color3): Frame
 end
 
 function UiKit.Button(parent: Instance, text: string, size: UDim2?, position: UDim2?): TextButton
+	local touchSize = size
+	if size and size.Y.Scale == 0 and size.Y.Offset > 0 and size.Y.Offset < 44 then
+		touchSize = UDim2.new(size.X.Scale, size.X.Offset, 0, 44)
+	end
 	local button = UiKit.Create("TextButton", {
 		BackgroundColor3 = UiKit.TINTS.ACCENT,
 		TextColor3 = UiKit.TINTS.WHITE,
 		Font = Enum.Font.GothamBold,
 		TextSize = 14,
-		Size = size or UDim2.fromScale(1, 0),
+		Size = touchSize or UDim2.fromScale(1, 0),
 		AutomaticSize = size == nil and Enum.AutomaticSize.Y or nil,
 		Position = position,
 		Text = text,

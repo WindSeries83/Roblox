@@ -11,6 +11,12 @@ return function(t)
 		expect.equal(DuelSim.TeamPower({}), 0)
 	end)
 
+	t.test("FilterTeam ignores stronger reserve creatures", function()
+		local creatures = { Creature("deployed", 10), Creature("reserve", 100) }
+		local team = DuelSim.FilterTeam(creatures, { deployed = true })
+		expect.equal(DuelSim.TeamPower(team), 10)
+	end)
+
 	t.test("Resolve is deterministic for a given seed", function()
 		local a = DuelSim.Resolve(100, 50, 12345)
 		local b = DuelSim.Resolve(100, 50, 12345)

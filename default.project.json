@@ -3,7 +3,7 @@
     "tree":  {
                  "$className":  "DataModel",
                  "ServerScriptService":  {
-                                             "ServerScriptService":  {
+                                             "Main":  {
                                                                          "$path":  "src/server/Main.server.luau"
                                                                      },
                                              "Bootstrap":  {
@@ -39,15 +39,27 @@
                                                            "BuyEgg":  {
                                                                           "$className":  "RemoteEvent"
                                                                       },
-                                                           "HatchEgg":  {
-                                                                            "$className":  "RemoteEvent"
-                                                                        },
+                                                           "PlaceEgg":  {
+                                                                          "$className":  "RemoteEvent"
+                                                                      },
+                                                           "StartIncubation":  {
+                                                                                   "$className":  "RemoteEvent"
+                                                                               },
+                                                           "ClaimIncubation":  {
+                                                                                  "$className":  "RemoteEvent"
+                                                                              },
                                                            "RiftAttack":  {
                                                                               "$className":  "RemoteEvent"
                                                                           },
                                                            "Sync":  {
                                                                         "$className":  "RemoteEvent"
                                                                     },
+                                                           "EconomySync":  {
+                                                                          "$className":  "RemoteEvent"
+                                                                      },
+                                                           "ActionResult":  {
+                                                                            "$className":  "RemoteEvent"
+                                                                        },
                                                            "HatchResult":  {
                                                                                "$className":  "RemoteEvent"
                                                                            },
@@ -102,6 +114,9 @@
                                                            "QuestClaim":  {
                                                                               "$className":  "RemoteEvent"
                                                                           },
+                                                           "SetDuelDefense":  {
+                                                                                 "$className":  "RemoteEvent"
+                                                                             },
                                                             "TutorialComplete":  {
                                                                                      "$className":  "RemoteEvent"
                                                                                  },
@@ -163,14 +178,10 @@
                                                                     "$path":  "src/client"
                                                                 }
                                    },
-                 "StarterGui":  {
-                                    "UiLoader":  {
-                                                     "$path":  "src/client/UiLoader.client.luau"
-                                                 }
-                                },
                  "Workspace":  {
                                    "$properties":  {
-                                                       "FilteringEnabled":  true
+                                                       "FilteringEnabled":  true,
+                                                       "StreamingEnabled":  true
                                                    },
                                    "SpawnLocation":  {
                                                          "$className":  "SpawnLocation",

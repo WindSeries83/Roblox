@@ -1,17 +1,79 @@
 local ServerScriptService = game:GetService("ServerScriptService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local ProfileStore = require(ServerScriptService.ServerPackages.ProfileStore)
+local Config = require(ReplicatedStorage.Shared.Config)
+local Incubation = require(ReplicatedStorage.Shared.Incubation)
+local Worlds = require(ReplicatedStorage.Shared.Worlds)
+local PurchaseLedger = require(ReplicatedStorage.Shared.PurchaseLedger)
 
 local SaveService = {}
 
 SaveService.Profiles = {}
 
-local DATA_VERSION = 8
+local DATA_VERSION = 16
+
+local function NormalizeIncubators(data)
+	local valid = {}
+	if type(data.Incubators) == "table" then
+		for _, record in data.Incubators do
+			if Incubation.IsRecord(record) then
+				table.insert(valid, record)
+			end
+		end
+	end
+	data.Incubators = valid
+end
+
+local function NormalizeRush(data)
+	local source = data.Rush
+	local candidate = nil
+	if type(source) == "table" then
+		candidate = if type(source.Active) == "table" then source.Active else source
+	end
+	if type(candidate) ~= "table" then
+		data.Rush = {}
+		return
+	end
+
+	local worldId = candidate.WorldId
+	local world = if type(worldId) == "string" then Worlds.Get(worldId) else nil
+	local startedAt = candidate.StartedAt
+	if
+		not world
+		or type(startedAt) ~= "number"
+		or startedAt < 0
+		or startedAt == math.huge
+		or startedAt ~= startedAt
+	then
+		data.Rush = {}
+		return
+	end
+	local endsAt = candidate.EndsAt
+	if type(endsAt) ~= "number" or endsAt < startedAt or endsAt == math.huge or endsAt ~= endsAt then
+		endsAt = startedAt + world.Rush.TargetSeconds
+	end
+	data.Rush = {
+		Active = {
+			WorldId = worldId,
+			AttemptId = if type(candidate.AttemptId) == "string" and candidate.AttemptId ~= ""
+				then candidate.AttemptId
+				else `legacy:{worldId}:{startedAt}`,
+			StartedAt = math.floor(startedAt),
+			EndsAt = math.floor(endsAt),
+			Completed = candidate.Completed == true,
+			Claimed = candidate.Claimed == true,
+			Expired = candidate.Expired == true,
+		},
+	}
+end
 
 local Store = ProfileStore.New("RiftBeastsData_v1", {
 	Essence = 0,
 	Creatures = {},
 	Eggs = {},
+	Incubators = {},
 	SanctuaryLevel = 1,
 	Stats = {
 		TotalHatched = 0,
@@ -42,6 +104,7 @@ local Store = ProfileStore.New("RiftBeastsData_v1", {
 		Achievements = {},
 	},
 	Season = {
+		Version = 1,
 		Level = 1,
 		XP = 0,
 		ClaimedFree = {},
@@ -57,6 +120,23 @@ local Store = ProfileStore.New("RiftBeastsData_v1", {
 		SeasonPremium = false,
 	},
 	PurchaseReceipts = {},
+	PurchaseReceiptOrder = {},
+	EconomyLedger = {},
+	MarketLedger = {
+		Buys = {},
+		Credits = {},
+		Listings = {},
+	},
+	DuelDefense = {},
+	DuelLedger = {},
+	DuelSeason = {
+		Version = 1,
+		Rating = 1000,
+		Wins = 0,
+		Losses = 0,
+	},
+	LuckPotion = nil,
+	VipExpiresAt = 0,
 	SkillPoints = 0,
 	SkillRanks = {},
 	Offers = {
@@ -66,8 +146,15 @@ local Store = ProfileStore.New("RiftBeastsData_v1", {
 	},
 	VipGiftDate = "",
 	TutorialDone = false,
+	WorldProgress = {},
+	Rush = {},
+	SanctuaryAssignments = {},
 	Version = DATA_VERSION,
 })
+
+if RunService:IsStudio() then
+	Store = Store.Mock
+end
 
 local MIGRATIONS = {
 	[1] = function(data)
@@ -159,10 +246,106 @@ local MIGRATIONS = {
 		data.PurchaseReceipts = data.PurchaseReceipts or {}
 		data.Version = 8
 	end,
+	[8] = function(data)
+		data.PurchaseReceipts = data.PurchaseReceipts or {}
+		data.PurchaseReceiptOrder = data.PurchaseReceiptOrder or {}
+		data.EconomyLedger = data.EconomyLedger or {}
+		data.MarketLedger = data.MarketLedger or { Buys = {}, Credits = {}, Listings = {} }
+		data.MarketLedger.Buys = data.MarketLedger.Buys or {}
+		data.MarketLedger.Credits = data.MarketLedger.Credits or {}
+		data.MarketLedger.Listings = data.MarketLedger.Listings or {}
+		data.DuelDefense = data.DuelDefense or {}
+		data.VipExpiresAt = data.VipExpiresAt or 0
+		data.Version = 9
+	end,
+	[9] = function(data)
+		data.Incubators = data.Incubators or {}
+		data.Version = 10
+	end,
+	[10] = function(data)
+		NormalizeIncubators(data)
+		data.Version = 11
+	end,
+	[11] = function(data)
+		local worlds = { "TwilightGrove", "AshForge", "GalePeaks", "NyxAbyss" }
+		local progress = {}
+		if type(data.WorldProgress) == "table" then
+			for _, worldId in worlds do
+				local state = data.WorldProgress[worldId]
+				if type(state) == "table" then
+					local highest = if type(state.HighestStage) == "number" then state.HighestStage else 0
+					progress[worldId] = {
+						HighestStage = math.clamp(math.floor(highest), 0, 5),
+						BossDefeated = state.BossDefeated == true,
+					}
+				end
+			end
+		end
+		data.WorldProgress = progress
+
+		local assignments = {}
+		if type(data.SanctuaryAssignments) == "table" then
+			for index = 1, 3 do
+				local sanctuaryId = `Sanctuary{index}`
+				local assignment = data.SanctuaryAssignments[sanctuaryId]
+				if type(assignment) == "table" then
+					local creatureIds = {}
+					if type(assignment.CreatureIds) == "table" then
+						for _, creatureId in assignment.CreatureIds do
+							if type(creatureId) == "string" and creatureId ~= "" then
+								table.insert(creatureIds, creatureId)
+							end
+						end
+					end
+					assignments[sanctuaryId] = {
+						CreatureIds = creatureIds,
+						LastCollectedAt = if type(assignment.LastCollectedAt) == "number"
+							then math.max(0, math.floor(assignment.LastCollectedAt))
+							else 0,
+					}
+				end
+			end
+		end
+		data.SanctuaryAssignments = assignments
+		data.Version = 12
+	end,
+	[12] = function(data)
+		data.Season = data.Season or {}
+		data.Season.Version = if type(data.Season.Version) == "number" then data.Season.Version else 1
+		data.Season.XP = if type(data.Season.XP) == "number" then math.max(0, data.Season.XP) else 0
+		data.Season.Level = if type(data.Season.Level) == "number"
+			then math.clamp(math.floor(data.Season.Level), 1, Config.SEASON_MAX_LEVEL)
+			else 1
+		data.Season.ClaimedFree = data.Season.ClaimedFree or {}
+		data.Season.ClaimedPremium = data.Season.ClaimedPremium or {}
+		data.Version = 13
+	end,
+	[13] = function(data)
+		NormalizeRush(data)
+		data.Version = 14
+	end,
+	[14] = function(data)
+		data.DuelLedger = if type(data.DuelLedger) == "table" then data.DuelLedger else {}
+		data.Version = 15
+	end,
+	[15] = function(data)
+		data.DuelSeason = if type(data.DuelSeason) == "table" then data.DuelSeason else {}
+		data.DuelSeason.Version = Config.DUEL_SEASON_VERSION
+		data.DuelSeason.Rating = if type(data.DuelSeason.Rating) == "number"
+			then math.max(0, math.floor(data.DuelSeason.Rating))
+			else 1000
+		data.DuelSeason.Wins = if type(data.DuelSeason.Wins) == "number"
+			then math.max(0, math.floor(data.DuelSeason.Wins))
+			else 0
+		data.DuelSeason.Losses = if type(data.DuelSeason.Losses) == "number"
+			then math.max(0, math.floor(data.DuelSeason.Losses))
+			else 0
+		data.Version = 16
+	end,
 }
 
 function SaveService.Migrate(data)
-	local version = data.Version or 1
+	local version = if type(data.Version) == "number" then math.floor(data.Version) else 1
 	while version < DATA_VERSION do
 		local migrate = MIGRATIONS[version]
 		if migrate then
@@ -170,6 +353,24 @@ function SaveService.Migrate(data)
 		end
 		version += 1
 	end
+	-- Les profils déjà migrés peuvent aussi provenir d'une sauvegarde partiellement corrompue.
+	-- Nettoyer ici garantit que Restore ne transforme pas une entrée invalide en couveuse bloquée.
+	NormalizeIncubators(data)
+	NormalizeRush(data)
+	data.DuelLedger = if type(data.DuelLedger) == "table" then data.DuelLedger else {}
+	data.DuelSeason = if type(data.DuelSeason) == "table" then data.DuelSeason else {}
+	data.DuelSeason.Version = if type(data.DuelSeason.Version) == "number"
+		then data.DuelSeason.Version
+		else Config.DUEL_SEASON_VERSION
+	data.DuelSeason.Rating = if type(data.DuelSeason.Rating) == "number"
+		then math.max(0, math.floor(data.DuelSeason.Rating))
+		else 1000
+	data.DuelSeason.Wins = if type(data.DuelSeason.Wins) == "number"
+		then math.max(0, math.floor(data.DuelSeason.Wins))
+		else 0
+	data.DuelSeason.Losses = if type(data.DuelSeason.Losses) == "number"
+		then math.max(0, math.floor(data.DuelSeason.Losses))
+		else 0
 	return data
 end
 
@@ -177,14 +378,39 @@ local function ProfileKey(player: Player): string
 	return `Player_{player.UserId}`
 end
 
+local function SaveAndConfirm(profile: any, proof: ((any) -> boolean)?): boolean
+	local ok = pcall(function()
+		profile:Save()
+	end)
+	if not ok then
+		return false
+	end
+	if not proof then
+		return true
+	end
+	local deadline = os.clock() + 8
+	repeat
+		local saved = profile.LastSavedData
+		if saved and proof(saved) then
+			return true
+		end
+		task.wait(0.1)
+	until os.clock() >= deadline
+	return false
+end
+
 function SaveService:Init(container)
 	local log = container:Get("Log")
-	Store.OnError:Connect(function(message, store_name, profile_key)
-		warn(`[SaveService] Erreur DataStore: {store_name}/{profile_key} - {message}`)
-	end)
-	Store.OnOverwrite:Connect(function(store_name, profile_key)
-		log:Economy("SaveService", "ProfileOverwrite", { Store = store_name, Key = profile_key })
-	end)
+	if Store.OnError then
+		Store.OnError:Connect(function(message, store_name, profile_key)
+			warn(`[SaveService] Erreur DataStore: {store_name}/{profile_key} - {message}`)
+		end)
+	end
+	if Store.OnOverwrite then
+		Store.OnOverwrite:Connect(function(store_name, profile_key)
+			log:Economy("SaveService", "ProfileOverwrite", { Store = store_name, Key = profile_key })
+		end)
+	end
 end
 
 function SaveService:LoadProfileAsync(player: Player)
@@ -198,6 +424,100 @@ function SaveService:LoadProfileAsync(player: Player)
 		profile:Reconcile()
 		SaveService.Migrate(profile.Data)
 		self.Profiles[player] = profile
+		profile:MessageHandler(function(message, processed)
+			if type(message) ~= "table" then
+				processed()
+				return
+			end
+			if message.Type == "DuelSettlement" then
+				local challengeId = message.ChallengeId
+				local role = message.Role
+				local amount = message.Amount
+				if
+					type(challengeId) ~= "string"
+					or challengeId == ""
+					or (role ~= "Winner" and role ~= "Loser" and role ~= "Refund")
+					or type(amount) ~= "number"
+					or amount < 0
+					or amount ~= math.floor(amount)
+					or amount > Config.DUEL_MAX_WAGER * 2
+				then
+					processed()
+					return
+				end
+				local marker = `Duel{role}Applied`
+				profile.Data.DuelLedger = profile.Data.DuelLedger or {}
+				if profile.Data.DuelLedger[challengeId] == marker then
+					processed()
+					return
+				end
+				if role == "Refund" and profile.Data.DuelLedger[challengeId] ~= "ChallengerEscrowed" then
+					processed()
+					return
+				end
+				local snapshot = PurchaseLedger.Snapshot(profile.Data)
+				profile.Data.DuelLedger[challengeId] = marker
+				if role == "Winner" then
+					profile.Data.Essence += amount
+					profile.Data.Stats.TotalEssenceEarned += amount
+					profile.Data.Stats.DuelsWon += 1
+				elseif role == "Loser" then
+					profile.Data.Stats.DuelsLost += 1
+				else
+					profile.Data.Essence += amount
+					profile.Data.Stats.TotalEssenceEarned += amount
+				end
+				if role == "Winner" or role == "Loser" then
+					local duelSeason = profile.Data.DuelSeason
+					if role == "Winner" then
+						duelSeason.Rating += 25
+						duelSeason.Wins += 1
+					else
+						duelSeason.Rating = math.max(0, duelSeason.Rating - 15)
+						duelSeason.Losses += 1
+					end
+				end
+				profile.Data.LastPlayed = os.time()
+				local saved = SaveAndConfirm(profile, function(data)
+					return data.DuelLedger and data.DuelLedger[challengeId] == marker
+				end)
+				if not saved then
+					PurchaseLedger.Restore(profile.Data, snapshot)
+					return
+				end
+				processed()
+				return
+			end
+			if message.Type ~= "MarketCredit" then
+				processed()
+				return
+			end
+			local transactionId = message.TransactionId
+			local payout = message.Payout
+			if type(transactionId) ~= "string" or type(payout) ~= "number" or payout <= 0 then
+				processed()
+				return
+			end
+			local ledger = profile.Data.MarketLedger
+			if not ledger.Credits[transactionId] then
+				ledger.Credits[transactionId] = true
+				local amount = math.floor(payout)
+				profile.Data.Essence += amount
+				profile.Data.Stats.TotalEssenceEarned += amount
+				profile.Data.Stats.MarketSales += 1
+				profile.Data.LastPlayed = os.time()
+				local saved = SaveAndConfirm(profile, function(data)
+					return data.MarketLedger
+						and data.MarketLedger.Credits
+						and data.MarketLedger.Credits[transactionId] == true
+				end)
+				if not saved then
+					ledger.Credits[transactionId] = nil
+					return
+				end
+			end
+			processed()
+		end)
 		profile.OnSessionEnd:Connect(function()
 			self.Profiles[player] = nil
 		end)
@@ -207,6 +527,21 @@ end
 
 function SaveService:GetProfile(player: Player)
 	return self.Profiles[player]
+end
+
+function SaveService:SaveProfile(player: Player, proof: ((any) -> boolean)?): boolean
+	local profile = self.Profiles[player]
+	if not profile then
+		return false
+	end
+	return SaveAndConfirm(profile, proof)
+end
+
+function SaveService:QueueProfileMessage(userId: number, message: { [string]: any }): boolean
+	local ok, result = pcall(function()
+		return Store:MessageAsync(`Player_{userId}`, message)
+	end)
+	return ok and result == true
 end
 
 function SaveService:ReleaseProfile(player: Player)

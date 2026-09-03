@@ -3,6 +3,8 @@ local Config = require(script.Parent.Config)
 local Sanctuary = {}
 
 Sanctuary.SLOTS_PER_LEVEL = Config.SANCTUARY_SLOTS_PER_LEVEL
+Sanctuary.SHARED_IDS = { "Sanctuary1", "Sanctuary2", "Sanctuary3" }
+Sanctuary.SHARED_CREATURE_CAP = 3
 
 function Sanctuary.MaxCreatures(sanctuaryLevel: number, bonusSlots: number?): number
 	return Config.MAX_CREATURES_BASE
@@ -56,6 +58,36 @@ function Sanctuary.ResolveEggTier(tier: string, sanctuaryLevel: number): string
 		i -= 1
 	end
 	return Sanctuary.EGG_TIERS[i]
+end
+
+function Sanctuary.ValidateAssignment(
+	sanctuaryId: string,
+	creatureIds: { string },
+	ownedIds: { [string]: boolean },
+	unlockedCount: number
+): boolean
+	local index = table.find(Sanctuary.SHARED_IDS, sanctuaryId)
+	if not index or index > unlockedCount then
+		return false
+	end
+	local seen = {}
+	local count = 0
+	for key, creatureId in creatureIds do
+		count += 1
+		if type(key) ~= "number" or key % 1 ~= 0 or key < 1 or key > #creatureIds then
+			return false
+		end
+		if type(creatureId) ~= "string" or seen[creatureId] or not ownedIds[creatureId] then
+			return false
+		end
+		seen[creatureId] = true
+	end
+	return count <= Sanctuary.SHARED_CREATURE_CAP
+end
+
+function Sanctuary.OfflineReward(rate: number, lastCollectedAt: number, now: number): (number, number)
+	local elapsed = math.clamp(now - math.max(0, lastCollectedAt), 0, Config.OFFLINE_CAP_SECONDS)
+	return math.max(0, math.floor(rate * Config.OFFLINE_RATE * elapsed)), now
 end
 
 return Sanctuary

@@ -1,3 +1,5 @@
+--!strict
+
 local HttpService = game:GetService("HttpService")
 local MessagingService = game:GetService("MessagingService")
 local Players = game:GetService("Players")
@@ -6,6 +8,7 @@ local RunService = game:GetService("RunService")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local MarketTransaction = require(ReplicatedStorage.Shared.MarketTransaction)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 local SafeStore = require(script.Parent.SafeStore)
@@ -16,15 +19,9 @@ local log
 local saveService
 local essenceService
 local dataSync
-local skillService
-local analyticsService
-
-local ListingsKey = "Listings"
 
 local Store = SafeStore.Get("RiftBeastsMarket_v1", nil)
-
 local listings: { [string]: any } = {}
-local pendingCredits: { [number]: number } = {}
 local cooldowns: { [Player]: { [string]: number } } = {}
 local lastAppliedAt = 0
 
@@ -37,8 +34,6 @@ local function ListedCount(player: Player): number
 	end
 	return count
 end
-
---[[ Pure logic (unit-testable) ]]
 
 function MarketService.ValidatePrice(price: any): boolean
 	return type(price) == "number"
@@ -64,10 +59,10 @@ function MarketService.CanBuy(
 		return false, "Listing introuvable"
 	end
 	if listing.SellerUserId == buyerUserId then
-		return false, "Tu ne peux pas acheter ta propre créature"
+		return false, "Tu ne peux pas acheter ta propre creature"
 	end
-	if listing.WithdrawAt then
-		return false, "Retrait en cours"
+	if MarketTransaction.State(listing) ~= "Open" or listing.WithdrawAt then
+		return false, "Listing indisponible"
 	end
 	if essence < listing.Price then
 		return false, "Essence insuffisante"
@@ -83,13 +78,10 @@ function MarketService.CanClaim(listing: any, buyerUserId: number): (boolean, st
 		return false, "Listing introuvable"
 	end
 	if listing.SellerUserId == buyerUserId then
-		return false, "Tu ne peux pas acheter ta propre créature"
+		return false, "Tu ne peux pas acheter ta propre creature"
 	end
-	if listing.SoldAt then
-		return false, "Déjà vendu"
-	end
-	if listing.WithdrawAt then
-		return false, "Retrait en cours"
+	if MarketTransaction.State(listing) ~= "Open" or listing.WithdrawAt then
+		return false, "Listing indisponible"
 	end
 	return true
 end
@@ -104,21 +96,18 @@ function MarketService.CanList(
 		return false, "Prix invalide"
 	end
 	if not creature then
-		return false, "Créature introuvable"
+		return false, "Creature introuvable"
 	end
 	if listedCount >= Config.MARKET_MAX_LISTINGS then
 		return false, "Nombre de ventes maximum atteint"
 	end
 	if not Gameplay.FindCreature(playerCreatures, creature.Id) then
-		return false, "Créature introuvable"
+		return false, "Creature introuvable"
 	end
 	return true
 end
 
---[[ Persistance par-listing (DataStore source de vérité) ]]
-
-local function notifyOtherServers()
-	-- propagation live aux autres serveurs (guard Studio : PublishAsync bloque non publié)
+local function NotifyServers()
 	if not RunService:IsStudio() then
 		pcall(function()
 			MessagingService:PublishAsync(Config.MARKET_TOPIC, { UpdatedAt = os.time() })
@@ -126,9 +115,8 @@ local function notifyOtherServers()
 	end
 end
 
--- UpdateAsync : read-modify-write atomique cross-serveur (GetAsync+SetAsync écraserait les ajouts concurrents).
-local function UpdateIndex(id: string, add: boolean)
-	pcall(function()
+local function UpdateIndex(id: string, add: boolean): boolean
+	local ok = pcall(function()
 		Store:UpdateAsync("Index", function(old)
 			local ids = if type(old) == "table" and type(old.Ids) == "table" then table.clone(old.Ids) else {}
 			local pos = table.find(ids, id)
@@ -140,22 +128,41 @@ local function UpdateIndex(id: string, add: boolean)
 			return { Ids = ids }
 		end)
 	end)
-	notifyOtherServers()
+	if ok then
+		NotifyServers()
+	end
+	return ok
 end
 
-local function PersistListing(listing: any)
-	pcall(function()
+local function PersistListing(listing: any): boolean
+	local ok = pcall(function()
 		Store:SetAsync(`Listing_{listing.Id}`, listing)
 	end)
-	UpdateIndex(listing.Id, true)
+	return ok and UpdateIndex(listing.Id, true)
 end
 
-local function RemoveListing(id: string)
-	pcall(function()
-		-- SetAsync(key, nil) ne supprime pas sur le DataStore réel (tombstone requis).
+local function RemoveListing(id: string): boolean
+	local ok = pcall(function()
 		Store:RemoveAsync(`Listing_{id}`)
 	end)
-	UpdateIndex(id, false)
+	return ok and UpdateIndex(id, false)
+end
+
+local function AdvanceListing(id: string, expected: string, next: string, fields: { [string]: any }?): any?
+	local updated
+	local ok = pcall(function()
+		updated = Store:UpdateAsync(`Listing_{id}`, function(old)
+			if type(old) ~= "table" or not MarketTransaction.Transition(old, expected, next, fields) then
+				return nil
+			end
+			return old
+		end)
+	end)
+	if not ok or type(updated) ~= "table" or MarketTransaction.State(updated) ~= next then
+		return nil
+	end
+	listings[id] = updated
+	return updated
 end
 
 local function LoadListings(replace: boolean?)
@@ -172,33 +179,20 @@ local function LoadListings(replace: boolean?)
 		pcall(function()
 			data = Store:GetAsync(`Listing_{id}`)
 		end)
-		if type(data) == "table" and type(data.Id) == "string" and not data.SettledAt then
-			listings[data.Id] = data
+		if type(data) == "table" and type(data.Id) == "string" and not MarketTransaction.IsSettled(data) then
+			if MarketTransaction.State(data) ~= "Escrowed" then
+				listings[data.Id] = data
+			end
 		end
 	end
 end
 
-local function PersistPending(userId: number)
-	pcall(function()
-		Store:SetAsync(`Pending_{userId}`, pendingCredits[userId] or 0)
-	end)
-end
-
-local function LoadPending(userId: number)
-	local ok, amount = pcall(function()
-		return Store:GetAsync(`Pending_{userId}`)
-	end)
-	if ok and type(amount) == "number" and amount > 0 then
-		pendingCredits[userId] = amount
-	end
-end
-
---[[ Sync ]]
-
 local function ListingsPayload(): { any }
 	local list = {}
 	for _, listing in listings do
-		table.insert(list, listing)
+		if MarketTransaction.State(listing) == "Open" then
+			table.insert(list, listing)
+		end
 	end
 	table.sort(list, function(a, b)
 		return a.ListedAt > b.ListedAt
@@ -214,35 +208,67 @@ local function BroadcastListings()
 	Net.MarketSync:FireAllClients({ Listings = ListingsPayload() })
 end
 
-local function CreditSeller(listing: any)
+local function CreditSeller(listing: any): boolean
+	local payout = MarketService.Payout(listing.Price, Config.MARKET_FEE)
 	local seller = Players:GetPlayerByUserId(listing.SellerUserId)
 	local sellerProfile = if seller then saveService:GetProfile(seller) else nil
-	local eff = if sellerProfile then skillService:EffectsOf(sellerProfile) else {}
-	local payout = MarketService.Payout(listing.Price, math.max(0, Config.MARKET_FEE - (eff.MarketFeeReduction or 0)))
-	analyticsService:Event("market_sale", { Price = listing.Price })
-	if seller then
-		essenceService:Add(seller, payout, `MarketSale_{listing.Id}`)
-		if sellerProfile then
-			sellerProfile.Data.Stats.MarketSales += 1
-			table.insert(sellerProfile.Data.MarketHistory, {
-				CreatureId = listing.Creature.Id,
-				SpeciesId = listing.Creature.SpeciesId,
-				Price = listing.Price,
-				Payout = payout,
-				SoldAt = os.time(),
-			})
+	if seller and sellerProfile then
+		local applied, rollback = MarketTransaction.ApplySellerCredit(sellerProfile.Data, listing, payout, function()
+			return essenceService:AddOnce(seller, payout, `MarketSale_{listing.Id}`, `market-credit:{listing.Id}`)
+		end)
+		if not applied then
+			return false
+		end
+		sellerProfile.Data.LastPlayed = os.time()
+		local saved = saveService:SaveProfile(seller, function(data)
+			return data.MarketLedger and data.MarketLedger.Credits[listing.Id] == true
+		end)
+		if not saved then
+			if rollback then
+				rollback()
+			end
+			return false
 		end
 		dataSync:Send(seller)
-	else
-		pendingCredits[listing.SellerUserId] = (pendingCredits[listing.SellerUserId] or 0) + payout
-		PersistPending(listing.SellerUserId)
+		return true
 	end
+	return saveService:QueueProfileMessage(listing.SellerUserId, {
+		Type = "MarketCredit",
+		TransactionId = listing.Id,
+		Payout = payout,
+	})
 end
 
---[[ Remotes ]]
+local function SettleBuyerApplied(listing: any): boolean
+	if MarketTransaction.State(listing) ~= "BuyerApplied" then
+		return MarketTransaction.State(listing) == "Settled"
+	end
+	local settled = CreditSeller(listing)
+	if not settled then
+		return false
+	end
+	if not AdvanceListing(listing.Id, "BuyerApplied", "SellerApplied", { SellerAppliedAt = os.time() }) then
+		return false
+	end
+	if not AdvanceListing(listing.Id, "SellerApplied", "Settled", { SettledAt = os.time() }) then
+		return false
+	end
+	listings[listing.Id] = nil
+	RemoveListing(listing.Id)
+	return true
+end
+
+local function ReopenClaim(id: string): any?
+	return AdvanceListing(id, "Claimed", "Open", {
+		BuyerUserId = nil,
+		SoldBy = nil,
+		ClaimedAt = nil,
+		BuyerAppliedAt = nil,
+	})
+end
 
 local function OnMarketList(player: Player, creatureId: any, price: any)
-	if not Gameplay.CheckCooldown(cooldowns, player, "List", Config.MARKET_COOLDOWN) then
+	if not Config.MARKET_ENABLED or not Gameplay.CheckCooldown(cooldowns, player, "List", Config.MARKET_COOLDOWN) then
 		return
 	end
 	if typeof(creatureId) ~= "string" then
@@ -260,11 +286,9 @@ local function OnMarketList(player: Player, creatureId: any, price: any)
 	end
 	for _, listing in listings do
 		if listing.SellerUserId == player.UserId and listing.Creature.Id == creatureId then
-			log:Economy("Market", "ListRejected", { Player = player.Name, Reason = "Déjà en vente" })
 			return
 		end
 	end
-
 	local listing = {
 		Id = HttpService:GenerateGUID(false),
 		SellerUserId = player.UserId,
@@ -272,45 +296,52 @@ local function OnMarketList(player: Player, creatureId: any, price: any)
 		Creature = creature,
 		Price = price,
 		ListedAt = os.time(),
+		TransactionState = "Escrowed",
 	}
-	listings[listing.Id] = listing
-	PersistListing(listing)
-
+	if not PersistListing(listing) then
+		return
+	end
+	profile.Data.MarketLedger.Listings[listing.Id] = true
 	for i, owned in profile.Data.Creatures do
 		if owned.Id == creatureId then
 			table.remove(profile.Data.Creatures, i)
 			break
 		end
 	end
-	-- La créature vendue ne peut plus rester compagnon (donnée morte sinon).
 	if profile.Data.CompanionId == creatureId then
 		profile.Data.CompanionId = nil
 	end
 	profile.Data.LastPlayed = os.time()
-	dataSync:Send(player)
-
-	log:Economy("Market", "List", {
-		Player = player.Name,
-		Listing = listing.Id,
-		Creature = creature.Id,
-		Species = creature.SpeciesId,
-		Price = price,
-	})
-	BroadcastListings()
+	if
+		not saveService:SaveProfile(player, function(data)
+			return data.MarketLedger and data.MarketLedger.Listings[listing.Id] == true
+		end)
+	then
+		table.insert(profile.Data.Creatures, creature)
+		profile.Data.MarketLedger.Listings[listing.Id] = nil
+		RemoveListing(listing.Id)
+		return
+	end
+	local opened = AdvanceListing(listing.Id, "Escrowed", "Open")
+	if opened then
+		listings[listing.Id] = opened
+		dataSync:Send(player)
+		BroadcastListings()
+	end
 end
 
 local function OnMarketBuy(player: Player, listingId: any)
-	if not Gameplay.CheckCooldown(cooldowns, player, "Buy", Config.MARKET_COOLDOWN) then
+	if not Config.MARKET_ENABLED or not Gameplay.CheckCooldown(cooldowns, player, "Buy", Config.MARKET_COOLDOWN) then
 		return
 	end
 	if typeof(listingId) ~= "string" then
 		return
 	end
 	local profile = saveService:GetProfile(player)
-	if not profile then
+	local listing = listings[listingId]
+	if not profile or not listing then
 		return
 	end
-	local listing = listings[listingId]
 	local bonusSlots = if profile.Data.Entitlements.MoreSlots then Config.GAMEPASSES.MoreSlots.BonusSlots else 0
 	local ok, reason = MarketService.CanBuy(
 		listing,
@@ -324,146 +355,105 @@ local function OnMarketBuy(player: Player, listingId: any)
 		log:Economy("Market", "BuyRejected", { Player = player.Name, Reason = reason })
 		return
 	end
-
-	-- 1) Claim atomique cross-serveur : un seul acheteur peut marquer SoldAt.
-	local claimed
-	local okClaim = pcall(function()
-		claimed = Store:UpdateAsync(`Listing_{listingId}`, function(old)
-			local claimable, _reason = MarketService.CanClaim(old, player.UserId)
-			if not claimable then
-				return nil -- abandonne l'écriture
-			end
-			local updated = table.clone(old)
-			updated.SoldAt = os.time()
-			updated.SoldBy = player.UserId
-			return updated
-		end)
-	end)
-	if not okClaim or type(claimed) ~= "table" or claimed.SoldBy ~= player.UserId then
-		log:Economy("Market", "BuyRejected", { Player = player.Name, Reason = "Listing déjà pris" })
+	local claimed = AdvanceListing(listingId, "Open", "Claimed", {
+		BuyerUserId = player.UserId,
+		SoldBy = player.UserId,
+		ClaimedAt = os.time(),
+	})
+	if not claimed then
 		LoadListings(true)
 		BroadcastListings()
 		return
 	end
-
-	-- 2) Créature d'abord, débit ensuite, règlement enfin (ordre le moins perdeur).
-	table.insert(profile.Data.Creatures, claimed.Creature)
-	if not essenceService:Spend(player, claimed.Price, `MarketBuy_{claimed.Id}`) then
-		table.remove(profile.Data.Creatures)
-		pcall(function()
-			Store:UpdateAsync(`Listing_{claimed.Id}`, function(old)
-				old.SoldAt = nil
-				old.SoldBy = nil
-				return old
-			end)
-		end)
+	local previousBuyState = profile.Data.MarketLedger.Buys[claimed.Id]
+	local applied, rollback = MarketTransaction.ApplyBuyerPurchase(profile.Data, claimed, function()
+		return essenceService:Spend(player, claimed.Price, `MarketBuy_{claimed.Id}`)
+	end)
+	if not applied then
+		if previousBuyState == nil then
+			ReopenClaim(claimed.Id)
+		end
 		return
 	end
-	profile.Data.LastPlayed = os.time()
-	dataSync:Send(player)
-
-	-- 3) Règlement vendeur puis suppression du listing.
-	pcall(function()
-		Store:UpdateAsync(`Listing_{claimed.Id}`, function(old)
-			old.SettledAt = os.time()
-			return old
+	if
+		not saveService:SaveProfile(player, function(data)
+			return data.MarketLedger and data.MarketLedger.Buys[claimed.Id] == "BuyerApplied"
 		end)
-	end)
-	listings[claimed.Id] = nil
-	CreditSeller(claimed)
-	RemoveListing(claimed.Id)
-
-	log:Economy("Market", "Buy", {
-		Player = player.Name,
-		Listing = claimed.Id,
-		Seller = claimed.SellerName,
-		Species = claimed.Creature.SpeciesId,
-		Price = claimed.Price,
-	})
+	then
+		if rollback then
+			rollback()
+		end
+		local rollbackSaved = saveService:SaveProfile(player, function(data)
+			return data.MarketLedger and data.MarketLedger.Buys[claimed.Id] == nil
+		end)
+		if rollbackSaved then
+			ReopenClaim(claimed.Id)
+			BroadcastListings()
+		end
+		return
+	end
+	dataSync:Send(player)
+	local buyerApplied = AdvanceListing(claimed.Id, "Claimed", "BuyerApplied", { BuyerAppliedAt = os.time() })
+	if buyerApplied then
+		SettleBuyerApplied(buyerApplied)
+	end
 	BroadcastListings()
 end
 
 local function OnMarketRemove(player: Player, listingId: any)
-	if not Gameplay.CheckCooldown(cooldowns, player, "Remove", Config.MARKET_COOLDOWN) then
+	if not Config.MARKET_ENABLED or not Gameplay.CheckCooldown(cooldowns, player, "Remove", Config.MARKET_COOLDOWN) then
 		return
 	end
 	if typeof(listingId) ~= "string" then
 		return
 	end
 	local profile = saveService:GetProfile(player)
-	if not profile then
-		return
-	end
 	local listing = listings[listingId]
-	if not listing or listing.SellerUserId ~= player.UserId then
+	if not profile or not listing or listing.SellerUserId ~= player.UserId then
 		return
 	end
-	if listing.SoldAt then
-		return -- déjà claimé (cache périmé), le retrait écraserait SoldAt dans le store
+	if MarketTransaction.State(listing) ~= "Open" then
+		return
 	end
-
 	if not listing.WithdrawAt then
-		listing.WithdrawAt = os.time() + Config.MARKET_WITHDRAW_DELAY
-		PersistListing(listing)
-		BroadcastListings()
+		local pending =
+			AdvanceListing(listing.Id, "Open", "Open", { WithdrawAt = os.time() + Config.MARKET_WITHDRAW_DELAY })
+		if pending then
+			BroadcastListings()
+		end
 		return
 	end
 	if os.time() < listing.WithdrawAt then
 		return
 	end
-
-	listings[listing.Id] = nil
-	RemoveListing(listing.Id)
-	table.insert(profile.Data.Creatures, listing.Creature)
-	profile.Data.LastPlayed = os.time()
-	dataSync:Send(player)
-
-	log:Economy("Market", "Withdraw", {
-		Player = player.Name,
-		Listing = listing.Id,
-		Creature = listing.Creature.Id,
-	})
-	BroadcastListings()
-end
-
-local function OnMarketListings(player: Player)
-	if not Gameplay.CheckCooldown(cooldowns, player, "Query", Config.MARKET_QUERY_COOLDOWN) then
+	if not profile.Data.MarketLedger.Listings[listing.Id] then
 		return
 	end
-	Net.MarketSync:FireClient(player, { Listings = ListingsPayload() })
+	profile.Data.MarketLedger.Listings[listing.Id] = nil
+	table.insert(profile.Data.Creatures, listing.Creature)
+	profile.Data.LastPlayed = os.time()
+	if
+		not saveService:SaveProfile(player, function(data)
+			return data.MarketLedger and data.MarketLedger.Listings[listing.Id] == nil
+		end)
+	then
+		return
+	end
+	listings[listing.Id] = nil
+	RemoveListing(listing.Id)
+	dataSync:Send(player)
+	BroadcastListings()
 end
-
---[[ Lifecycle ]]
 
 function MarketService:Init(container)
 	log = container:Get("Log")
 	saveService = container:Get("SaveService")
 	essenceService = container:Get("EssenceService")
 	dataSync = container:Get("DataSync")
-	skillService = container:Get("SkillService")
-	analyticsService = container:Get("AnalyticsService")
 end
 
 function MarketService:Start()
-	-- Migration v1 -> par-listing : l'ancien snapshot unique devient des clés individuelles.
-	local legacy
-	pcall(function()
-		legacy = Store:GetAsync(ListingsKey)
-	end)
-	if type(legacy) == "table" then
-		for _, listing in legacy do
-			if type(listing.Id) == "string" and not listing.SoldAt then
-				PersistListing(listing)
-			end
-		end
-		pcall(function()
-			Store:RemoveAsync(ListingsKey)
-		end)
-	end
-
 	LoadListings()
-
-	-- sync live : les autres serveurs notifient chaque mutation
 	if not RunService:IsStudio() then
 		pcall(function()
 			MessagingService:SubscribeAsync(Config.MARKET_TOPIC, function(message)
@@ -476,52 +466,65 @@ function MarketService:Start()
 			end)
 		end)
 	end
-
-	-- ponytail: refresh périodique depuis le store (source de vérité) + balayage crash post-claim.
 	task.spawn(function()
 		while true do
 			task.wait(60)
-			-- ponytail: crash entre claim et règlement -> on règle le vendeur
-			-- (fenêtre minuscule, favorable acheteur ; à durcir seulement si exploité).
 			for _, listing in listings do
-				if listing.SoldAt and not listing.SettledAt and os.time() - listing.SoldAt > 120 then
-					listing.SettledAt = os.time()
-					PersistListing(listing)
-					CreditSeller(listing)
-					listings[listing.Id] = nil
-					RemoveListing(listing.Id)
+				local state = MarketTransaction.State(listing)
+				if state == "Claimed" and os.time() - (listing.ClaimedAt or os.time()) >= 120 then
+					local buyer = Players:GetPlayerByUserId(listing.BuyerUserId or listing.SoldBy)
+					local buyerProfile = if buyer then saveService:GetProfile(buyer) else nil
+					if buyerProfile then
+						if buyerProfile.Data.MarketLedger.Buys[listing.Id] == "BuyerApplied" then
+							local applied =
+								AdvanceListing(listing.Id, "Claimed", "BuyerApplied", { BuyerAppliedAt = os.time() })
+							if applied then
+								SettleBuyerApplied(applied)
+							end
+						elseif buyerProfile.Data.MarketLedger.Buys[listing.Id] == nil then
+							local rollbackSaved = saveService:SaveProfile(buyer, function(data)
+								return data.MarketLedger and data.MarketLedger.Buys[listing.Id] == nil
+							end)
+							if rollbackSaved then
+								ReopenClaim(listing.Id)
+							end
+						end
+					end
+				elseif state == "BuyerApplied" then
+					SettleBuyerApplied(listing)
 				end
 			end
 			LoadListings(true)
 			BroadcastListings()
 		end
 	end)
-
-	for _, player in Players:GetPlayers() do
-		LoadPending(player.UserId)
-	end
 	Players.PlayerAdded:Connect(function(player)
 		task.defer(function()
-			local userId = player.UserId
-			LoadPending(userId)
-			local amount = pendingCredits[userId] or 0
-			if amount > 0 then
-				pendingCredits[userId] = nil
-				PersistPending(userId)
-				essenceService:Add(player, amount, "MarketPending")
-				dataSync:Send(player)
-				log:Economy("Market", "PendingCredit", { Player = player.Name, Amount = amount })
+			local profile = saveService:GetProfile(player)
+			if profile then
+				for id in profile.Data.MarketLedger.Listings do
+					local opened = AdvanceListing(id, "Escrowed", "Open")
+					if opened then
+						listings[id] = opened
+					end
+				end
+				BroadcastListings()
 			end
 		end)
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		cooldowns[player] = nil
 	end)
-
 	Net.MarketList.OnServerEvent:Connect(OnMarketList)
 	Net.MarketBuy.OnServerEvent:Connect(OnMarketBuy)
 	Net.MarketRemove.OnServerEvent:Connect(OnMarketRemove)
-	Net.MarketListings.OnServerEvent:Connect(OnMarketListings)
+	Net.MarketListings.OnServerEvent:Connect(function(player)
+		if
+			Config.MARKET_ENABLED and Gameplay.CheckCooldown(cooldowns, player, "Query", Config.MARKET_QUERY_COOLDOWN)
+		then
+			Net.MarketSync:FireClient(player, { Listings = ListingsPayload() })
+		end
+	end)
 end
 
 return MarketService

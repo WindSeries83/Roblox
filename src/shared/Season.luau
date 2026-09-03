@@ -2,6 +2,18 @@ local Config = require(script.Parent.Config)
 
 local Season = {}
 
+function Season.ResetIfVersionChanged(season: any, version: number): boolean
+	if type(season) ~= "table" or type(version) ~= "number" or version < 1 or season.Version == version then
+		return false
+	end
+	season.Version = math.floor(version)
+	season.Level = 1
+	season.XP = 0
+	season.ClaimedFree = {}
+	season.ClaimedPremium = {}
+	return true
+end
+
 function Season.LevelFromXP(xp: number): number
 	return math.clamp(math.floor(xp / Config.SEASON_XP_PER_LEVEL) + 1, 1, Config.SEASON_MAX_LEVEL)
 end

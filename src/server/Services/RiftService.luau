@@ -6,6 +6,8 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 local DuelSim = require(ReplicatedStorage.Shared.DuelSim)
+local RiftDifficulty = require(ReplicatedStorage.Shared.RiftDifficulty)
+local Worlds = require(ReplicatedStorage.Shared.Worlds)
 local Net = require(ReplicatedStorage.Shared.Net)
 
 local RiftService = {}
@@ -18,6 +20,7 @@ local itemService
 local questService
 local skillService
 local analyticsService
+local dataSync
 
 local container
 
@@ -178,6 +181,7 @@ local function SyncPlayer(player: Player)
 	local combat = Combat[player]
 	if not combat then
 		Net.RiftSync:FireClient(player, { InRift = false })
+		Net.ExpeditionSync:FireClient(player, { InExpedition = false })
 		return
 	end
 	Net.RiftSync:FireClient(player, {
@@ -187,6 +191,20 @@ local function SyncPlayer(player: Player)
 		GuardianMaxHP = combat.GuardianMaxHP,
 		PlayerHP = math.max(0, math.floor(combat.PlayerHP)),
 		PlayerMaxHP = combat.PlayerMaxHP,
+		WorldId = combat.WorldId,
+		Stage = combat.Stage,
+		Stance = combat.Stance,
+	})
+	Net.ExpeditionSync:FireClient(player, {
+		InExpedition = true,
+		Phase = combat.Phase,
+		EnemyHP = math.max(0, math.floor(combat.GuardianHP)),
+		EnemyMaxHP = combat.GuardianMaxHP,
+		PlayerHP = math.max(0, math.floor(combat.PlayerHP)),
+		PlayerMaxHP = combat.PlayerMaxHP,
+		WorldId = combat.WorldId,
+		Stage = combat.Stage,
+		Stance = combat.Stance,
 	})
 end
 
@@ -237,10 +255,27 @@ local function WinRift(player: Player)
 	end
 
 	profile.Data.Stats.RiftsCompleted += 1
+	local advanced = Worlds.RecordVictory(profile.Data.WorldProgress, combat.WorldId, combat.Stage)
+	local world = Worlds.Get(combat.WorldId)
+	if advanced and world then
+		local checkpointReward = if combat.Stage == Worlds.BOSS_STAGE
+			then world.Boss.Reward
+			else world.Stages[combat.Stage].Reward
+		if checkpointReward.Essence then
+			essenceService:Add(player, checkpointReward.Essence, `WorldReward_{combat.WorldId}_{combat.Stage}`)
+		end
+	end
 	questService:OnRiftWon(player)
 	container:Get("SeasonService"):OnRiftWon(player)
+	dataSync:Send(player)
 
 	Net.RiftEnded:FireClient(player, { Win = true, Essence = essence, EggTier = eggTier, RelicTier = relicTier })
+	Net.ExpeditionEnded:FireClient(player, {
+		Win = true,
+		WorldId = combat.WorldId,
+		Stage = combat.Stage,
+		Essence = essence,
+	})
 	log:Economy("Rift", "Complete", {
 		Player = player.Name,
 		Essence = essence,
@@ -269,17 +304,32 @@ local function LoseRift(player: Player)
 		end
 	end
 	Net.RiftEnded:FireClient(player, { Win = false, RelicTier = defeatTier })
+	Net.ExpeditionEnded:FireClient(player, {
+		Win = false,
+		WorldId = combat.WorldId,
+		Stage = combat.Stage,
+	})
 	log:Economy("Rift", "Defeat", { Player = player.Name, Duration = os.time() - combat.StartedAt })
 	analyticsService:Event("rift_complete", { Win = false, Duration = os.time() - combat.StartedAt })
 	CleanupCombat(player)
 end
 
-local function JoinRift(player: Player, _character: Model?)
+local function JoinRift(player: Player, _character: Model?, requestedWorldId: string?)
 	local profile = saveService:GetProfile(player)
 	if not profile then
 		return
 	end
 	if Combat[player] then
+		return
+	end
+	local worldId = if type(requestedWorldId) == "string"
+		then requestedWorldId
+		else Worlds.All[math.min((profile.Data.Stars or 0) + 1, #Worlds.All)].Id
+	if not Worlds.CanEnter(profile.Data.WorldProgress, profile.Data.Stars or 0, worldId) then
+		return
+	end
+	local stage = Worlds.NextStage(profile.Data.WorldProgress, worldId)
+	if not stage then
 		return
 	end
 	-- Anti-réentrée (AUD-P1-06) : pas de nouveau combat pendant le cooldown.
@@ -289,19 +339,25 @@ local function JoinRift(player: Player, _character: Model?)
 	player:SetAttribute("InRiftCombat", true)
 
 	local power = TeamPower(player)
-	local maxHp = Config.RIFT_GUARDIAN_BASE_HP + power * Config.RIFT_GUARDIAN_HP_PER_POWER
+	local tutorial = profile.Data.Stats.RiftsCompleted == 0 and not profile.Data.TutorialDone
+	local difficulty = RiftDifficulty.For(power, tutorial)
+	local maxHp = difficulty.GuardianHP
 
 	Combat[player] = {
 		Phase = "Fight",
 		StartedAt = os.time(),
 		GuardianHP = maxHp,
 		GuardianMaxHP = maxHp,
+		GuardianDamage = difficulty.GuardianDamage,
 		PlayerHP = Config.RIFT_PLAYER_MAX_HP,
 		PlayerMaxHP = Config.RIFT_PLAYER_MAX_HP,
 		LastAttack = 0,
 		NextGuardianHit = os.clock() + 2,
 		GuardianPart = BuildGuardian(player),
 		CrystalPart = nil,
+		WorldId = worldId,
+		Stage = stage,
+		Stance = "Balanced",
 	}
 
 	log:Economy("Rift", "Enter", { Player = player.Name, Power = power, GuardianHP = maxHp })
@@ -332,42 +388,58 @@ function RiftService:Init(cont)
 	questService = cont:Get("QuestService")
 	skillService = cont:Get("SkillService")
 	analyticsService = cont:Get("AnalyticsService")
+	dataSync = cont:Get("DataSync")
 end
 
 function RiftService:GetStatePayload()
-	return { Active = worldActive, EndsAt = worldEndsAt, NextAt = nextAt }
+	return { Active = worldActive, EndsAt = worldEndsAt, NextAt = nextAt, Worlds = Worlds.All }
+end
+
+local function AttackCombat(player: Player)
+	local combat = Combat[player]
+	if not combat or combat.Phase ~= "Fight" then
+		return
+	end
+	if os.clock() - combat.LastAttack < Config.RIFT_ATTACK_COOLDOWN then
+		return
+	end
+	combat.LastAttack = os.clock()
+
+	local multiplier = if combat.Stance == "Power" then 1.25 else 1
+	local damage = math.floor(TeamPower(player) * Config.RIFT_PLAYER_DAMAGE_MULT * multiplier)
+	combat.GuardianHP -= damage
+	if combat.GuardianHP <= 0 then
+		combat.Phase = "Crystal"
+		if combat.GuardianPart then
+			combat.GuardianPart:Destroy()
+			combat.GuardianPart = nil
+		end
+		combat.CrystalPart = BuildCrystal(player)
+		log:Economy("Expedition", "StageDown", { Player = player.Name, World = combat.WorldId, Stage = combat.Stage })
+	end
+	SyncPlayer(player)
 end
 
 function RiftService:Start()
 	Net.RiftRequest.OnServerEvent:Connect(function(player: Player)
 		Net.RiftWorld:FireClient(player, RiftService:GetStatePayload())
 	end)
+	Net.ExpeditionRequest.OnServerEvent:Connect(function(player: Player, worldId: string?)
+		Net.RiftWorld:FireClient(player, RiftService:GetStatePayload())
+		if worldActive then
+			JoinRift(player, player.Character, worldId)
+		end
+	end)
+	Net.ExpeditionAction.OnServerEvent:Connect(function(player: Player, action: string, value: string?)
+		local combat = Combat[player]
+		if combat and action == "Stance" and table.find({ "Balanced", "Power", "Guard" }, value) then
+			combat.Stance = value
+			SyncPlayer(player)
+		end
+	end)
 
 	Net.RiftAttack.OnServerEvent:Connect(function(player: Player)
-		local combat = Combat[player]
-		if not combat or combat.Phase ~= "Fight" then
-			return
-		end
-		if os.clock() - combat.LastAttack < Config.RIFT_ATTACK_COOLDOWN then
-			return
-		end
-		combat.LastAttack = os.clock()
-
-		local power = TeamPower(player)
-		local damage = math.floor(power * Config.RIFT_PLAYER_DAMAGE_MULT)
-		combat.GuardianHP -= damage
-
-		if combat.GuardianHP <= 0 then
-			combat.Phase = "Crystal"
-			if combat.GuardianPart then
-				combat.GuardianPart:Destroy()
-				combat.GuardianPart = nil
-			end
-			local crystal = BuildCrystal(player)
-			combat.CrystalPart = crystal
-			log:Economy("Rift", "GuardianDown", { Player = player.Name })
-		end
-		SyncPlayer(player)
+		AttackCombat(player)
 	end)
 
 	Players.PlayerRemoving:Connect(function(player)
@@ -415,9 +487,13 @@ function RiftService:Start()
 			if now >= nextGuardianTick then
 				nextGuardianTick = now + 0.5
 				for player, combat in Combat do
+					if combat.Phase == "Fight" then
+						AttackCombat(player)
+					end
 					if combat.Phase == "Fight" and now >= combat.NextGuardianHit then
 						combat.NextGuardianHit = now + Config.RIFT_GUARDIAN_ATTACK_INTERVAL
-						combat.PlayerHP -= Config.RIFT_GUARDIAN_DAMAGE
+						local multiplier = if combat.Stance == "Guard" then 0.5 else 1
+						combat.PlayerHP -= combat.GuardianDamage * multiplier
 						if combat.PlayerHP <= 0 then
 							LoseRift(player)
 						else

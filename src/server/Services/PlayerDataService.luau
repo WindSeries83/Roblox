@@ -58,6 +58,7 @@ local essenceService
 local riftService
 local dataSync
 local skillService
+local analyticsService
 
 local function OnPlayerAdded(player: Player)
 	task.spawn(function()
@@ -109,14 +110,26 @@ local function OnPlayerAdded(player: Player)
 		profile.Data.LastPlayed = os.time()
 
 		local today = os.date("%Y-%m-%d")
-		local streak, dayIndex = Streak.Evaluate(today, profile.Data.LastLoginDate, profile.Data.LoginStreak or 0)
+		local previousLoginDate = profile.Data.LastLoginDate
+		local streak, dayIndex = Streak.Evaluate(today, previousLoginDate, profile.Data.LoginStreak or 0)
 		if dayIndex then
+			local consecutive = previousLoginDate ~= ""
+				and previousLoginDate ~= today
+				and Streak.ToDayNumber(today) - Streak.ToDayNumber(previousLoginDate) == 1
+			local broken = previousLoginDate ~= "" and previousLoginDate ~= today and not consecutive
 			profile.Data.LoginStreak = streak
 			profile.Data.LastLoginDate = today
 			local amount = Config.STREAK_REWARDS[dayIndex]
 			profile.Data.Essence += amount
 			profile.Data.Stats.TotalEssenceEarned += amount
 			log:Economy("Essence", "Streak", { Player = player.Name, Day = streak, Amount = amount })
+			analyticsService:Event("login_streak_awarded", {
+				Day = streak,
+				RewardIndex = dayIndex,
+				Amount = amount,
+				Consecutive = consecutive,
+				Broken = broken,
+			})
 			-- delai : laisse l'UI client finir de monter avant d'afficher le toast
 			task.delay(5, function()
 				if not player:IsDescendantOf(game) then
@@ -135,7 +148,7 @@ local function OnPlayerAdded(player: Player)
 			if not player:IsDescendantOf(game) then
 				return
 			end
-			if profile.Data.Entitlements.VIP then
+			if Vip.IsActive(profile.Data.VipExpiresAt, os.time()) then
 				if Vip.GiftDue(profile.Data.VipGiftDate or "", today) then
 					essenceService:Add(player, Config.VIP_DAILY_GIFT, "VipDailyGift")
 					profile.Data.VipGiftDate = today
@@ -154,20 +167,32 @@ local function OnPlayerAdded(player: Player)
 		if returnDay then
 			if Offers.ReturnGiftDue(profile.Data, returnDay) then
 				local amount = Config.RETURN_GIFTS[returnDay]
-				essenceService:Add(player, amount, `ReturnGift_{returnDay}`)
-				profile.Data.Offers.ReturnGifts[returnDay] = true
-				task.delay(5, function()
-					if not player:IsDescendantOf(game) then
-						return
-					end
-					Net.QuestsSync:FireClient(player, {
-						Quests = profile.Data.Quests,
-						Notice = { Type = "ReturnGift", Name = returnDay, Amount = amount },
+				analyticsService:Event("return_gift_proposed", { OfferId = `Return{returnDay}`, Day = returnDay })
+				local granted = essenceService:Add(player, amount, `ReturnGift_{returnDay}`)
+				if granted > 0 then
+					profile.Data.Offers.ReturnGifts[returnDay] = true
+					analyticsService:Event("return_gift_granted", {
+						OfferId = `Return{returnDay}`,
+						Day = returnDay,
+						Amount = granted,
 					})
-				end)
+					task.delay(5, function()
+						if not player:IsDescendantOf(game) then
+							return
+						end
+						Net.QuestsSync:FireClient(player, {
+							Quests = profile.Data.Quests,
+							Notice = { Type = "ReturnGift", Name = returnDay, Amount = granted },
+						})
+					end)
+				end
 			end
 			-- Déclencheur offre 1er achat : retour après ≥ 1 jour d'absence.
 			profile.Data.Offers.FirstPurchaseEligible = true
+		end
+
+		if not profile.Data.TutorialDone then
+			analyticsService:Event("tutorial_entered", { FirstSession = isNewPlayer })
 		end
 
 		dataSync:Send(player)
@@ -189,6 +214,7 @@ function PlayerDataService:Init(container)
 	riftService = container:Get("RiftService")
 	dataSync = container:Get("DataSync")
 	skillService = container:Get("SkillService")
+	analyticsService = container:Get("AnalyticsService")
 end
 
 function PlayerDataService:Start()

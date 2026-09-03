@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain (rokit)
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | sh
+          echo "$HOME/.rokit/bin" >> "$GITHUB_PATH"
+
+      - name: Pin tools from rokit.toml
+        run: rokit install
+
+      - name: Format check (StyLua)
+        run: stylua --check src/ tests/
+
+      - name: Lint (selene)
+        run: selene src/ tests/
+
+      - name: Unit tests (headless, pure logic)
+        run: lune run tests/run_tests.luau
+
+      - name: Install packages (Wally)
+        run: wally install
+
+      - name: Build place (smoke)
+        run: rojo build -o rift-beasts.rbxlx

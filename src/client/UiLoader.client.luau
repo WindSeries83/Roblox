@@ -1,10 +1,6 @@
 local Players = game:GetService("Players")
-local StarterPlayerScripts = game:GetService("StarterPlayer").StarterPlayerScripts
 
 local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
-if not playerGui:FindFirstChild("RiftBeastsUi") then
-	require(StarterPlayerScripts:WaitForChild("Tutorial"))
-	require(StarterPlayerScripts:WaitForChild("Ui"))
-end
+local playerScripts = player:WaitForChild("PlayerScripts")
+require(playerScripts:WaitForChild("Tutorial"))
+require(playerScripts:WaitForChild("Ui"))

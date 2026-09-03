@@ -28,6 +28,10 @@ function Evolution.EquippedMaxLevelBonus(equipment: { any }): number
 	return bonus
 end
 
+function Evolution.SlotsForStage(stage: number): number
+	return math.max(1, math.floor(stage or 1))
+end
+
 function Evolution.MaxLevelFor(creature: any): number
 	local stage = Evolution.StageDef(creature.Stage)
 	if not stage then

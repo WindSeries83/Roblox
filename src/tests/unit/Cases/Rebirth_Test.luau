@@ -12,14 +12,28 @@ return function(t)
 	-- Rebirth requires enough total essence earned.
 	t.test("rebirth requires enough total essence earned", function()
 		local threshold = Rebirth.NextThreshold(0)
-		expect.falsy(Rebirth.CanRebirth(threshold - 1, 0))
-		expect.truthy(Rebirth.CanRebirth(threshold, 0))
+		expect.falsy(Rebirth.CanRebirth(threshold - 1, 0, true))
+		expect.truthy(Rebirth.CanRebirth(threshold, 0, true))
+	end)
+
+	-- Le boss du monde courant est une porte de Renaissance indépendante de l'économie.
+	t.test("rebirth requires the current world boss", function()
+		local threshold = Rebirth.NextThreshold(0)
+		expect.falsy(Rebirth.CanRebirth(threshold, 0, false))
+		expect.truthy(Rebirth.CanRebirth(threshold, 0, true))
+	end)
+
+	t.test("rebirth reason rounds missing essence up", function()
+		local threshold = Rebirth.NextThreshold(0)
+		local ok, reason = Rebirth.CanRebirth(threshold - 0.25, 0, true)
+		expect.falsy(ok)
+		expect.equal(reason, `il manque 1 d'Essence gagnée`)
 	end)
 
 	-- No rebirth beyond the last threshold.
 	t.test("no rebirth beyond the last threshold", function()
 		local stars = #Config.REBIRTH_THRESHOLDS
-		expect.falsy(Rebirth.CanRebirth(1e18, stars))
+		expect.falsy(Rebirth.CanRebirth(1e18, stars, true))
 	end)
 
 	-- Stars multiply essence.
@@ -35,6 +49,7 @@ return function(t)
 			Items = { { Type = "Relic", Tier = 1 }, { Type = "Relic", Tier = 3 }, { Type = "Collar", Tier = 2 } },
 			CompanionId = "b",
 			Eggs = { { Id = "e" } },
+			Incubators = { { EggId = "e", ReadyAt = 100 } },
 			SanctuaryLevel = 4,
 			Stars = 1,
 			Rebirths = 0,
@@ -46,6 +61,7 @@ return function(t)
 		expect.equal(#data.Items, 3)
 		expect.equal(data.CompanionId, "b")
 		expect.equal(#data.Eggs, 0)
+		expect.equal(#data.Incubators, 0)
 		expect.equal(data.SanctuaryLevel, 1)
 		expect.equal(data.Stars, 2)
 		expect.equal(data.Rebirths, 1)

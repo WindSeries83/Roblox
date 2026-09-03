@@ -3,7 +3,7 @@ return function(t)
 	local SaveService = require(game.ServerScriptService.Services.SaveService)
 
 	-- A v1 profile gains every new field through migration.
-	t.test("migration v1 to v8 completes creature fields", function()
+	t.test("migration v1 to v11 completes creature fields", function()
 		local data = {
 			Essence = 100,
 			Creatures = {
@@ -16,7 +16,7 @@ return function(t)
 			Version = 1,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 16)
 		expect.equal(data.CompanionId, nil)
 		expect.truthy(data.Index ~= nil)
 		expect.truthy(data.Items ~= nil)
@@ -41,15 +41,23 @@ return function(t)
 		expect.equal(data.LastLoginDate, "")
 		expect.equal(data.Stats.HatchesSinceRare, 0)
 		expect.equal(data.Season.Level, 1)
+		expect.equal(data.Season.Version, 1)
 		expect.equal(data.Season.XP, 0)
 		expect.truthy(data.Season.ClaimedFree ~= nil)
 		expect.truthy(data.Season.ClaimedPremium ~= nil)
 		expect.truthy(data.Titles ~= nil)
 		expect.truthy(data.MarketHistory ~= nil)
+		expect.truthy(data.EconomyLedger ~= nil)
+		expect.truthy(data.MarketLedger ~= nil)
+		expect.truthy(data.DuelDefense ~= nil)
+		expect.truthy(data.DuelLedger ~= nil)
+		expect.equal(data.DuelSeason.Rating, 1000)
+		expect.equal(data.VipExpiresAt, 0)
+		expect.truthy(data.Incubators ~= nil)
 	end)
 
 	-- A v2 profile gains quest fields and keeps its data.
-	t.test("migration v2 to v8 keeps data", function()
+	t.test("migration v2 to v11 keeps data", function()
 		local data = {
 			Essence = 50,
 			Creatures = {},
@@ -62,7 +70,7 @@ return function(t)
 			Version = 2,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 16)
 		expect.equal(data.Stars, 3)
 		expect.equal(data.Rebirths, 2)
 		expect.equal(#data.Items, 1)
@@ -74,7 +82,7 @@ return function(t)
 	end)
 
 	-- A v3 profile gains social/monetization fields and keeps its data.
-	t.test("migration v3 to v8 keeps data", function()
+	t.test("migration v3 to v11 keeps data", function()
 		local data = {
 			Essence = 50,
 			Creatures = {},
@@ -89,7 +97,7 @@ return function(t)
 			Version = 3,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 16)
 		expect.equal(data.Stats.TotalBred, 1)
 		expect.equal(data.Quests.Day, "2026-01-01")
 		expect.truthy(data.Quests.Achievements.FirstHatch)
@@ -106,7 +114,7 @@ return function(t)
 	end)
 
 	-- A v4 profile gains the streak/pity fields and keeps its data.
-	t.test("migration v4 to v8 keeps data", function()
+	t.test("migration v4 to v11 keeps data", function()
 		local data = {
 			Essence = 50,
 			Creatures = {},
@@ -132,7 +140,7 @@ return function(t)
 			Version = 4,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 16)
 		expect.equal(data.LoginStreak, 0)
 		expect.equal(data.LastLoginDate, "")
 		expect.equal(data.Stats.HatchesSinceRare, 0)
@@ -143,10 +151,10 @@ return function(t)
 	end)
 
 	-- A v5 profile gains the lot2 fields through migration.
-	t.test("migration v5 to v8 adds lot2 fields", function()
+	t.test("migration v5 to v11 adds lot2 fields", function()
 		local data = { Version = 5 }
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 16)
 		expect.equal(data.SkillPoints, 0)
 		expect.truthy(data.SkillRanks ~= nil)
 		expect.equal(data.Offers.FirstPurchaseEligible, false)
@@ -157,7 +165,7 @@ return function(t)
 	end)
 
 	-- A v5 profile keeps its funnels, ranks and companion through migration.
-	t.test("migration preserves existing funnels ranks and companion", function()
+	t.test("migration v6 to v11 preserves funnels ranks and companion", function()
 		local data = {
 			Version = 5,
 			Stats = { TotalHatched = 12 },
@@ -166,7 +174,7 @@ return function(t)
 			CompanionId = "comp_9",
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 16)
 		expect.equal(data.Stats.TotalHatched, 12)
 		expect.equal(data.SkillRanks.FarmRate1, 2)
 		expect.equal(data.Offers.FirstPurchaseClaimed, true)
@@ -174,21 +182,117 @@ return function(t)
 		expect.equal(data.CompanionId, "comp_9")
 	end)
 
-	-- Un profil v7 gagne la table PurchaseReceipts (garde-fou anti double-grant).
-	t.test("migration v7 to v8 adds purchase receipts", function()
+	-- Un profil v7 gagne les tables transactionnelles (garde-fou anti double-grant).
+	t.test("migration v7 to v11 adds transaction ledgers", function()
 		local data = { Version = 7, CompanionId = "comp_1" }
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 16)
 		expect.truthy(data.PurchaseReceipts ~= nil)
+		expect.truthy(data.PurchaseReceiptOrder ~= nil)
+		expect.truthy(data.MarketLedger ~= nil)
 		expect.equal(next(data.PurchaseReceipts), nil)
 		expect.equal(data.CompanionId, "comp_1")
 	end)
 
-	-- Un profil déjà en v8 garde ses receipts existants.
-	t.test("migration preserves existing purchase receipts", function()
-		local data = { Version = 8, PurchaseReceipts = { ["42_abc"] = true } }
+	-- Un profil déjà en v9 garde ses receipts existants.
+	t.test("migration v9 to v11 adds incubators and preserves receipts", function()
+		local data = { Version = 9, PurchaseReceipts = { ["42_abc"] = true } }
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 16)
 		expect.equal(data.PurchaseReceipts["42_abc"], true)
+		expect.truthy(data.Incubators ~= nil)
+	end)
+
+	t.test("migration v10 adds an empty incubator list", function()
+		local data = { Version = 10 }
+		SaveService.Migrate(data)
+		expect.equal(data.Version, 16)
+		expect.truthy(data.Incubators ~= nil)
+		expect.equal(#data.Incubators, 0)
+	end)
+
+	t.test("migration v10 ignores invalid and keeps valid incubators", function()
+		local valid = {
+			IncubatorId = "incubator_1",
+			EggId = "egg_1",
+			StartedAt = 100,
+			ReadyAt = 160,
+			QueueIndex = 1,
+			ReservedHatch = {
+				Species = "Riftling",
+				Rarity = "Common",
+				Mutation = nil,
+				Power = 12,
+			},
+		}
+		local data = {
+			Version = 10,
+			Incubators = {
+				{ EggId = "legacy", ReadyAt = 123 },
+				valid,
+				{ IncubatorId = "broken", EggId = "egg_2", StartedAt = 200, ReadyAt = 100 },
+			},
+		}
+		SaveService.Migrate(data)
+		expect.equal(data.Version, 16)
+		expect.equal(#data.Incubators, 1)
+		expect.equal(data.Incubators[1].IncubatorId, "incubator_1")
+	end)
+
+	t.test("migration v13 purge un incubateur invalide avant reconnexion", function()
+		local data = {
+			Version = 13,
+			Incubators = {
+				{ IncubatorId = "broken", EggId = "egg", StartedAt = 200, ReadyAt = 100 },
+			},
+		}
+		SaveService.Migrate(data)
+		expect.equal(#data.Incubators, 0)
+	end)
+
+	-- La v12 ajoute et normalise la progression des mondes et les affectations AFK.
+	t.test("migration v11 adds valid world and sanctuary progress", function()
+		local data = {
+			Version = 11,
+			WorldProgress = {
+				TwilightGrove = { HighestStage = 3.8, BossDefeated = true },
+				Unknown = { HighestStage = 99, BossDefeated = true },
+			},
+			SanctuaryAssignments = {
+				Sanctuary1 = { CreatureIds = { "a", 4, "b" }, LastCollectedAt = -5 },
+			},
+		}
+		SaveService.Migrate(data)
+		expect.equal(data.Version, 16)
+		expect.equal(data.WorldProgress.TwilightGrove.HighestStage, 3)
+		expect.truthy(data.WorldProgress.TwilightGrove.BossDefeated)
+		expect.equal(data.WorldProgress.Unknown, nil)
+		expect.equal(#data.SanctuaryAssignments.Sanctuary1.CreatureIds, 2)
+		expect.equal(data.SanctuaryAssignments.Sanctuary1.LastCollectedAt, 0)
+	end)
+
+	t.test("migration v13 keeps a valid Rush checkpoint and purges an invalid one", function()
+		local data = {
+			Version = 13,
+			Rush = {
+				Active = {
+					WorldId = "AshForge",
+					AttemptId = "attempt-legacy",
+					StartedAt = 100,
+					EndsAt = 340,
+					Completed = true,
+					Claimed = false,
+				},
+			},
+		}
+		SaveService.Migrate(data)
+		expect.equal(data.Version, 16)
+		expect.equal(data.Rush.Active.WorldId, "AshForge")
+		expect.equal(data.Rush.Active.AttemptId, "attempt-legacy")
+		expect.truthy(data.Rush.Active.Completed)
+
+		local invalid = { Version = 14, Rush = { Active = { WorldId = "Unknown", StartedAt = 1, EndsAt = 2 } } }
+		SaveService.Migrate(invalid)
+		expect.equal(invalid.Rush.Active, nil)
 	end)
 end

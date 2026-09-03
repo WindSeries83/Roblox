@@ -12,14 +12,20 @@ return {
 		LegendaryEgg = 8000,
 	},
 
-	HATCH_COOLDOWN = 5,
-
 	EGG_RARITY_WEIGHTS = {
 		CommonEgg = { Common = 75, Uncommon = 20, Rare = 5 },
 		UncommonEgg = { Uncommon = 80, Rare = 20 },
 		RareEgg = { Rare = 100 },
 		EpicEgg = { Epic = 80, Legendary = 20 },
 		LegendaryEgg = { Legendary = 100 },
+	},
+
+	-- Rotation serveur deterministe. Les tiers reutilisent le prix et les taux des oeufs existants.
+	ROTATING_EGG_ROTATION_SECONDS = 7 * 24 * 3600,
+	ROTATING_EGGS = {
+		{ Id = "MoonlitEgg", Name = "Oeuf lunaire", Tier = "RareEgg" },
+		{ Id = "EmberEgg", Name = "Oeuf embrase", Tier = "EpicEgg" },
+		{ Id = "TideEgg", Name = "Oeuf des marees", Tier = "UncommonEgg" },
 	},
 
 	FIRST_HATCH_WEIGHTS = { Common = 40, Uncommon = 40, Rare = 20 },
@@ -39,7 +45,7 @@ return {
 	OFFLINE_RATE = 0.5,
 	OFFLINE_CAP_SECONDS = 12 * 3600,
 
-	RIFT_INTERVAL = 600,
+	RIFT_INTERVAL = 5 * 60,
 	FIRST_RIFT_DELAY = 90,
 	RIFT_ACTIVE_SECONDS = 180,
 	RIFT_ESSENCE_MULT = 8,
@@ -55,6 +61,9 @@ return {
 	RIFT_PLAYER_DAMAGE_MULT = 0.8,
 	RIFT_GUARDIAN_ATTACK_INTERVAL = 2.5,
 	RIFT_GUARDIAN_DAMAGE = 12,
+	RIFT_TUTORIAL_GUARDIAN_BASE_HP = 30,
+	RIFT_TUTORIAL_GUARDIAN_HP_PER_POWER = 3,
+	RIFT_TUTORIAL_GUARDIAN_DAMAGE = 8,
 
 	RIFT_RELIC_WEIGHTS = { None = 88, T1 = 8, T2 = 3, T3 = 1 },
 	-- Défaite non punitive (bible 26/08) : roll de relique à 25 % du taux victoire.
@@ -129,14 +138,20 @@ return {
 	MARKET_LIST_LIMIT = 50,
 	MARKET_COOLDOWN = 2,
 	MARKET_QUERY_COOLDOWN = 5,
+	MARKET_ENABLED = false,
+	PURCHASES_ENABLED = false,
+	PURCHASE_RECEIPT_MAX = 100,
 
 	DUEL_MIN_WAGER = 50,
 	DUEL_MAX_WAGER = 10000,
 	DUEL_COOLDOWN = 10,
 	DUEL_TIMEOUT = 60,
 	DUEL_MAX_TEAM = 5,
+	DUEL_ACTIVE_SCAN_LIMIT = 256,
+	DUEL_SEASON_VERSION = 1,
 
 	SEASON_MAX_LEVEL = 20,
+	SEASON_VERSION = 1,
 	SEASON_XP_PER_LEVEL = 100,
 	SEASON_XP = {
 		Hatch = 10,
@@ -332,6 +347,7 @@ return {
 		VIP = { Id = 0, Name = "VIP — chance permanente, tag doré, cadeau quotidien" },
 	},
 	DEV_PRODUCTS = {
+		Vip30Days = { Id = 0, Name = "VIP 30 jours", Kind = "Vip", Duration = 30 * 24 * 3600 },
 		EssencePackSmall = { Id = 0, Name = "500 Essence", Amount = 500 },
 		EssencePackMedium = { Id = 0, Name = "2500 Essence", Amount = 2500 },
 		EssencePackLarge = { Id = 0, Name = "10000 Essence", Amount = 10000 },
@@ -355,6 +371,8 @@ return {
 	PITY_THRESHOLD = 20,
 
 	DAILY_QUESTS_COUNT = 3,
+	-- Dedupe des événements quotidiens persistant dans Quests et remis à zéro chaque jour.
+	DAILY_EVENT_DEDUPE_LIMIT = 64,
 
 	DAILY_QUESTS = {
 		HatchDaily = {

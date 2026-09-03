@@ -11,7 +11,9 @@ local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Luck = require(ReplicatedStorage.Shared.Luck)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
+local Vip = require(ReplicatedStorage.Shared.Vip)
 local Net = require(ReplicatedStorage.Shared.Net)
+local RotatingEgg = require(ReplicatedStorage.Shared.RotatingEgg)
 
 local HatchService = {}
 
@@ -33,9 +35,13 @@ local secretGate
 
 local container
 
-local hatchCooldowns: { [Player]: { [string]: number } } = {}
-
-function HatchService:GrantEgg(player: Player, tier: string, source: string, ascendChance: number?)
+function HatchService:GrantEgg(
+	player: Player,
+	tier: string,
+	source: string,
+	ascendChance: number?,
+	rotatingEggId: string?
+)
 	local profile = saveService:GetProfile(player)
 	if not profile then
 		return
@@ -46,6 +52,7 @@ function HatchService:GrantEgg(player: Player, tier: string, source: string, asc
 		Timestamp = os.time(),
 		Source = source,
 		AscendChance = ascendChance,
+		RotatingEggId = rotatingEggId,
 	}
 	table.insert(profile.Data.Eggs, egg)
 	profile.Data.LastPlayed = os.time()
@@ -118,48 +125,18 @@ function HatchService:Init(cont)
 	secretGate = cont:Get("SecretGate")
 end
 
-function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: boolean?): boolean
+function HatchService:Reserve(player: Player, egg): ({ [string]: any }?, string?)
 	local profile = saveService:GetProfile(player)
 	if not profile then
-		return false
+		return nil, "Sauvegarde indisponible"
 	end
-
-	local eggIndex = nil
-	for i, egg in profile.Data.Eggs do
-		if egg.Id == eggId then
-			eggIndex = i
-			break
-		end
-	end
-	if not eggIndex then
-		return false
-	end
-
-	if not profile.Data.Entitlements.AutoHatch then
-		if not Gameplay.CheckCooldown(hatchCooldowns, player, "Hatch", Config.HATCH_COOLDOWN) then
-			return false
-		end
-	end
-
-	local bonusSlots = if profile.Data.Entitlements.MoreSlots then Config.GAMEPASSES.MoreSlots.BonusSlots else 0
-	local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel, bonusSlots)
-	if #profile.Data.Creatures >= maxCreatures then
-		log:Economy("Hatch", "CapReached", {
-			Player = player.Name,
-			Creatures = #profile.Data.Creatures,
-			MaxCreatures = maxCreatures,
-		})
-		return false
-	end
-
-	local egg = table.remove(profile.Data.Eggs, eggIndex)
 	local eff = skillService:EffectsOf(profile)
 	local luck = Luck.Combine(
 		sessionLuck.For(player),
 		luckService:PotionBonus(player),
 		boostService:CurrentBonus(),
 		eff.HatchLuck,
-		if profile.Data.Entitlements.VIP then Config.VIP_LUCK_BONUS else 0
+		if Vip.IsActive(profile.Data.VipExpiresAt, os.time()) then Config.VIP_LUCK_BONUS else 0
 	)
 	local rarityWeights = nil
 	if profile.Data.Stats.TotalHatched == 0 and egg.Tier == "CommonEgg" then
@@ -192,6 +169,7 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 	if hatchesSinceRare >= Config.PITY_THRESHOLD - 1 and Gameplay.RarityRank(roll.Rarity) < rareRank then
 		roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile) + luck, { Rare = 100 })
 		log:Economy("Hatch", "PityTriggered", { Player = player.Name, SinceRare = hatchesSinceRare })
+		analyticsService:Event("pity_triggered", { SinceRare = hatchesSinceRare, Threshold = Config.PITY_THRESHOLD })
 	end
 	if Gameplay.RarityRank(roll.Rarity) >= rareRank then
 		profile.Data.Stats.HatchesSinceRare = 0
@@ -199,25 +177,67 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 		profile.Data.Stats.HatchesSinceRare = hatchesSinceRare + 1
 	end
 	local creature = Gameplay.CreateCreature(roll.Rarity, roll.SpeciesId, roll.Mutation)
+	return {
+		Species = roll.SpeciesId,
+		Rarity = roll.Rarity,
+		Mutation = if roll.Mutation == false then nil else roll.Mutation,
+		Power = creature.Power,
+	},
+		nil
+end
 
-	table.insert(profile.Data.Creatures, creature)
-	profile.Data.Stats.TotalHatched += 1
-	profile.Data.LastPlayed = os.time()
-	indexService:Register(player, roll.SpeciesId, roll.Rarity, roll.Mutation)
+function HatchService:ClaimReserved(player: Player, record, worldHatch: boolean?): (boolean, string?)
+	local profile = saveService:GetProfile(player)
+	if not profile then
+		return false, "Sauvegarde indisponible"
+	end
+	local reserved = record.ReservedHatch
+	if not Species[reserved.Species] or not Rarities[reserved.Rarity] then
+		return false, "Résultat d'incubation invalide"
+	end
+	local bonusSlots = if profile.Data.Entitlements.MoreSlots then Config.GAMEPASSES.MoreSlots.BonusSlots else 0
+	local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel, bonusSlots)
+	if #profile.Data.Creatures >= maxCreatures then
+		log:Economy("Hatch", "CapReached", {
+			Player = player.Name,
+			Creatures = #profile.Data.Creatures,
+			MaxCreatures = maxCreatures,
+		})
+		return false, "Sanctuaire plein"
+	end
+	local mutation = reserved.Mutation or false
+	local creature = Gameplay.CreateCreature(reserved.Rarity, reserved.Species, mutation)
+	creature.Power = reserved.Power
+	local previousTotalHatched = profile.Data.Stats.TotalHatched
+	local previousLastPlayed = profile.Data.LastPlayed
+	local creatureIndex = #profile.Data.Creatures + 1
+	local materialized, materializeError = pcall(function()
+		table.insert(profile.Data.Creatures, creature)
+		profile.Data.Stats.TotalHatched += 1
+		profile.Data.LastPlayed = os.time()
+		indexService:Register(player, reserved.Species, reserved.Rarity, mutation)
+	end)
+	if not materialized then
+		table.remove(profile.Data.Creatures, creatureIndex)
+		profile.Data.Stats.TotalHatched = previousTotalHatched
+		profile.Data.LastPlayed = previousLastPlayed
+		return false, tostring(materializeError)
+	end
 
-	local species = Species[roll.SpeciesId]
-	local mutationName = roll.Mutation ~= false and Mutations[roll.Mutation].Name or nil
-	local announced = Gameplay.RarityRank(roll.Rarity) >= Gameplay.RarityRank(Config.ANNOUNCE_MIN_RARITY)
-	questService:OnHatch(player, roll.Mutation ~= false)
+	local species = Species[reserved.Species]
+	local mutationName = reserved.Mutation and Mutations[reserved.Mutation].Name or nil
+	local announced = Gameplay.RarityRank(reserved.Rarity) >= Gameplay.RarityRank(Config.ANNOUNCE_MIN_RARITY)
+	questService:OnHatch(player, reserved.Mutation ~= nil, `{record.EggId}:{record.IncubatorId}`)
 	container:Get("SeasonService"):OnHatch(player)
 
 	Net.HatchResult:FireClient(player, {
-		EggId = eggId,
+		EggId = record.EggId,
+		IncubatorId = record.IncubatorId,
 		Creature = creature,
 		SpeciesName = species.Name,
-		Rarity = roll.Rarity,
-		RarityName = Rarities[roll.Rarity].Name,
-		RarityColor = Rarities[roll.Rarity].Color,
+		Rarity = reserved.Rarity,
+		RarityName = Rarities[reserved.Rarity].Name,
+		RarityColor = Rarities[reserved.Rarity].Color,
 		MutationName = mutationName,
 		Announced = announced,
 		WorldHatch = worldHatch or nil,
@@ -227,16 +247,26 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 
 	log:Economy("Hatch", "Success", {
 		Player = player.Name,
-		Tier = egg.Tier,
-		Species = roll.SpeciesId,
-		Rarity = roll.Rarity,
-		Mutation = tostring(roll.Mutation),
+		Tier = record.EggTier or "Incubation",
+		Species = reserved.Species,
+		Rarity = reserved.Rarity,
+		Mutation = tostring(reserved.Mutation),
 		CreatureId = creature.Id,
 		WorldHatch = worldHatch or nil,
 	})
-	local rank = Gameplay.RarityRank(roll.Rarity)
-	analyticsService:Event("hatch", { Rarity = roll.Rarity, Mutation = tostring(roll.Mutation), Source = egg.Tier })
+	local rank = Gameplay.RarityRank(reserved.Rarity)
+	local hatchProperties = {
+		Rarity = reserved.Rarity,
+		Mutation = tostring(reserved.Mutation),
+		Source = record.EggTier or "Incubation",
+		RotatingEggId = record.RotatingEggId,
+	}
+	analyticsService:Event("hatch", hatchProperties)
+	if record.RotatingEggId then
+		analyticsService:Event("rotating_egg_hatch", { Id = record.RotatingEggId, Tier = record.EggTier })
+	end
 	analyticsService:Funnel(profile, "FirstHatchAt")
+	local rareRank = Gameplay.RarityRank("Rare")
 	if rank >= rareRank then
 		analyticsService:Funnel(profile, "FirstRarePlusAt")
 	end
@@ -245,7 +275,11 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 		profile.Data.Offers.FirstPurchaseEligible = true
 	end
 
-	Announce(player, roll)
+	Announce(player, {
+		SpeciesId = reserved.Species,
+		Rarity = reserved.Rarity,
+		Mutation = mutation,
+	})
 	return true
 end
 
@@ -254,28 +288,57 @@ function HatchService:Start()
 	eclipseService = container:Get("EclipseService")
 	dataSync = container:Get("DataSync")
 	Net.BuyEgg.OnServerEvent:Connect(function(player: Player, tier: string)
-		local price = Config.EGG_PRICES[tier]
+		if type(tier) ~= "string" then
+			return
+		end
+		local purchaseTier = tier
+		local rotatingEggId: string?
+		if tier == "RotatingEgg" then
+			local active = RotatingEgg.GetActive(os.time())
+			if not active then
+				return
+			end
+			purchaseTier = active.Tier
+			rotatingEggId = active.Id
+		end
+		local price = Config.EGG_PRICES[purchaseTier]
 		if not price then
 			return
 		end
 		local profile = saveService:GetProfile(player)
-		local required = Sanctuary.EggLocked(tier, if profile then profile.Data.SanctuaryLevel else 1)
+		if profile and profile.Data.Entitlements.AutoHatch and #profile.Data.Incubators > 0 then
+			Net.ActionResult:FireClient(player, { Action = "BuyEgg", Success = false, Reason = "Couveuse occupee" })
+			return
+		end
+		local required = Sanctuary.EggLocked(purchaseTier, if profile then profile.Data.SanctuaryLevel else 1)
 		if required then
-			log:Economy("Eggs", "EggLocked", { Player = player.Name, Tier = tier, RequiredRank = required })
+			log:Economy("Eggs", "EggLocked", { Player = player.Name, Tier = purchaseTier, RequiredRank = required })
 			return
 		end
 		local eff = if profile then skillService:EffectsOf(profile) else {}
 		price = math.max(1, math.floor(price * (1 - (eff.EggPriceReduction or 0))))
-		if not essenceService:Spend(player, price, `BuyEgg_{tier}`) then
+		if not essenceService:Spend(player, price, `BuyEgg_{purchaseTier}`) then
 			return
 		end
-		self:GrantEgg(player, tier, "Purchase")
+		self:GrantEgg(player, purchaseTier, if rotatingEggId then "Rotating" else "Purchase", nil, rotatingEggId)
+		if rotatingEggId then
+			analyticsService:Event("rotating_egg_purchase", { Id = rotatingEggId, Tier = purchaseTier, Price = price })
+		end
 		if profile and profile.Data.Entitlements.AutoHatch then
 			-- Éclosion auto : dernier œuf fraîchement accordé (Source="Purchase").
 			for i = #profile.Data.Eggs, 1, -1 do
 				local fresh = profile.Data.Eggs[i]
-				if fresh.Source == "Purchase" then
-					incubationService:AutoPlaceAndHatch(player, fresh.Id, tier)
+				if fresh.Source == "Purchase" or fresh.Source == "Rotating" then
+					local ok = incubationService:AutoPlaceAndHatch(player, fresh.Id, tier)
+					if not ok then
+						for j = #profile.Data.Eggs, 1, -1 do
+							if profile.Data.Eggs[j].Id == fresh.Id then
+								table.remove(profile.Data.Eggs, j)
+								profile.Data.Essence += price
+								break
+							end
+						end
+					end
 					break
 				end
 			end

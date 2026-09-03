@@ -4,23 +4,67 @@ return function(t)
 	local Rarities = require(game.ReplicatedStorage.Shared.Data.Rarities)
 	local Mutations = require(game.ReplicatedStorage.Shared.Data.Mutations)
 	local Config = require(game.ReplicatedStorage.Shared.Config)
+	local Worlds = require(game.ReplicatedStorage.Shared.Worlds)
+	local validFamilies = { Feral = true, Wild = true, Mystic = true }
+	local validRoles = { Digger = true, Gatherer = true, Guardian = true }
 
-	-- The roster count after Lot 1 species wave.
-	t.test("species list has exactly the Lot1 count", function()
+	t.test("species catalogue has exactly 30 entries", function()
 		local count = 0
 		for _ in Species do
 			count += 1
 		end
-		expect.equal(count, 14)
+		expect.equal(count, 30)
 	end)
 
-	-- Every species references a known rarity with positive stats.
-	t.test("every species references a known rarity with positive stats", function()
-		for _, def in Species do
+	t.test("every species has valid identity, stats, family, role and world", function()
+		local concepts = {}
+		local worlds = {}
+		for speciesId, def in Species do
+			expect.truthy(type(speciesId) == "string" and speciesId ~= "")
 			expect.truthy(Rarities[def.Rarity] ~= nil)
 			expect.truthy(def.BaseRate > 0)
 			expect.truthy(def.BasePower > 0)
 			expect.truthy(type(def.Name) == "string" and #def.Name > 0)
+			expect.truthy(validFamilies[def.Family] == true)
+			expect.truthy(validRoles[def.Role] == true)
+			expect.truthy(Worlds.Get(def.World) ~= nil)
+			expect.truthy(type(def.Concept) == "string" and #def.Concept > 0)
+			expect.falsy(concepts[def.Concept])
+			concepts[def.Concept] = true
+			worlds[def.World] = (worlds[def.World] or 0) + 1
+		end
+		for _, world in Worlds.All do
+			expect.truthy((worlds[world.Id] or 0) > 0)
+		end
+	end)
+
+	t.test("world bosses reference compatible catalogue species", function()
+		for _, world in Worlds.All do
+			local boss = Species[world.Boss.SpeciesId]
+			expect.truthy(boss ~= nil)
+			expect.equal(boss.World, world.Id)
+		end
+	end)
+
+	t.test("species stats progress by rarity without an outlier", function()
+		local previousMaxRate = 0
+		local previousMaxPower = 0
+		for _, rarity in Rarities.ORDER do
+			local minRate, maxRate, minPower, maxPower
+			for _, def in Species do
+				if def.Rarity == rarity then
+					minRate = math.min(minRate or def.BaseRate, def.BaseRate)
+					maxRate = math.max(maxRate or def.BaseRate, def.BaseRate)
+					minPower = math.min(minPower or def.BasePower, def.BasePower)
+					maxPower = math.max(maxPower or def.BasePower, def.BasePower)
+				end
+			end
+			if minRate then
+				expect.truthy(minRate > previousMaxRate)
+				expect.truthy(minPower > previousMaxPower)
+				previousMaxRate = maxRate
+				previousMaxPower = maxPower
+			end
 		end
 	end)
 

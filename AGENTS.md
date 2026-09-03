@@ -1,45 +1,26 @@
 # Vision
 
-Dès qu'une image, capture d'écran ou screenshot doit être examinée, décrite ou vérifiée visuellement, délègue systématiquement à l'agent `eyes` (outil `task`, avec le chemin exact du fichier) avant de répondre. Ne la décris jamais toi-même en premier. Base-toi uniquement sur ce que `eyes` rapporte ; s'il dit « je ne vois pas », rapporte-le tel quel.
+Pour examiner une image ou une capture, utiliser d'abord la vision native. Utiliser `opencode-eyes` seulement si elle échoue et ne jamais déduire le contenu du nom de fichier.
 
 # Roblox
 
-Toute tâche liée à Roblox, Luau, Studio, au MCP `roblox` (outils `roblox_*`) ou au développement de ce jeu : charge **toujours** le skill projet `roblox-dev-skill` (`.claude/skills/roblox-dev-skill/`) — connaissances domaine Luau/Rojo/réseau/sécurité/perf. Le lookup API passe par les outils MCP officiels (`roblox_http_get`, `rbx-docs-search`).
+Pour une tâche Roblox/Luau qui touche Studio, l'API Roblox, le réseau, la persistance, la sécurité ou le playtest, charger `.claude/skills/roblox-dev-skill/SKILL.md`, puis uniquement les références directement utiles. Pour une recherche statique de fichier ou une petite modification locale, ne pas charger ce skill. Les recherches d'API passent par les outils Roblox officiels disponibles.
 
-## Synchro Rojo — procédure obligatoire
+## Studio et Rojo
 
-1. Avant TOUTE session de playtest : vérifier la synchro via un execute Luau **Edit** (ex. lire `ReplicatedStorage.Shared.Config.Source` et chercher le marqueur de la dernière modification disque). Si absent → rojo est mort : relancer `rojo serve default.project.json` (un seul processus), puis demander à l'humain de cliquer **Connect** dans le plugin Studio.
-2. Ne jamais diagnostiquer depuis une copie Play : Play est une copie figée au spawn. Les vérifications de code se font en Edit ; les vérifications visuelles uniquement après confirmation que la copie Play contient la dernière source.
-3. Un seul processus `rojo serve` à la fois (`Get-Process rojo` doit montrer ≤ 2 PID parent/enfant).
-4. Le message `[profilestore]: Roblox API services unavailable` est **attendu** en Studio non publié (mock) — ne pas le traiter comme une erreur.
-5. Sessions courtes : éviter les dumps complets de logs/captures dans les tours ; les longues boucles de diagnostic saturent le contexte et coupent la session.
+- N'interroger Studio que si la tâche nécessite son état, une exécution ou un playtest. Une revue statique reste sur disque.
+- Avant tout playtest, vérifier en mode Edit que Studio contient un marqueur de la dernière modification disque.
+- Si le marqueur manque, vérifier qu'un seul `rojo serve default.project.json` tourne, le relancer si nécessaire, puis demander à l'humain de cliquer **Connect**.
+- Ne jamais diagnostiquer le code depuis la copie Play, qui est figée au démarrage. Confirmer la source avant toute vérification visuelle.
+- `[profilestore]: Roblox API services unavailable` est attendu dans un Studio non publié utilisant le mock.
+- Garder les sessions et sorties Studio courtes.
 
-# Orchestration des process
+# Skills de process
 
-## Skills projet (`.claude/skills/`)
+Utiliser `playtest-report`, `bug-report`, `bug-triage`, `retrospective`, `scope-check` ou `balance-check` uniquement lorsque la demande correspond explicitement à leur finalité. Ne pas inventorier ni charger les autres skills par défaut.
 
-- **Connaissance domaine** : `roblox-dev-skill` (+ `references/` — datastore, networking, sécurité, perf, UI, migration, monétisation).
-- **Process** : `playtest-report`, `bug-report`, `bug-triage`, `retrospective`, `scope-check`, `balance-check`.
-- **Templates** : `docs/templates/` — game-design-document, systems-index, milestone-definition, sprint-plan, post-mortem, prototype-report.
+Les modèles de documents sont dans `docs/templates/`. Les sources MIT sont listées dans `THIRD_PARTY_NOTICES.md`.
 
-## Précédence
+## Lecture économique
 
-1. Demandes directes de l'utilisateur
-2. Superpowers (process) : brainstorming, writing-plans, systematic-debugging, test-driven-development, verification-before-completion
-3. Skills projet ci-dessus (domaine)
-4. Ponytail gouverne uniquement le style de sortie (lean, YAGNI)
-
-## Routage
-
-| Déclencheur | Chaîne |
-|---|---|
-| Nouvelle feature / système | brainstorming → fiche GDD (`docs/templates/game-design-document.md`) si méritée → writing-plans |
-| Bug | bug-report → bug-triage → systematic-debugging → fix → verification-before-completion |
-| Fin de lot | retrospective (+ template post-mortem si lot majeur) |
-| Avant validation d'un lot | scope-check |
-| Session playtest MCP Studio | playtest-report |
-| Équilibrage économie / revenus | balance-check |
-
-Mode lean par défaut : les skills projet sautent leur cérémonie optionnelle sauf demande explicite.
-
-Sources tierces MIT : voir `THIRD_PARTY_NOTICES.md`.
+Ne pas lire par défaut `.superpowers/`, `.codex/`, les miroirs générés `.agents/`, `ServerPackages/`, `Packages/`, les builds Roblox, `sourcemap.json` et `docs/superpowers/`. Ouvrir la bible de design uniquement pour une tâche de gameplay, d'économie ou de direction créative. Charger les références du skill Roblox uniquement si la question les nécessite.

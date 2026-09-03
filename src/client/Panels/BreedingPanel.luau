@@ -12,6 +12,8 @@ local BreedingPanel = {}
 local leftList
 local rightList
 local treeList
+local breedButton: TextButton? = nil
+local requestPending = false
 
 local selection = { left = nil, right = nil }
 
@@ -180,10 +182,12 @@ function BreedingPanel.Create(parent)
 		Parent = frame,
 	})
 
-	local breedButton = UiKit.Button(frame, "Croiser", UDim2.fromScale(0.3, 0.08), UDim2.fromScale(0.35, 0.86))
+	breedButton = UiKit.Button(frame, "Croiser", UDim2.fromScale(0.3, 0.08), UDim2.fromScale(0.35, 0.86))
 	breedButton.Name = "BreedButton"
 	breedButton.Activated:Connect(function()
-		if selection.left and selection.right then
+		if not requestPending and selection.left and selection.right then
+			requestPending = true
+			breedButton.Active = false
 			Net.BreedCreatures:FireServer(selection.left, selection.right)
 		end
 	end)
@@ -194,5 +198,21 @@ end
 function BreedingPanel.Refresh(state)
 	RenderSelectors(state)
 end
+
+Net.BreedResult.OnClientEvent:Connect(function()
+	requestPending = false
+	if breedButton then
+		breedButton.Active = true
+	end
+end)
+
+Net.ActionResult.OnClientEvent:Connect(function(result)
+	if result and result.Action == "BreedCreatures" then
+		requestPending = false
+		if breedButton then
+			breedButton.Active = true
+		end
+	end
+end)
 
 return BreedingPanel

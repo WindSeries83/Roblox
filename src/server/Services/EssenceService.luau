@@ -4,6 +4,8 @@ local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Index = require(ReplicatedStorage.Shared.Index)
+local FeatureUnlocks = require(ReplicatedStorage.Shared.FeatureUnlocks)
+local Net = require(ReplicatedStorage.Shared.Net)
 local Rebirth = require(ReplicatedStorage.Shared.Rebirth)
 local Pack = require(ReplicatedStorage.Shared.Pack)
 
@@ -11,7 +13,6 @@ local EssenceService = {}
 
 local log
 local saveService
-local dataSync
 local questService
 local skillService
 local packService
@@ -23,7 +24,7 @@ function EssenceService.GetRate(player: Player): number
 		return 0
 	end
 	local sanctuaryMult = 1 + Config.SANCTUARY_LEVEL_BONUS * (profile.Data.SanctuaryLevel - 1)
-	local indexMult = Index.ComputeMult(profile.Data.Index)
+	local indexMult = if FeatureUnlocks.Require(profile.Data, "Index") then Index.ComputeMult(profile.Data.Index) else 1
 	local starMult = Rebirth.StarEssenceMult(profile.Data.Stars)
 	local passMult = if profile.Data.Entitlements.PassiveBoost then 1.5 else 1
 	local skillMult = 1 + skillService:EffectsOf(profile).EssenceRate
@@ -59,6 +60,19 @@ function EssenceService:Add(player: Player, amount: number, source: string)
 	return gained
 end
 
+function EssenceService:AddOnce(player: Player, amount: number, source: string, ledgerKey: string): number
+	local profile = saveService:GetProfile(player)
+	if not profile then
+		return 0
+	end
+	profile.Data.EconomyLedger = profile.Data.EconomyLedger or {}
+	if profile.Data.EconomyLedger[ledgerKey] then
+		return 0
+	end
+	profile.Data.EconomyLedger[ledgerKey] = true
+	return EssenceService:Add(player, amount, source)
+end
+
 function EssenceService:Spend(player: Player, amount: number, source: string): boolean
 	local profile = saveService:GetProfile(player)
 	if not profile then
@@ -81,7 +95,6 @@ end
 function EssenceService:Init(cont)
 	log = cont:Get("Log")
 	saveService = cont:Get("SaveService")
-	dataSync = cont:Get("DataSync")
 	skillService = cont:Get("SkillService")
 	-- QuestService s'initialise après celui-ci (dépendance circulaire) :
 	-- la référence est résolue au Start, quand toutes les Init sont passées.
@@ -116,7 +129,18 @@ function EssenceService:Start()
 					profile.Data.LastPlayed = os.time()
 					questService:OnEssenceGained(player, rate, "Passive")
 				end
-				dataSync:Send(player)
+				local entitlements = profile.Data.Entitlements
+				Net.EconomySync:FireClient(player, {
+					Essence = math.floor(profile.Data.Essence),
+					Rate = rate,
+					Stars = profile.Data.Stars,
+					Luck = container:Get("SessionLuck").For(player),
+					Meute = packService and packService:Count(player) or 0,
+					CreatureCount = #profile.Data.Creatures,
+					SanctuaryLevel = profile.Data.SanctuaryLevel,
+					MoreSlots = entitlements and entitlements.MoreSlots == true or false,
+					SkillPoints = profile.Data.SkillPoints,
+				})
 			end)
 		end
 

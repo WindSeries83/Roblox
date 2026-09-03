@@ -29,6 +29,16 @@ local function ResetSelection()
 	selectedTeam = {}
 end
 
+local function SelectedCount(): number
+	local count = 0
+	for selected in selectedTeam do
+		if selected then
+			count += 1
+		end
+	end
+	return count
+end
+
 local function RebuildTargets(state)
 	UiKit.Clear(targetPage)
 	for _, player in Players:GetPlayers() do
@@ -60,7 +70,28 @@ end
 
 local function RebuildTeam(state)
 	UiKit.Clear(teamPage)
-	UiKit.Title(teamPage, `Choisis ton équipe ({#selectedTeam}/{Config.DUEL_MAX_TEAM})`)
+	UiKit.Title(teamPage, `Choisis ton équipe ({SelectedCount()}/{Config.DUEL_MAX_TEAM})`)
+	local deploy = UiKit.Button(teamPage, "Déployer", UDim2.fromOffset(104, 34), UDim2.new(1, -112, 0, 4))
+	deploy.AnchorPoint = Vector2.new(1, 0)
+	deploy.Activated:Connect(function()
+		local ids = {}
+		for id in selectedTeam do
+			table.insert(ids, id)
+		end
+		if #ids == 0 then
+			for index, creature in state.Creatures or {} do
+				if index > Config.DUEL_MAX_TEAM then
+					break
+				end
+				table.insert(ids, creature.Id)
+			end
+		end
+		if #ids > 0 then
+			Net.SetDuelDefense:FireServer(ids)
+			challengeStatus.Text = "Équipe de défense enregistrée."
+			challengeStatus.TextColor3 = TINTS.GREEN
+		end
+	end)
 	for _, creature in state.Creatures or {} do
 		local cell = UiKit.Cell(teamPage)
 		UiKit.Create("TextLabel", {
@@ -86,7 +117,7 @@ local function RebuildTeam(state)
 		button.Activated:Connect(function()
 			if inTeam then
 				selectedTeam[creature.Id] = nil
-			elseif #selectedTeam < Config.DUEL_MAX_TEAM then
+			elseif SelectedCount() < Config.DUEL_MAX_TEAM then
 				selectedTeam[creature.Id] = true
 			end
 			RebuildTeam(state)

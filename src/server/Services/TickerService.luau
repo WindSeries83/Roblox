@@ -11,31 +11,70 @@ local SafeStore = require(script.Parent.SafeStore)
 local TickerService = {}
 
 local log
+local analyticsService
 
 local queue: { any } = {}
 local lastShownAt = 0
 local sessionHatches = 0
 local knownTotal = 0
+local activeWeekKey = Ticker.WeekKey(os.time())
 
 local StatsStore = SafeStore.Get(Config.GLOBAL_STATS_STORE, 0)
 
-local function FlushStats()
+local function FlushStats(key: string?): boolean
 	local amount = sessionHatches
 	if amount == 0 then
-		return
+		return true
 	end
-	sessionHatches = 0
-	local key = Ticker.WeekKey(os.time())
-	pcall(function()
-		knownTotal = StatsStore:UpdateAsync(key, function(old)
+	local targetKey = key or activeWeekKey
+	local ok = pcall(function()
+		local updated = StatsStore:UpdateAsync(targetKey, function(old)
 			return (old or 0) + amount
-		end) or knownTotal + amount
+		end)
+		knownTotal = updated or knownTotal + amount
 	end)
-	log:Economy("Ticker", "StatsFlush", { Key = key, Amount = amount, Total = knownTotal })
+	if not ok then
+		return false
+	end
+	-- Preserve hatches that arrived while UpdateAsync yielded.
+	sessionHatches = math.max(0, sessionHatches - amount)
+	log:Economy("Ticker", "StatsFlush", { Key = targetKey, Amount = amount, Total = knownTotal })
+	if analyticsService then
+		analyticsService:Event("ticker_stats_flush", { Key = targetKey, Amount = amount, Total = knownTotal })
+	end
+	return true
+end
+
+local function LoadStats(key: string)
+	task.spawn(function()
+		local ok, total = pcall(function()
+			return StatsStore:GetAsync(key)
+		end)
+		if ok and activeWeekKey == key and type(total) == "number" then
+			knownTotal = total
+		end
+	end)
+end
+
+local function EnsureWeek(now: number): boolean
+	if not Ticker.IsNewWeek(activeWeekKey, now) then
+		return true
+	end
+	if not FlushStats(activeWeekKey) then
+		return false
+	end
+	activeWeekKey = Ticker.WeekKey(now)
+	knownTotal = 0
+	LoadStats(activeWeekKey)
+	if analyticsService then
+		analyticsService:Event("ticker_week_reset", { Key = activeWeekKey })
+	end
+	return true
 end
 
 -- Appelé par HatchService à chaque drop Rare+ (local).
 function TickerService:Publish(payload)
+	EnsureWeek(os.time())
 	sessionHatches += 1
 	table.insert(queue, payload)
 	while #queue > 20 do
@@ -51,6 +90,7 @@ end
 
 function TickerService:Init(container)
 	log = container:Get("Log")
+	analyticsService = container:Get("AnalyticsService")
 end
 
 function TickerService:Start()
@@ -69,20 +109,16 @@ function TickerService:Start()
 		end)
 	end
 
-	task.spawn(function()
-		local ok, total = pcall(function()
-			return StatsStore:GetAsync(Ticker.WeekKey(os.time()))
-		end)
-		if ok and type(total) == "number" then
-			knownTotal = total
-		end
-	end)
+	activeWeekKey = Ticker.WeekKey(os.time())
+	LoadStats(activeWeekKey)
 
 	Net.GlobalStats.OnServerEvent:Connect(function(player)
+		EnsureWeek(os.time())
 		Net.GlobalStats:FireClient(player, { WeekHatches = knownTotal + sessionHatches })
 	end)
 
 	Players.PlayerAdded:Connect(function(player)
+		EnsureWeek(os.time())
 		Net.GlobalStats:FireClient(player, { WeekHatches = knownTotal + sessionHatches })
 	end)
 

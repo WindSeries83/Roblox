@@ -19,4 +19,17 @@ function DuelSim.TeamPower(team: { any }): number
 	return total
 end
 
+function DuelSim.FilterTeam(creatures: { any }, deployedIds: { [string]: boolean }?): { any }
+	if type(deployedIds) ~= "table" then
+		return {}
+	end
+	local team = {}
+	for _, creature in creatures do
+		if deployedIds[creature.Id] then
+			table.insert(team, creature)
+		end
+	end
+	return team
+end
+
 return DuelSim

@@ -40,9 +40,9 @@ local ORDER = {
 	"SecretGate",
 	"HatchService",
 	"TickerService",
-	"NestService",
 	"OrbService",
 	"EclipseService",
+	"WorldService",
 	"RiftService",
 	"BreedingService",
 	"RebirthService",
@@ -52,6 +52,7 @@ local ORDER = {
 	"SeasonService",
 	"LeaderboardService",
 	"PurchaseService",
+	"RushService",
 	"PlayerDataService",
 }
 

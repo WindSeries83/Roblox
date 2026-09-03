@@ -90,4 +90,21 @@ return function(t)
 		expect.equal(sorted[2].Id, "a")
 		expect.equal(sorted[3].Id, "b")
 	end)
+
+	t.test("shared sanctuary assignments enforce unlock ownership and cap", function()
+		local owned = { a = true, b = true, c = true, d = true }
+		expect.truthy(Sanctuary.ValidateAssignment("Sanctuary1", { "a", "b", "c" }, owned, 1))
+		expect.falsy(Sanctuary.ValidateAssignment("Sanctuary2", { "a" }, owned, 1))
+		expect.falsy(Sanctuary.ValidateAssignment("Sanctuary1", { "a", "missing" }, owned, 1))
+		expect.falsy(Sanctuary.ValidateAssignment("Sanctuary1", { "a", "b", "c", "d" }, owned, 1))
+		expect.falsy(Sanctuary.ValidateAssignment("Sanctuary1", { "a", "a" }, owned, 1))
+	end)
+
+	t.test("offline production is capped and cannot be collected twice", function()
+		local amount, collectedAt = Sanctuary.OfflineReward(10, 0, Config.OFFLINE_CAP_SECONDS * 2)
+		expect.equal(amount, math.floor(10 * Config.OFFLINE_RATE * Config.OFFLINE_CAP_SECONDS))
+		expect.equal(collectedAt, Config.OFFLINE_CAP_SECONDS * 2)
+		local replay = Sanctuary.OfflineReward(10, collectedAt, collectedAt)
+		expect.equal(replay, 0)
+	end)
 end

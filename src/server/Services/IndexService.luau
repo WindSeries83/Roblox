@@ -1,6 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Index = require(ReplicatedStorage.Shared.Index)
+local FeatureUnlocks = require(ReplicatedStorage.Shared.FeatureUnlocks)
 
 local IndexService = {}
 
@@ -31,6 +32,9 @@ end
 function IndexService:GetMult(player: Player): number
 	local profile = saveService:GetProfile(player)
 	if not profile then
+		return 1
+	end
+	if not FeatureUnlocks.Require(profile.Data, "Index") then
 		return 1
 	end
 	return Index.ComputeMult(profile.Data.Index)

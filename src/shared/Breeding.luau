@@ -1,8 +1,19 @@
 local Ascension = require(script.Parent.Ascension)
 local Config = require(script.Parent.Config)
 local Gameplay = require(script.Parent.Gameplay)
+local BreedingLineage = require(script.Parent.BreedingLineage)
 
 local Breeding = {}
+
+function Breeding.ValidateRequest(fatherId: unknown, motherId: unknown): (boolean, string?)
+	if type(fatherId) ~= "string" or type(motherId) ~= "string" then
+		return false, "parents invalides"
+	end
+	if fatherId == "" or motherId == "" then
+		return false, "parents invalides"
+	end
+	return true
+end
 
 function Breeding.CanBreed(a: any, b: any): (boolean, string?)
 	if not a or not b then
@@ -49,15 +60,18 @@ function Breeding.RollChildMutation(a: any, b: any)
 end
 
 function Breeding.RollChild(a: any, b: any, luck: number?)
+	local generation = math.max(a.Generation or 1, b.Generation or 1) + 1
+	local mutation = Breeding.RollChildMutation(a, b)
 	return {
 		SpeciesId = a.SpeciesId,
 		Rarity = Ascension.RollFrom(Breeding.RollChildRarity(a, b), luck),
-		Mutation = Breeding.RollChildMutation(a, b),
+		Mutation = mutation,
 		Parents = {
 			Father = a.Id,
 			Mother = b.Id,
 		},
-		Generation = math.max(a.Generation or 1, b.Generation or 1) + 1,
+		Generation = generation,
+		BreedingLineage = BreedingLineage.Create(a.Id, b.Id, generation, if mutation then { mutation } else {}),
 	}
 end
 

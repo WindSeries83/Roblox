@@ -90,4 +90,10 @@ return function(t)
 		expect.truthy(Config.BREED_COST > 0)
 		expect.truthy(Config.BREED_COOLDOWN > 0)
 	end)
+
+	t.test("breeding request validation rejects non-string ids", function()
+		local ok, reason = Breeding.ValidateRequest(123, "b")
+		expect.falsy(ok)
+		expect.equal(reason, "parents invalides")
+	end)
 end

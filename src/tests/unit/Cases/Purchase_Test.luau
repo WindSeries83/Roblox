@@ -3,6 +3,10 @@ return function(t)
 	local Config = require(game.ReplicatedStorage.Shared.Config)
 	local PurchaseService = require(game.ServerScriptService.Services.PurchaseService)
 
+	t.test("purchase prompts remain globally gated during validation", function()
+		expect.falsy(Config.PURCHASES_ENABLED)
+	end)
+
 	t.test("ResolveProduct finds a dev product by id", function()
 		for _, def in Config.DEV_PRODUCTS do
 			if def.Id ~= 0 then
@@ -14,6 +18,8 @@ return function(t)
 	t.test("ResolveProduct returns nil for unknown or unset ids", function()
 		expect.falsy(PurchaseService.ResolveProduct(0))
 		expect.falsy(PurchaseService.ResolveProduct(123456789))
+		expect.falsy(PurchaseService.ResolveOffer(0))
+		expect.falsy(PurchaseService.ResolveOffer(123456789))
 	end)
 
 	t.test("ReceiptKey is stable per player and purchase", function()

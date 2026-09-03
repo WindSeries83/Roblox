@@ -15,6 +15,7 @@ local COLOR_MAX = Color3.fromRGB(255, 215, 94)
 
 local pointsLabel
 local list
+local pendingBuys: { [string]: boolean } = {}
 
 -- Profondeur de dépendance : les racines d'abord, chaque palier après ses prerequis.
 local depthCache: { [string]: number } = {}
@@ -162,6 +163,11 @@ local function AddSkillRow(parent, node, ranks: { [string]: number }, points: nu
 		buy.Name = `Buy_{node.Id}`
 		buy.AnchorPoint = Vector2.new(1, 0)
 		buy.Activated:Connect(function()
+			if pendingBuys[node.Id] then
+				return
+			end
+			pendingBuys[node.Id] = true
+			buy.Active = false
 			Net.SkillBuy:FireServer(node.Id)
 		end)
 	else
@@ -214,6 +220,7 @@ function SkillPanel.Create(parent)
 end
 
 function SkillPanel.Refresh(state)
+	pendingBuys = {}
 	local points = state.SkillPoints or 0
 	local ranks = state.SkillRanks or {}
 	pointsLabel.Text = `Points d'étoile : {points}`

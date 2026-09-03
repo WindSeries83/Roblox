@@ -134,4 +134,34 @@ return function(t)
 			expect.equal(typeof(id), "string")
 		end
 	end)
+
+	t.test("daily reset clears progress and replay ledger", function()
+		local quests = {
+			Day = "2026-08-16",
+			Daily = { { Id = "HatchDaily", Progress = 1, Claimed = false } },
+			ProcessedEvents = { old_hatch = true },
+		}
+		expect.truthy(QuestService.ResetDaily(quests, "2026-08-17", 11510578955))
+		expect.equal(quests.Day, "2026-08-17")
+		expect.equal(#quests.Daily, Config.DAILY_QUESTS_COUNT)
+		expect.equal(next(quests.ProcessedEvents), nil)
+		expect.falsy(QuestService.ResetDaily(quests, "2026-08-17", 11510578955))
+	end)
+
+	t.test("daily progress ignores the same event replay", function()
+		local quests = {
+			Day = "2026-08-17",
+			Daily = { { Id = "HatchDaily", Progress = 0, Claimed = false } },
+		}
+		local changed, completed = QuestService.ApplyDailyProgress(quests, "HatchDaily", 1, "egg:incubator")
+		expect.truthy(changed)
+		expect.falsy(completed)
+		expect.equal(quests.Daily[1].Progress, 1)
+		local replayed = QuestService.ApplyDailyProgress(quests, "HatchDaily", 1, "egg:incubator")
+		expect.falsy(replayed)
+		expect.equal(quests.Daily[1].Progress, 1)
+		local _, completedNext = QuestService.ApplyDailyProgress(quests, "HatchDaily", 1, "egg:incubator-2")
+		expect.truthy(completedNext)
+		expect.equal(quests.Daily[1].Progress, 2)
+	end)
 end

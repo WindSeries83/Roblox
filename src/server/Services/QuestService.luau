@@ -3,12 +3,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Objective = require(ReplicatedStorage.Shared.Objective)
 
 local QuestService = {}
 
 local log
 local saveService
 local essenceService
+local analyticsService
+local lastQuestClaim: { [Player]: number } = {}
 
 local container
 
@@ -32,6 +35,59 @@ function QuestService.RollDaily(day: string, userId: number): { string }
 		seed = seed * 31 + 7
 	end
 	return list
+end
+
+function QuestService.ResetDaily(quests: any, day: string, userId: number): boolean
+	if type(quests) ~= "table" or quests.Day == day then
+		return false
+	end
+	quests.Day = day
+	quests.Daily = {}
+	quests.ProcessedEvents = {}
+	for _, questId in QuestService.RollDaily(day, userId) do
+		table.insert(quests.Daily, { Id = questId, Progress = 0, Claimed = false })
+	end
+	return true
+end
+
+function QuestService.ApplyDailyProgress(
+	quests: any,
+	questId: string,
+	amount: number,
+	eventKey: string?
+): (boolean, boolean)
+	if type(quests) ~= "table" or type(quests.Daily) ~= "table" or amount <= 0 then
+		return false, false
+	end
+	local processed = quests.ProcessedEvents
+	if type(processed) ~= "table" then
+		processed = {}
+		quests.ProcessedEvents = processed
+	end
+	if eventKey and processed[eventKey] then
+		return false, false
+	end
+	local changed = false
+	local completed = false
+	for _, quest in quests.Daily do
+		local def = Config.DAILY_QUESTS[quest.Id]
+		if quest.Id == questId and def and not quest.Claimed and quest.Progress < def.Target then
+			quest.Progress = math.min(quest.Progress + amount, def.Target)
+			changed = true
+			completed = quest.Progress >= def.Target
+			break
+		end
+	end
+	if eventKey and changed then
+		local count = 0
+		for _ in processed do
+			count += 1
+		end
+		if count < Config.DAILY_EVENT_DEDUPE_LIMIT then
+			processed[eventKey] = true
+		end
+	end
+	return changed, completed
 end
 
 function QuestService.EvaluateAchievements(data: any): { [string]: boolean }
@@ -113,12 +169,9 @@ local function EnsureQuests(player: Player)
 		return nil
 	end
 	local quests = profile.Data.Quests
-	if quests.Day ~= os.date("%Y-%m-%d") then
-		quests.Day = os.date("%Y-%m-%d")
-		quests.Daily = {}
-		for _, questId in QuestService.RollDaily(quests.Day, player.UserId) do
-			table.insert(quests.Daily, { Id = questId, Progress = 0, Claimed = false })
-		end
+	local day = os.date("%Y-%m-%d")
+	if QuestService.ResetDaily(quests, day, player.UserId) and analyticsService then
+		analyticsService:Event("daily_quest_reset", { Day = day, Count = #quests.Daily })
 	end
 	return quests
 end
@@ -146,43 +199,39 @@ local function UnlockAchievements(player: Player): { string }
 	return unlocked
 end
 
-local function ProgressDaily(player: Player, questId: string, amount: number)
+local function ProgressDaily(player: Player, questId: string, amount: number, eventKey: string?)
 	local profile = saveService:GetProfile(player)
 	local quests = EnsureQuests(player)
 	if not profile or not quests then
 		return
 	end
-	local target = Config.DAILY_QUESTS[questId] and Config.DAILY_QUESTS[questId].Target or 0
-	local completed = nil
-	for _, quest in quests.Daily do
-		if quest.Id == questId and not quest.Claimed and quest.Progress < target then
-			quest.Progress = math.min(quest.Progress + amount, target)
-			if quest.Progress >= target then
-				completed = questId
-			end
-			break
-		end
+	local changed, completed = QuestService.ApplyDailyProgress(quests, questId, amount, eventKey)
+	if not changed then
+		return nil
 	end
 	profile.Data.LastPlayed = os.time()
 	local notice = nil
 	if completed then
-		notice = { Type = "QuestComplete", Name = Config.DAILY_QUESTS[completed].Name }
-		log:Economy("Quests", "DailyComplete", { Player = player.Name, Quest = completed })
+		notice = { Type = "QuestComplete", Name = Config.DAILY_QUESTS[questId].Name }
+		log:Economy("Quests", "DailyComplete", { Player = player.Name, Quest = questId })
+		if analyticsService then
+			analyticsService:Event("daily_quest_complete", { Quest = questId })
+		end
 		SyncQuests(player, notice)
 	end
 	return notice
 end
 
-local function ProgressAndUnlock(player: Player, questId: string, amount: number)
-	ProgressDaily(player, questId, amount)
+local function ProgressAndUnlock(player: Player, questId: string, amount: number, eventKey: string?)
+	ProgressDaily(player, questId, amount, eventKey)
 	local unlocked = UnlockAchievements(player)
 	if #unlocked > 0 then
 		SyncQuests(player, { Type = "Achievement", Name = unlocked[1].Name })
 	end
 end
 
-function QuestService:OnHatch(player: Player, _mutated: boolean)
-	ProgressAndUnlock(player, "HatchDaily", 1)
+function QuestService:OnHatch(player: Player, _mutated: boolean, eventKey: string?)
+	ProgressAndUnlock(player, "HatchDaily", 1, eventKey)
 end
 
 function QuestService:OnBreed(player: Player)
@@ -217,12 +266,28 @@ function QuestService:Init(cont)
 	log = cont:Get("Log")
 	saveService = cont:Get("SaveService")
 	essenceService = cont:Get("EssenceService")
+	analyticsService = cont:Get("AnalyticsService")
 end
 
 function QuestService:Start()
-	Net.QuestClaim.OnServerEvent:Connect(function(player: Player, questId: string)
+	Net.QuestClaim.OnServerEvent:Connect(function(player: Player, questId: unknown)
+		local now = os.clock()
+		if lastQuestClaim[player] and now - lastQuestClaim[player] < 0.5 then
+			return
+		end
+		lastQuestClaim[player] = now
+
+		local function reject(reason: string)
+			Net.ActionResult:FireClient(player, { Action = "QuestClaim", Success = false, Reason = reason })
+		end
+
+		if type(questId) ~= "string" then
+			reject("Quête invalide")
+			return
+		end
 		local quests = EnsureQuests(player)
 		if not quests then
+			reject("Profil indisponible")
 			return
 		end
 		for _, quest in quests.Daily do
@@ -238,17 +303,39 @@ function QuestService:Start()
 					Quest = questId,
 					Reward = def.Reward,
 				})
+				if analyticsService then
+					analyticsService:Event("daily_quest_claim", { Quest = questId, Reward = def.Reward })
+				end
 				SyncQuests(player)
 				container:Get("DataSync"):Send(player)
 				container:Get("SeasonService"):OnQuestClaim(player)
+				Net.ActionResult:FireClient(player, {
+					Action = "QuestClaim",
+					Success = true,
+					QuestId = questId,
+					Reward = def.Reward,
+				})
 				return
 			end
 		end
+		reject("Quête non disponible")
 	end)
 
 	Net.TutorialComplete.OnServerEvent:Connect(function(player: Player)
 		local profile = saveService:GetProfile(player)
-		if not profile or profile.Data.TutorialDone then
+		local function reject(reason: string)
+			Net.ActionResult:FireClient(player, { Action = "TutorialComplete", Success = false, Reason = reason })
+		end
+		if not profile then
+			reject("Profil indisponible")
+			return
+		end
+		if profile.Data.TutorialDone then
+			reject("Tutoriel déjà terminé")
+			return
+		end
+		if not Objective.CanCompleteTutorial(profile.Data) then
+			reject("Termine d'abord l'incubation et une Faille")
 			return
 		end
 		profile.Data.TutorialDone = true
@@ -258,10 +345,26 @@ function QuestService:Start()
 			Player = player.Name,
 			Reward = Config.TUTORIAL_REWARD,
 		})
+		if analyticsService then
+			analyticsService:Event("tutorial_completed", {
+				Reward = Config.TUTORIAL_REWARD,
+				TotalHatched = profile.Data.Stats.TotalHatched,
+				RiftsCompleted = profile.Data.Stats.RiftsCompleted,
+			})
+		end
+		container:Get("DataSync"):Send(player)
+		Net.ActionResult:FireClient(player, {
+			Action = "TutorialComplete",
+			Success = true,
+			Reward = Config.TUTORIAL_REWARD,
+		})
 	end)
 
 	Players.PlayerAdded:Connect(function(player)
 		EnsureQuests(player)
+	end)
+	Players.PlayerRemoving:Connect(function(player)
+		lastQuestClaim[player] = nil
 	end)
 
 	for _, player in Players:GetPlayers() do

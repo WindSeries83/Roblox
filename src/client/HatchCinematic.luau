@@ -2,7 +2,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
-local Audio = require(script.Parent.Audio)
+local Audio = require(script.Parent:WaitForChild("Audio"))
 local Fx = require(script.Parent.Fx)
 local UiKit = require(script.Parent.UiKit)
 local CreaturePortrait = require(script.Parent.CreaturePortrait)
@@ -116,7 +116,16 @@ end
 function HatchCinematic.Play(result)
 	Audio.Play("HatchCrack")
 
-	local egg = Workspace:FindFirstChild("Nest") and Workspace.Nest:FindFirstChild("NestEgg")
+	local eggModel
+	for _, candidate in Workspace:GetChildren() do
+		if candidate:IsA("Model") and candidate.Name == "IncubatingEgg" then
+			if result.IncubatorId == nil or candidate:GetAttribute("IncubatorId") == result.IncubatorId then
+				eggModel = candidate
+				break
+			end
+		end
+	end
+	local egg = eggModel and eggModel.PrimaryPart
 	local color = result.RarityColor or Color3.fromRGB(255, 255, 255)
 
 	if egg and egg:IsA("BasePart") and egg.Transparency < 1 then
@@ -169,7 +178,11 @@ function HatchCinematic.Play(result)
 	local anchor = nil
 	local bestDist = 30
 	for _, model in Workspace:GetChildren() do
-		if model.Name == "IncubatingEgg" and model.PrimaryPart then
+		if
+			model.Name == "IncubatingEgg"
+			and model.PrimaryPart
+			and (not result.IncubatorId or model:GetAttribute("IncubatorId") == result.IncubatorId)
+		then
 			local d = root and (model.PrimaryPart.Position - root.Position).Magnitude or 0
 			if d < bestDist then
 				bestDist = d

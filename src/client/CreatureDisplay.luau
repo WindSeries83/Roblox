@@ -8,14 +8,14 @@ local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Mutations = require(ReplicatedStorage.Shared.Data.Mutations)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local CreatureTemplates = require(ReplicatedStorage.Shared.CreatureTemplates)
-local Fx = require(script.Parent.Fx)
-local CreatureHud = require(script.Parent.CreatureHud)
-local HoverCard = require(script.Parent.HoverCard)
+local Fx = require(script.Parent:WaitForChild("Fx"))
+local CreatureHud = require(script.Parent:WaitForChild("CreatureHud"))
+local HoverCard = require(script.Parent:WaitForChild("HoverCard"))
 
 local CreatureDisplay = {}
 CreatureDisplay.Motion = {}
 
-local TINTS = require(script.Parent.UiKit).TINTS
+local TINTS = require(script.Parent:WaitForChild("UiKit")).TINTS
 
 local spawned: { [string]: Model } = {}
 local bases: { [string]: CFrame } = {}

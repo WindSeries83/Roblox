@@ -1,11 +1,11 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local UiKit = require(script.Parent.Parent.UiKit)
-local Audio = require(script.Parent.Parent.Audio)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Config = require(ReplicatedStorage.Shared.Config)
 
 local QuestsPanel = {}
+local pendingClaims: { [string]: boolean } = {}
 
 local TINTS = UiKit.TINTS
 
@@ -133,7 +133,11 @@ local function AddQuestRow(parent: Instance, row, onClaim: (string) -> ())
 		claim.AnchorPoint = Vector2.new(0.5, 0)
 		claim.TextSize = 13
 		claim.Activated:Connect(function()
-			Audio.Play("CoinReward")
+			if pendingClaims[row.Id] then
+				return
+			end
+			pendingClaims[row.Id] = true
+			claim.Active = false
 			onClaim(row.Id)
 		end)
 	else
@@ -297,6 +301,7 @@ function QuestsPanel.Create(parent: Instance): Frame
 	BuildGuide()
 
 	local function Refresh(payload)
+		pendingClaims = {}
 		local quests = payload and (payload.Quests or payload) or nil
 		UiKit.Clear(dailyPage)
 		UiKit.Clear(achievementPage)

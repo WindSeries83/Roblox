@@ -89,4 +89,14 @@ Net.RebirthPreview.OnClientEvent:Connect(function(preview)
 	end
 end)
 
+Net.ActionResult.OnClientEvent:Connect(function(result)
+	if not result or result.Action ~= "Rebirth" or not previewLabel or not confirmButton then
+		return
+	end
+	if result.Success then
+		confirmButton.Visible = false
+		previewLabel.Text = "Renaissance effectuée. Tes données sont synchronisées."
+	end
+end)
+
 return RebirthPanel

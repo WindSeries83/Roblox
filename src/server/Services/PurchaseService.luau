@@ -1,12 +1,17 @@
-local SafeStore = require(script.Parent.SafeStore)
+--!strict
+
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Offers = require(ReplicatedStorage.Shared.Offers)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
+local PurchaseLedger = require(ReplicatedStorage.Shared.PurchaseLedger)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
+local Vip = require(ReplicatedStorage.Shared.Vip)
+local SafeStore = require(script.Parent.SafeStore)
 local Log = require(script.Parent.Log)
 
 local PurchaseService = {}
@@ -24,36 +29,68 @@ local function LogPurchase(source: string, data: { [string]: any })
 	Log:Economy("Purchase", source, data)
 end
 
--- Effet d'un produit sur le profil. Retourne false = refus propre
--- (NotProcessedYet -> remboursement automatique par Roblox).
-function PurchaseService.GrantProduct(player: Player, product: any, productId: number): boolean
+function PurchaseService.GrantProduct(player: Player, product: any, productId: number, receiptKey: string?): boolean
+	local profile = saveService:GetProfile(player)
+	if receiptKey and profile and profile.Data.EconomyLedger and profile.Data.EconomyLedger[receiptKey] then
+		return true
+	end
 	if product.Kind == "LuckPotion" then
-		luckService:GrantPotion(player, product.PotionKind)
+		return luckService:GrantPotion(player, product.PotionKind, receiptKey)
 	elseif product.Kind == "ServerBoost" then
-		boostService:Activate(player)
-	elseif product.Kind == "FirstOffer" then
-		local profile = saveService:GetProfile(player)
-		if not profile or profile.Data.Offers.FirstPurchaseClaimed then
-			LogPurchase("FirstOfferReject", { PlayerId = player.UserId })
+		return boostService:Activate(player, receiptKey)
+	elseif product.Kind == "Vip" then
+		if not profile then
 			return false
 		end
-		if not PurchaseService.GrantPass(player, "StarterBundle") then
+		profile.Data.VipExpiresAt = Vip.Extend(profile.Data.VipExpiresAt, os.time(), product.Duration)
+		profile.Data.Entitlements.VIP = nil
+		if receiptKey then
+			profile.Data.EconomyLedger = profile.Data.EconomyLedger or {}
+			profile.Data.EconomyLedger[receiptKey] = true
+		end
+		return true
+	elseif product.Kind == "FirstOffer" then
+		if not profile then
+			return false
+		end
+		if profile.Data.Offers.FirstPurchaseClaimed then
+			return true
+		end
+		if not PurchaseService.GrantPass(player, "StarterBundle", receiptKey) then
 			return false
 		end
 		profile.Data.Offers.FirstPurchaseClaimed = true
-	else
-		essenceService:Add(player, product.Amount, `DevProduct_{productId}`)
+		if receiptKey then
+			profile.Data.EconomyLedger = profile.Data.EconomyLedger or {}
+			profile.Data.EconomyLedger[receiptKey] = true
+		end
+		return true
 	end
-	return true
+	if not receiptKey then
+		return essenceService:Add(player, product.Amount, `DevProduct_{productId}`) > 0
+	end
+	return essenceService:AddOnce(player, product.Amount, `DevProduct_{productId}`, receiptKey) > 0
 end
 
 function PurchaseService.ResolveProduct(productId: number)
-	if productId == 0 then
+	local offer = PurchaseService.ResolveOffer(productId)
+	if not offer or offer.Kind ~= "DeveloperProduct" then
 		return nil
 	end
-	for _, def in Config.DEV_PRODUCTS do
-		if def.Id == productId then
-			return def
+	local def = Config.DEV_PRODUCTS[offer.ConfigKey]
+	if def and def.Id == productId then
+		return def
+	end
+	return nil
+end
+
+function PurchaseService.ResolveOffer(sku: number)
+	if type(sku) ~= "number" or sku <= 0 then
+		return nil
+	end
+	for _, offer in Offers.All do
+		if offer.Sku == sku and Offers.IsAvailable(offer) then
+			return offer
 		end
 	end
 	return nil
@@ -63,7 +100,6 @@ function PurchaseService.ReceiptKey(playerId: number, purchaseId: string): strin
 	return `{playerId}_{purchaseId}`
 end
 
--- Pure : effet d'un pass sur le profil (testable sans container).
 function PurchaseService.PassEffect(passKey: string)
 	if passKey == "StarterBundle" then
 		return { Flag = "StarterBundle", Essence = 2000, Creature = { Rarity = "Rare", Mutation = "Shadow" } }
@@ -80,7 +116,10 @@ function PurchaseService.PassEffect(passKey: string)
 	return nil
 end
 
-function PurchaseService.GrantPass(player: Player, passKey: string): boolean
+function PurchaseService.GrantPass(player: Player, passKey: string, receiptKey: string?): boolean
+	if passKey == "VIP" then
+		return false
+	end
 	local pass = Config.GAMEPASSES[passKey]
 	local effect = PurchaseService.PassEffect(passKey)
 	if not pass or not effect then
@@ -90,14 +129,21 @@ function PurchaseService.GrantPass(player: Player, passKey: string): boolean
 	if not profile then
 		return false
 	end
-	-- Pas de re-grant : les effets consommables (essence, créature) ne sont
-	-- accordés qu'au premier grant ; le flag est reposé dans tous les cas.
 	local firstGrant = not profile.Data.Entitlements[effect.Flag]
-	profile.Data.Entitlements[effect.Flag] = true
 	if firstGrant then
 		if effect.Essence > 0 then
-			essenceService:Add(player, effect.Essence, "StarterBundle")
+			local ledgerKey = if receiptKey then `{receiptKey}:starter` else nil
+			local granted = if receiptKey
+				then essenceService:AddOnce(player, effect.Essence, "StarterBundle", ledgerKey :: string)
+				else essenceService:Add(player, effect.Essence, "StarterBundle")
+			if granted <= 0 then
+				if ledgerKey then
+					profile.Data.EconomyLedger[ledgerKey] = nil
+				end
+				return false
+			end
 		end
+		profile.Data.Entitlements[effect.Flag] = true
 		if effect.Creature then
 			local bonusSlots = if profile.Data.Entitlements.MoreSlots then Config.GAMEPASSES.MoreSlots.BonusSlots else 0
 			local maxCreatures = Sanctuary.MaxCreatures(profile.Data.SanctuaryLevel, bonusSlots)
@@ -109,32 +155,19 @@ function PurchaseService.GrantPass(player: Player, passKey: string): boolean
 					end
 				end
 				local speciesId = pool[Random.new():NextInteger(1, #pool)]
-				local creature = Gameplay.CreateCreature(effect.Creature.Rarity, speciesId, effect.Creature.Mutation)
-				table.insert(profile.Data.Creatures, creature)
-				LogPurchase("StarterCreature", {
-					Player = player.Name,
-					Species = speciesId,
-					Rarity = creature.Rarity,
-					Mutation = tostring(creature.Mutation),
-					CreatureId = creature.Id,
-				})
-			else
-				LogPurchase("StarterCreatureSkipped", {
-					Player = player.Name,
-					Reason = "CapReached",
-					Creatures = #profile.Data.Creatures,
-					MaxCreatures = maxCreatures,
-				})
+				table.insert(
+					profile.Data.Creatures,
+					Gameplay.CreateCreature(effect.Creature.Rarity, speciesId, effect.Creature.Mutation)
+				)
 			end
 		end
 	end
 	profile.Data.LastPlayed = os.time()
-	LogPurchase("Gamepass", { Player = player.Name, Pass = passKey })
+	dataSync:Send(player)
 	if firstGrant then
 		analyticsService:Event("purchase", { Pass = passKey })
 		analyticsService:Funnel(profile, "FirstPurchaseAt")
 	end
-	dataSync:Send(player)
 	return true
 end
 
@@ -148,7 +181,6 @@ function PurchaseService:Init(container)
 end
 
 function PurchaseService:Start()
-	-- Re-grant owned gamepasses on join (idempotent : flags déjà posés)
 	Players.PlayerAdded:Connect(function(player)
 		task.spawn(function()
 			for passKey, def in Config.GAMEPASSES do
@@ -165,16 +197,14 @@ function PurchaseService:Start()
 	end)
 
 	MarketplaceService.ProcessReceipt = function(receiptInfo)
+		if not Config.PURCHASES_ENABLED then
+			return Enum.ProductPurchaseDecision.NotProcessedYet
+		end
 		local receiptKey = PurchaseService.ReceiptKey(receiptInfo.PlayerId, receiptInfo.PurchaseId)
-
-		-- Claim atomique AVANT tout effet : deux replays concurrents -> un seul passage.
-		local state
-		local okClaim = pcall(function()
-			state = ReceiptsStore:UpdateAsync(receiptKey, function(old)
-				return if old == "done" then "done" else "pending"
-			end)
+		local knownOk, known = pcall(function()
+			return ReceiptsStore:GetAsync(receiptKey)
 		end)
-		if okClaim and state == "done" then
+		if knownOk and known == "done" then
 			return Enum.ProductPurchaseDecision.PurchaseGranted
 		end
 
@@ -186,43 +216,46 @@ function PurchaseService:Start()
 		local player = Players:GetPlayerByUserId(receiptInfo.PlayerId)
 		local profile = if player then saveService:GetProfile(player) else nil
 		if not player or not profile then
-			-- Claim conservé ("pending") : retry Roblox reprendra le traitement.
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		end
-
-		-- Garde-fou durable : si l'effet est déjà dans le profil (crash après
-		-- grant, avant le flag "done"), on ne re-grante pas.
-		if not Gameplay.ConsumeOnce(profile.Data.PurchaseReceipts, receiptKey) then
-			pcall(function()
-				ReceiptsStore:UpdateAsync(receiptKey, function()
-					return "done"
-				end)
-			end)
+		profile.Data.PurchaseReceipts = profile.Data.PurchaseReceipts or {}
+		profile.Data.PurchaseReceiptOrder = profile.Data.PurchaseReceiptOrder or {}
+		if profile.Data.PurchaseReceipts[receiptKey] then
 			return Enum.ProductPurchaseDecision.PurchaseGranted
 		end
 
-		local okGrant, grantedOk = pcall(function()
-			return PurchaseService.GrantProduct(player, product, receiptInfo.ProductId)
-		end)
-		if not okGrant or not grantedOk then
+		local snapshot = PurchaseLedger.Snapshot(profile.Data)
+		local applied = PurchaseLedger.Apply(
+			profile.Data.PurchaseReceipts,
+			profile.Data.PurchaseReceiptOrder,
+			receiptKey,
+			Config.PURCHASE_RECEIPT_MAX,
+			function()
+				local okGrant, granted = pcall(function()
+					return PurchaseService.GrantProduct(player, product, receiptInfo.ProductId, receiptKey)
+				end)
+				return okGrant and granted, function()
+					PurchaseLedger.Restore(profile.Data, snapshot)
+				end
+			end,
+			function()
+				return saveService:SaveProfile(player, function(data)
+					return data.PurchaseReceipts and data.PurchaseReceipts[receiptKey] == true
+				end)
+			end
+		)
+		if not applied then
 			LogPurchase("ReceiptGrantFailed", { PlayerId = receiptInfo.PlayerId, ProductId = receiptInfo.ProductId })
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		end
 		dataSync:Send(player)
-
-		-- ponytail: fenêtre résiduelle crash grant-mémoire -> sauvegarde profil :
-		-- double-grant borné, détectable au log "Receipt" dupliqué ; fermer via
-		-- flush profil avant ack si ça se produit en prod.
 		pcall(function()
-			ReceiptsStore:UpdateAsync(receiptKey, function()
-				return "done"
-			end)
+			ReceiptsStore:SetAsync(receiptKey, "done")
 		end)
 		LogPurchase("Receipt", {
 			PlayerId = receiptInfo.PlayerId,
 			ProductId = receiptInfo.ProductId,
 			Kind = product.Kind or "Essence",
-			Amount = product.Amount,
 			PurchaseId = receiptInfo.PurchaseId,
 		})
 		analyticsService:Event("purchase", { ProductId = receiptInfo.ProductId, Kind = product.Kind or "Essence" })

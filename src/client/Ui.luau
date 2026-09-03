@@ -2,9 +2,10 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
 
-local UiKit = require(script.Parent.UiKit)
-local Audio = require(script.Parent.Audio)
+local UiKit = require(script.Parent:WaitForChild("UiKit"))
+local Audio = require(script.Parent:WaitForChild("Audio"))
 local Net = require(ReplicatedStorage.Shared.Net)
 local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
@@ -12,27 +13,29 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 
-local SanctuaryPanel = require(script.Parent.Panels.SanctuaryPanel)
-local EggPanel = require(script.Parent.Panels.EggPanel)
-local IndexPanel = require(script.Parent.Panels.IndexPanel)
-local BreedingPanel = require(script.Parent.Panels.BreedingPanel)
-local RebirthPanel = require(script.Parent.Panels.RebirthPanel)
-local SkillPanel = require(script.Parent.Panels.SkillPanel)
-local QuestsPanel = require(script.Parent.Panels.QuestsPanel)
-local MarketPanel = require(script.Parent.Panels.MarketPanel)
-local DuelPanel = require(script.Parent.Panels.DuelPanel)
-local SeasonPanel = require(script.Parent.Panels.SeasonPanel)
-local LeaderboardPanel = require(script.Parent.Panels.LeaderboardPanel)
-local ShopPanel = require(script.Parent.Panels.ShopPanel)
-local FriendsPanel = require(script.Parent.Panels.FriendsPanel)
-local CreaturePortrait = require(script.Parent.CreaturePortrait)
+local panelModules = script.Parent:WaitForChild("Panels")
+local SanctuaryPanel = require(panelModules:WaitForChild("SanctuaryPanel"))
+local EggPanel = require(panelModules:WaitForChild("EggPanel"))
+local CouveusePanel = require(panelModules:WaitForChild("CouveusePanel"))
+local IndexPanel = require(panelModules:WaitForChild("IndexPanel"))
+local BreedingPanel = require(panelModules:WaitForChild("BreedingPanel"))
+local RebirthPanel = require(panelModules:WaitForChild("RebirthPanel"))
+local SkillPanel = require(panelModules:WaitForChild("SkillPanel"))
+local QuestsPanel = require(panelModules:WaitForChild("QuestsPanel"))
+local MarketPanel = require(panelModules:WaitForChild("MarketPanel"))
+local DuelPanel = require(panelModules:WaitForChild("DuelPanel"))
+local SeasonPanel = require(panelModules:WaitForChild("SeasonPanel"))
+local LeaderboardPanel = require(panelModules:WaitForChild("LeaderboardPanel"))
+local ShopPanel = require(panelModules:WaitForChild("ShopPanel"))
+local FriendsPanel = require(panelModules:WaitForChild("FriendsPanel"))
+local CreaturePortrait = require(script.Parent:WaitForChild("CreaturePortrait"))
 local TutorialBridge = require(ReplicatedStorage.Shared.TutorialBridge)
-local Fx = require(script.Parent.Fx)
-local Cinematic = require(script.Parent.Cinematic)
-local ObjectiveBanner = require(script.Parent.ObjectiveBanner)
-local RiftFx = require(script.Parent.RiftFx)
-local HatchCinematic = require(script.Parent.HatchCinematic)
-local Celebration = require(script.Parent.Celebration)
+local Fx = require(script.Parent:WaitForChild("Fx"))
+local Cinematic = require(script.Parent:WaitForChild("Cinematic"))
+local ObjectiveBanner = require(script.Parent:WaitForChild("ObjectiveBanner"))
+local RiftFx = require(script.Parent:WaitForChild("RiftFx"))
+local HatchCinematic = require(script.Parent:WaitForChild("HatchCinematic"))
+local Celebration = require(script.Parent:WaitForChild("Celebration"))
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -172,6 +175,7 @@ local panelsFrame = UiKit.Create("Frame", {
 
 local panels = {}
 local selectByName: { [string]: (() -> ())? } = {}
+local tabButtons: { [string]: TextButton } = {}
 -- Onglet actuellement affiché : permet au bouton de barre d'action de refermer le menu.
 local activeTabName = ""
 local tabCount = 0
@@ -206,18 +210,22 @@ local function AddTab(name: string, panelModule: any)
 
 	button.Activated:Connect(Select)
 	selectByName[name] = Select
+	tabButtons[name] = button
 
-	table.insert(panels, { module = panelModule, frame = frame })
+	table.insert(panels, { module = panelModule, frame = frame, name = name, button = button })
 end
 
 AddTab("Sanctuaire", SanctuaryPanel)
 AddTab("Œufs", EggPanel)
+AddTab("Couveuse", CouveusePanel)
 AddTab("Index", IndexPanel)
 AddTab("Élevage", BreedingPanel)
 AddTab("Renaissance", RebirthPanel)
 AddTab("Arbre", SkillPanel)
 AddTab("Objectifs", QuestsPanel)
-AddTab("Marché", MarketPanel)
+if Config.MARKET_ENABLED then
+	AddTab("Marché", MarketPanel)
+end
 AddTab("Boutique", ShopPanel)
 AddTab("Amis", FriendsPanel)
 
@@ -271,6 +279,7 @@ do
 
 	button.Activated:Connect(Select)
 	selectByName["Duels & Classements"] = Select
+	tabButtons["Duels & Classements"] = button
 
 	table.insert(panels, {
 		module = {
@@ -286,6 +295,8 @@ do
 			end,
 		},
 		frame = frame,
+		name = "Duels & Classements",
+		button = button,
 	})
 end
 
@@ -312,6 +323,7 @@ LayoutTabs()
 
 if panels[1] then
 	panels[1].frame.Visible = true
+	activeTabName = panels[1].name
 end
 
 local questBadge = UiKit.Create("TextLabel", {
@@ -347,10 +359,43 @@ end
 local menuTargetSize = UDim2.fromScale(if compact then 0.96 else 0.72, if compact then 0.96 else 0.72)
 local menuTween
 local menuOpen = false
+local previousSelectedObject: GuiObject? = nil
 
-local function SetMenuOpen(open: boolean)
+local function IsFocusable(target: GuiObject?): GuiObject?
+	if not target or not target:IsDescendantOf(playerGui) or not target.Visible or not target.Selectable then
+		return nil
+	end
+	local ancestor = target.Parent
+	while ancestor and ancestor ~= playerGui do
+		if ancestor:IsA("GuiObject") and not ancestor.Visible then
+			return nil
+		end
+		if ancestor:IsA("ScreenGui") and not ancestor.Enabled then
+			return nil
+		end
+		ancestor = ancestor.Parent
+	end
+	return target
+end
+
+local function FirstFocusable(root: Instance): GuiObject?
+	for _, descendant in root:GetDescendants() do
+		if descendant:IsA("GuiObject") then
+			local target = IsFocusable(descendant)
+			if target then
+				return target
+			end
+		end
+	end
+	return nil
+end
+
+local function SetMenuOpen(open: boolean, focusTarget: GuiObject?, returnTarget: GuiObject?)
 	if menuTween then
 		menuTween:Cancel()
+	end
+	if open and not menuOpen then
+		previousSelectedObject = IsFocusable(GuiService.SelectedObject) or IsFocusable(returnTarget)
 	end
 	menuOpen = open
 	if open then
@@ -362,6 +407,9 @@ local function SetMenuOpen(open: boolean)
 			BackgroundTransparency = 0,
 		})
 		menuTween:Play()
+		GuiService.SelectedObject = IsFocusable(focusTarget)
+			or IsFocusable(tabButtons[activeTabName])
+			or FirstFocusable(content)
 	else
 		menuTween = TweenService:Create(content, TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 			Size = UDim2.fromScale(menuTargetSize.X.Scale * 0.96, menuTargetSize.Y.Scale * 0.96),
@@ -373,6 +421,9 @@ local function SetMenuOpen(open: boolean)
 			end
 		end)
 		menuTween:Play()
+		local restore = previousSelectedObject
+		previousSelectedObject = nil
+		GuiService.SelectedObject = IsFocusable(restore)
 	end
 	TutorialBridge.Set("MenuOpen", open)
 end
@@ -416,7 +467,7 @@ local skillBadge = UiKit.Create("TextButton", {
 })
 UiKit.Corner(skillBadge)
 skillBadge.Activated:Connect(function()
-	SetMenuOpen(true)
+	SetMenuOpen(true, tabButtons["Arbre"], skillBadge)
 	if selectByName["Arbre"] then
 		selectByName["Arbre"]()
 	end
@@ -458,33 +509,50 @@ local function BarButton(text: string, layoutOrder: number, accent: boolean?): T
 end
 
 -- Re-cliquer le bouton de l'onglet déjà affiché referme le menu ; sinon ouvre et sélectionne.
-local function ToggleOrSelect(name: string)
+local function ToggleOrSelect(name: string, origin: GuiObject?)
 	if menuOpen and activeTabName == name then
 		SetMenuOpen(false)
 	else
-		SetMenuOpen(true)
+		SetMenuOpen(true, tabButtons[name], origin)
 		if selectByName[name] then
 			selectByName[name]()
 		end
 	end
 end
 
-local failleButton = BarButton("Faille", 2)
-BarButton("Œufs", 1).Activated:Connect(function()
-	ToggleOrSelect("Œufs")
+CouveusePanel.SetOpenCallback(function()
+	ToggleOrSelect("Couveuse")
 end)
-BarButton("Sanctuaire", 3).Activated:Connect(function()
-	ToggleOrSelect("Sanctuaire")
+
+local parcoursButton = BarButton("Parcours", 2)
+parcoursButton.Visible = false
+local eggsButton = BarButton("Œufs", 1)
+eggsButton.Activated:Connect(function()
+	ToggleOrSelect("Œufs", eggsButton)
 end)
-BarButton("Plus", 4).Activated:Connect(function()
-	SetMenuOpen(not menuOpen)
+local sanctuariesButton = BarButton("Sanctuaires", 3)
+sanctuariesButton.Activated:Connect(function()
+	ToggleOrSelect("Sanctuaire", sanctuariesButton)
+end)
+local moreButton = BarButton("Plus", 4)
+moreButton.Visible = false
+moreButton.Activated:Connect(function()
+	SetMenuOpen(not menuOpen, tabButtons[activeTabName], moreButton)
+end)
+
+-- La couveuse utilise le menu Œufs unique ; aucun doublon flottant illisible.
+task.spawn(function()
+	local model = workspace:WaitForChild("Couveuse", 30)
+	local prompt = model and model:FindFirstChildWhichIsA("ProximityPrompt", true)
+	if prompt then
+		prompt.Triggered:Connect(function()
+			ToggleOrSelect("Couveuse")
+		end)
+	end
 end)
 
 -- Manette (B) et Échap referment le menu ouvert.
-UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-	if gameProcessedEvent then
-		return
-	end
+UserInputService.InputBegan:Connect(function(input, _gameProcessedEvent)
 	if input.KeyCode == Enum.KeyCode.ButtonB or input.KeyCode == Enum.KeyCode.Escape then
 		if menuOpen then
 			SetMenuOpen(false)
@@ -497,25 +565,25 @@ local riftNextAt = 0
 
 local function UpdateFailleButton()
 	if riftActiveState then
-		failleButton.Text = "FAILLE !"
+		parcoursButton.Text = "PARCOURS !"
 	elseif riftNextAt > 0 then
 		local remaining = math.max(0, riftNextAt - os.time())
-		failleButton.Text = string.format("Faille %d:%02d", math.floor(remaining / 60), remaining % 60)
+		parcoursButton.Text = string.format("Parcours %d:%02d", math.floor(remaining / 60), remaining % 60)
 	else
-		failleButton.Text = "Faille"
+		parcoursButton.Text = "Parcours"
 	end
 end
 
-failleButton.Activated:Connect(function()
+parcoursButton.Activated:Connect(function()
 	Net.RiftRequest:FireServer()
 	local msg
 	if riftActiveState then
-		msg = "Une faille est ouverte ! Rejoins le portail."
+		msg = "Un parcours est ouvert ! Rejoins le portail."
 	elseif riftNextAt > 0 then
 		local remaining = math.max(0, riftNextAt - os.time())
-		msg = string.format("Prochaine faille dans %d:%02d", math.floor(remaining / 60), remaining % 60)
+		msg = string.format("Prochain parcours dans %d:%02d", math.floor(remaining / 60), remaining % 60)
 	else
-		msg = "La faille revient bientôt…"
+		msg = "Le parcours revient bientôt…"
 	end
 	ShowAnnouncement(msg)
 end)
@@ -538,7 +606,7 @@ UiKit.Create("TextLabel", {
 	Font = Enum.Font.GothamBold,
 	TextSize = 20,
 	Size = UDim2.fromScale(1, 0.16),
-	Text = "Faille",
+	Text = "Parcours",
 	Parent = riftHud,
 })
 
@@ -557,7 +625,7 @@ local attackButton = UiKit.Create("TextButton", {
 	TextSize = 18,
 	Size = UDim2.fromScale(1, 0.16),
 	Position = UDim2.fromScale(0, 0.5),
-	Text = "Attaquer",
+	Text = "Posture : Balanced",
 	Parent = riftHud,
 })
 UiKit.Corner(attackButton)
@@ -708,8 +776,6 @@ end
 
 local lastGuardianHP: number? = nil
 local lastPlayerHP: number? = nil
-local autoOpenedMenu = false
-local tutorialDone = false
 
 local function ShowRiftSync(state)
 	if not state.InRift then
@@ -739,6 +805,7 @@ local function ShowRiftSync(state)
 		riftHint.Text = "Touche le cristal pour récupérer les récompenses !"
 	else
 		attackButton.Visible = true
+		attackButton.Text = `Posture : {state.Stance or "Balanced"}`
 		riftHint.Text = ""
 	end
 end
@@ -749,7 +816,7 @@ local function ShowRiftEnded(result)
 		Audio.Play("CoinReward")
 		local relicText = result.RelicTier and `\nRelique T{result.RelicTier} obtenue !` or ""
 		ShowAnnouncement(
-			`Faille terminée : +{result.Essence} Essence et {UiKit.EGG_TIER_NAMES[result.EggTier] or result.EggTier}{relicText}`
+			`Parcours terminé : +{result.Essence} Essence et {UiKit.EGG_TIER_NAMES[result.EggTier] or result.EggTier}{relicText}`
 		)
 		Flash(0.35)
 		Fx.Confetti(
@@ -757,22 +824,15 @@ local function ShowRiftEnded(result)
 			TINTS.ACCENT,
 			30
 		)
-		if not autoOpenedMenu and not tutorialDone then
-			autoOpenedMenu = true
-			SetMenuOpen(true)
-			if selectByName["Œufs"] then
-				selectByName["Œufs"]()
-			end
-		end
 	else
 		ShowAnnouncement("Défaite face au gardien. Tes créatures n'étaient pas prêtes.")
 	end
 end
 
 attackButton.Activated:Connect(function()
-	Audio.Play("RiftWhoosh", 0.3)
-	RiftFx.OnAttack()
-	Net.RiftAttack:FireServer()
+	local current = string.match(attackButton.Text, ": (.+)$")
+	local nextStance = if current == "Power" then "Guard" elseif current == "Guard" then "Balanced" else "Power"
+	Net.ExpeditionAction:FireServer("Stance", nextStance)
 end)
 
 revealButton.Activated:Connect(function()
@@ -781,30 +841,67 @@ end)
 
 local state = nil
 
-local function RefreshAll(newState)
-	state = newState
-	tutorialDone = newState.TutorialDone == true
-	essenceLabel.Text = `Essence : {state.Essence}`
-	rateLabel.Text = `Rendement : {string.format("%.1f", state.Rate)} / s`
-	if state.Stars > 0 then
-		rateLabel.Text ..= ` — ★{state.Stars}`
+local function UpdateTopbar(topbarState)
+	if not topbarState then
+		return
 	end
-	if state.Luck and state.Luck > 0 then
-		rateLabel.Text ..= ` — Chance +{math.floor(state.Luck * 100 + 0.5)} %`
+	essenceLabel.Text = `Essence : {topbarState.Essence or 0}`
+	rateLabel.Text = `Rendement : {string.format("%.1f", topbarState.Rate or 0)} / s`
+	if topbarState.Stars and topbarState.Stars > 0 then
+		rateLabel.Text ..= ` — ★{topbarState.Stars}`
 	end
-	if state.Meute and state.Meute > 0 then
-		rateLabel.Text ..= ` — Meute ×{state.Meute}`
+	if topbarState.Luck and topbarState.Luck > 0 then
+		rateLabel.Text ..= ` — Chance +{math.floor(topbarState.Luck * 100 + 0.5)} %`
 	end
-	UpdateQuestBadge(state.Quests)
+	if topbarState.Meute and topbarState.Meute > 0 then
+		rateLabel.Text ..= ` — Meute ×{topbarState.Meute}`
+	end
 	-- Possessions : places du sanctuaire (gamepass inclus), étoiles, points d'arbre à dépenser.
-	local bonusSlots = if state.Entitlements and state.Entitlements.MoreSlots
-		then Config.GAMEPASSES.MoreSlots.BonusSlots
-		else 0
-	local hasSkillPoints = state.SkillPoints > 0
-	possessionsLabel.Text =
-		`🐾 {#state.Creatures}/{Sanctuary.MaxCreatures(state.SanctuaryLevel, bonusSlots)}   ★ {state.Stars}   🌟 {state.SkillPoints}`
+	local bonusSlots = if topbarState.MoreSlots then Config.GAMEPASSES.MoreSlots.BonusSlots else 0
+	local hasSkillPoints = (topbarState.SkillPoints or 0) > 0
+	possessionsLabel.Text = `🐾 {topbarState.CreatureCount or 0}/{Sanctuary.MaxCreatures(
+		topbarState.SanctuaryLevel or 1,
+		bonusSlots
+	)}   ★ {topbarState.Stars or 0}   🌟 {topbarState.SkillPoints or 0}`
 	possessionsLabel.TextColor3 = if hasSkillPoints then TINTS.ACCENT else TINTS.WHITE
 	skillBadge.Visible = hasSkillPoints
+end
+
+local function RefreshAll(newState)
+	state = newState
+	actionBar.Visible = true
+	local unlocks = state.FeatureUnlocks or {}
+	parcoursButton.Visible = unlocks.Expeditions == true
+	moreButton.Visible = unlocks.More == true
+	local gates = {
+		Index = "Index",
+		["Élevage"] = "Breeding",
+		Renaissance = "Rebirth",
+		Arbre = "SkillTree",
+		Objectifs = "Objectives",
+		["Marché"] = "Market",
+		Boutique = "Shop",
+		Amis = "Social",
+		["Duels & Classements"] = "Duels",
+	}
+	for name, key in gates do
+		local button = tabButtons[name]
+		if button then
+			button.Visible = unlocks[key] == true
+		end
+	end
+	UpdateTopbar({
+		Essence = state.Essence,
+		Rate = state.Rate,
+		Stars = state.Stars,
+		Luck = state.Luck,
+		Meute = state.Meute,
+		CreatureCount = state.Creatures and #state.Creatures or 0,
+		SanctuaryLevel = state.SanctuaryLevel,
+		MoreSlots = state.Entitlements and state.Entitlements.MoreSlots == true,
+		SkillPoints = state.SkillPoints,
+	})
+	UpdateQuestBadge(state.Quests)
 	ObjectiveBanner.Refresh(state)
 	for _, panel in panels do
 		if panel.module.Refresh then
@@ -814,6 +911,17 @@ local function RefreshAll(newState)
 end
 
 Net.Sync.OnClientEvent:Connect(RefreshAll)
+
+Net.EconomySync.OnClientEvent:Connect(function(payload)
+	if not payload then
+		return
+	end
+	state = state or {}
+	for key, value in payload do
+		state[key] = value
+	end
+	UpdateTopbar(payload)
+end)
 
 Net.HatchResult.OnClientEvent:Connect(function(result)
 	if result.WorldHatch then
@@ -875,7 +983,7 @@ local function StartRiftCountdown(nextAt: number)
 		while riftStatusLabel and riftStatusLabel.Parent do
 			local remaining = math.max(0, nextAt - os.time())
 			riftStatusLabel.Text =
-				`Prochaine faille dans {string.format("%d:%02d", math.floor(remaining / 60), remaining % 60)}`
+				`Prochain parcours dans {string.format("%d:%02d", math.floor(remaining / 60), remaining % 60)}`
 			-- en compact le bouton Faille de la barre porte le compte à rebours
 			riftStatusLabel.Visible = remaining > 0 and not compact
 			UpdateFailleButton()
@@ -902,7 +1010,7 @@ Net.RiftWorld.OnClientEvent:Connect(function(world)
 			riftCountdown = nil
 		end
 		Audio.Play("RiftWhoosh")
-		riftStatusLabel.Text = "Une faille s'est ouverte ! Entre dans le portail."
+		riftStatusLabel.Text = "Un parcours s'est ouvert ! Entre dans le portail."
 		riftStatusLabel.Visible = not compact
 		riftActiveState = true
 		riftNextAt = 0
@@ -930,11 +1038,7 @@ Net.QuestsSync.OnClientEvent:Connect(function(payload)
 		-- sinon le bouton Réclamer reste affiché après un claim réussi.
 		state.Quests = payload.Quests
 		UpdateQuestBadge(payload.Quests)
-		for _, panel in panels do
-			if panel.module.Refresh then
-				panel.module.Refresh(state)
-			end
-		end
+		QuestsPanel.Refresh(state)
 	end
 	local notice = payload.Notice
 	if notice then
@@ -962,6 +1066,39 @@ Net.QuestsSync.OnClientEvent:Connect(function(payload)
 	end
 end)
 
+Net.ActionResult.OnClientEvent:Connect(function(result)
+	if not result then
+		return
+	end
+	if result.Success then
+		if result.Action == "QuestClaim" then
+			if state then
+				QuestsPanel.Refresh(state)
+			end
+			Audio.Play("CoinReward")
+			ShowAnnouncement(`Quête réclamée : +{result.Reward or 0} essence !`)
+		elseif result.Action == "SkillBuy" then
+			if state then
+				SkillPanel.Refresh(state)
+			end
+			Audio.Play("UpgradeMagic")
+			ShowAnnouncement("Talent acheté !")
+		elseif result.Action == "TutorialComplete" then
+			Audio.Play("CoinReward")
+			ShowAnnouncement(`Tutoriel terminé : +{result.Reward or 0} essence !`)
+		elseif result.Action == "BreedCreatures" then
+			ShowAnnouncement("Élevage réussi !")
+		end
+	else
+		if result.Action == "QuestClaim" and state then
+			QuestsPanel.Refresh(state)
+		elseif result.Action == "SkillBuy" and state then
+			SkillPanel.Refresh(state)
+		end
+		ShowAnnouncement(result.Reason or "Action refusée")
+	end
+end)
+
 ObjectiveBanner.Mount(ui)
 
 -- ponytail: retry car un require qui échoue (sync rojo partielle au boot) reste en cache erreur
@@ -977,7 +1114,6 @@ local function RequireWithRetry(module: ModuleScript)
 end
 
 RequireWithRetry(script.Parent.CreatureDisplay)
-RequireWithRetry(script.Parent.CouveusePanel)
 local followController = RequireWithRetry(script.Parent.FollowController)
 if followController then
 	followController.Start()

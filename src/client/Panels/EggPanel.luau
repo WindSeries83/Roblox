@@ -5,6 +5,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
+local CouveusePanel = require(script.Parent.CouveusePanel)
 
 local EggPanel = {}
 
@@ -13,8 +14,10 @@ local shopRow
 local itemShopRow
 local pityLabel
 local buyButtons: { [string]: TextButton } = {}
+local rotatingButton: TextButton?
 local lockedTiers: { [string]: number? } = {}
 local currentEssence = 0
+local rotatingEgg
 
 local function RefreshPity(hatchesSinceRare: number)
 	local remaining = Config.PITY_THRESHOLD - hatchesSinceRare
@@ -38,6 +41,24 @@ local function RefreshBuyButtons()
 		else
 			button.Text = `{UiKit.EGG_TIER_NAMES[tier]}\n{price} Essence`
 			button.TextColor3 = UiKit.TINTS.WHITE
+		end
+	end
+	if rotatingButton then
+		if not rotatingEgg then
+			rotatingButton.Visible = false
+			return
+		end
+		rotatingButton.Visible = true
+		local required = lockedTiers[rotatingEgg.Tier]
+		if required then
+			rotatingButton.Text = `{rotatingEgg.Name}\nRang de sanctuaire {required} requis`
+			rotatingButton.TextColor3 = Color3.fromRGB(140, 140, 150)
+		elseif currentEssence < rotatingEgg.Price then
+			rotatingButton.Text = `{rotatingEgg.Name}\n{rotatingEgg.Price} Essence - insuffisant`
+			rotatingButton.TextColor3 = Color3.fromRGB(255, 120, 120)
+		else
+			rotatingButton.Text = `{rotatingEgg.Name}\n{rotatingEgg.Price} Essence`
+			rotatingButton.TextColor3 = UiKit.TINTS.WHITE
 		end
 	end
 end
@@ -149,7 +170,7 @@ function EggPanel.Create(parent)
 			TextColor3 = UiKit.TINTS.WHITE,
 			Font = Enum.Font.GothamBold,
 			TextSize = 12,
-			Size = UDim2.fromScale(1 / #Sanctuary.EGG_TIERS, 1),
+			Size = UDim2.fromScale(1 / (#Sanctuary.EGG_TIERS + 1), 1),
 			Text = `{UiKit.EGG_TIER_NAMES[tier]}\n{price} Essence`,
 			TextWrapped = true,
 			Parent = shopRow,
@@ -163,6 +184,23 @@ function EggPanel.Create(parent)
 			Net.BuyEgg:FireServer(tier)
 		end)
 	end
+	rotatingButton = UiKit.Create("TextButton", {
+		Name = "BuyRotatingEgg",
+		LayoutOrder = #Sanctuary.EGG_TIERS + 1,
+		BackgroundColor3 = UiKit.TINTS.ACCENT,
+		TextColor3 = UiKit.TINTS.WHITE,
+		Font = Enum.Font.GothamBold,
+		TextSize = 12,
+		Size = UDim2.fromScale(1 / (#Sanctuary.EGG_TIERS + 1), 1),
+		TextWrapped = true,
+		Parent = shopRow,
+	})
+	UiKit.Corner(rotatingButton)
+	rotatingButton.Activated:Connect(function()
+		if rotatingEgg and not lockedTiers[rotatingEgg.Tier] then
+			Net.BuyEgg:FireServer("RotatingEgg")
+		end
+	end)
 
 	local itemOrder = 0
 	for _, itemType in { "Heart", "Collar" } do
@@ -194,6 +232,7 @@ function EggPanel.Refresh(state)
 	UiKit.Clear(eggList)
 	lockedTiers = Sanctuary.EggGate(state.SanctuaryLevel or 1)
 	currentEssence = math.floor(state.Essence or 0)
+	rotatingEgg = state.RotatingEgg
 	RefreshBuyButtons()
 	local stats = state.Stats or {}
 	RefreshPity(stats.HatchesSinceRare or 0)
@@ -208,14 +247,14 @@ function EggPanel.Refresh(state)
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Size = UDim2.fromOffset(0, 22),
 			AutomaticSize = Enum.AutomaticSize.X,
-			Text = UiKit.EGG_TIER_NAMES[egg.Tier] or egg.Tier,
+			Text = `{UiKit.EGG_TIER_NAMES[egg.Tier] or egg.Tier}{if egg.RotatingEggId then " (rotatif)" else ""}`,
 			Parent = row,
 		})
-		local button = UiKit.Button(row, "Placer", UDim2.new(0.55, 0, 0, 36), UDim2.fromScale(0.45, 0.5))
+		local button = UiKit.Button(row, "Sélectionner", UDim2.new(0.55, 0, 0, 36), UDim2.fromScale(0.45, 0.5))
 		button.Name = `PlaceButton{i}`
 		button.AnchorPoint = Vector2.new(0, 0.5)
 		button.Activated:Connect(function()
-			Net.PlaceEgg:FireServer(egg.Id)
+			CouveusePanel.SelectEgg(egg)
 		end)
 	end
 end

@@ -7,8 +7,9 @@ local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Equipment = require(ReplicatedStorage.Shared.Data.Equipment)
 local Evolution = require(ReplicatedStorage.Shared.Evolution)
+local FeatureUnlocks = require(ReplicatedStorage.Shared.FeatureUnlocks)
 local Gameplay = require(ReplicatedStorage.Shared.Gameplay)
-local UiKit = require(script.Parent.UiKit)
+local UiKit = require(script.Parent:WaitForChild("UiKit"))
 
 local CreatureHud = {}
 
@@ -74,11 +75,19 @@ local function Render()
 		UiKit.SetBar(xpFill, xpLabel, creature.XP, Evolution.XPToNext(creature.Level))
 	end
 
+	local equipmentUnlocked = FeatureUnlocks.Require(lastState, "Equipment")
 	local item = lastState.Items[1]
-	if item then
+	if not equipmentUnlocked then
+		equipButton.Visible = true
+		equipButton.Text = lastState.UnlockReasons and lastState.UnlockReasons.Equipment or "Équipement verrouillé"
+		equipButton.BackgroundColor3 = TINTS.DARK
+		equipButton.AutoButtonColor = false
+	elseif item then
 		local def = Equipment[item.Type] and Equipment[item.Type].Tiers[item.Tier]
 		equipButton.Visible = true
 		equipButton.Text = if def then `Équiper {def.Name}` else "Équiper"
+		equipButton.BackgroundColor3 = TINTS.ACCENT
+		equipButton.AutoButtonColor = true
 	else
 		equipButton.Visible = false
 	end
@@ -86,11 +95,18 @@ local function Render()
 	local isCompanion = lastState.CompanionId == creature.Id
 	companionButton.Text = if isCompanion then "Rappeler à la grille" else "Faire suivre"
 
-	local canEvolve, reason = Evolution.CanEvolve(creature, lastState.Essence)
-	evolveButton.Text = if canEvolve
-		then `Évoluer ({Evolution.EvolveCost(creature)} Essence)`
-		else `Évoluer — {reason}`
-	evolveButton.AutoButtonColor = canEvolve
+	local evolutionUnlocked = FeatureUnlocks.Require(lastState, "Evolution")
+	if evolutionUnlocked then
+		local canEvolve, reason = Evolution.CanEvolve(creature, lastState.Essence)
+		evolveButton.Text = if canEvolve
+			then `Évoluer ({Evolution.EvolveCost(creature)} Essence)`
+			else `Évoluer — {reason}`
+		evolveButton.AutoButtonColor = canEvolve
+	else
+		evolveButton.Text = lastState.UnlockReasons and lastState.UnlockReasons.Evolution or "Évolution verrouillée"
+		evolveButton.AutoButtonColor = false
+		evolveButton.BackgroundColor3 = TINTS.DARK
+	end
 end
 
 local function Build()
@@ -157,6 +173,9 @@ local function Build()
 	equipButton = UiKit.Button(panel, "Équiper", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.37))
 	equipButton.ZIndex = 50
 	equipButton.Activated:Connect(function()
+		if not lastState or not FeatureUnlocks.Require(lastState, "Equipment") then
+			return
+		end
 		local item = lastState and lastState.Items[1]
 		if item and currentId then
 			Net.EquipItem:FireServer(currentId, item.Id)
@@ -177,6 +196,9 @@ local function Build()
 	evolveButton = UiKit.Button(panel, "Évoluer", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.67))
 	evolveButton.ZIndex = 50
 	evolveButton.Activated:Connect(function()
+		if not lastState or not FeatureUnlocks.Require(lastState, "Evolution") then
+			return
+		end
 		local creature = CurrentCreature()
 		if creature then
 			local canEvolve = Evolution.CanEvolve(creature, lastState.Essence)

@@ -16,10 +16,16 @@ function LuckService:Init(container)
 end
 
 -- Une seule potion active : racheter la meme prolonge, une autre remplace.
-function LuckService:GrantPotion(player: Player, potionKind: string): boolean
+function LuckService:GrantPotion(player: Player, potionKind: string, receiptKey: string?): boolean
 	local profile = saveService:GetProfile(player)
 	if not profile then
 		return false
+	end
+	if receiptKey then
+		profile.Data.EconomyLedger = profile.Data.EconomyLedger or {}
+		if profile.Data.EconomyLedger[receiptKey] then
+			return true
+		end
 	end
 	local cfg = if potionKind == "Big" then Config.LUCK_POTION_BIG else Config.LUCK_POTION_SMALL
 	if not cfg then
@@ -35,6 +41,9 @@ function LuckService:GrantPotion(player: Player, potionKind: string): boolean
 		untilTs = Luck.Expiry(now, cfg.Duration)
 	end
 	profile.Data.LuckPotion = { PotionKind = potionKind, Bonus = cfg.Bonus, Until = untilTs }
+	if receiptKey then
+		profile.Data.EconomyLedger[receiptKey] = true
+	end
 
 	log:Economy("Luck", "PotionGranted", { Player = player.Name, Kind = potionKind, Until = untilTs })
 	dataSync:Send(player)

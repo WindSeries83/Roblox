@@ -79,7 +79,7 @@ function Cinematic.Play(payload)
 		diedConn = humanoid.Died:Connect(Restore)
 	end
 
-	local Audio = require(script.Parent.Audio)
+	local Audio = require(script.Parent:WaitForChild("Audio"))
 	Audio.Play("RebirthRoar")
 
 	blur = Instance.new("BlurEffect")

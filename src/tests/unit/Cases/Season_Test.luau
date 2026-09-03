@@ -3,6 +3,15 @@ return function(t)
 	local Season = require(game.ReplicatedStorage.Shared.Season)
 	local Config = require(game.ReplicatedStorage.Shared.Config)
 
+	t.test("version change resets claims exactly once", function()
+		local season =
+			{ Version = 1, Level = 8, XP = 700, ClaimedFree = { [1] = true }, ClaimedPremium = { [1] = true } }
+		expect.truthy(Season.ResetIfVersionChanged(season, 2))
+		expect.equal(season.Level, 1)
+		expect.equal(season.XP, 0)
+		expect.equal(Season.ResetIfVersionChanged(season, 2), false)
+	end)
+
 	t.test("fresh season is level 1", function()
 		expect.equal(Season.LevelFromXP(0), 1)
 		expect.equal(Season.LevelFromXP(99), 1)

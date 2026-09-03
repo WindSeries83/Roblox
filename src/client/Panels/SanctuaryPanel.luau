@@ -44,7 +44,7 @@ local function CreatureLabel(creature): string
 	return `[{string.upper(creature.Rarity)}] {name} — {stage.Name} — Niv. {creature.Level} — {creature.Power}`
 end
 
-local function RenderDetail(creature, items)
+local function RenderDetail(creature, items, state)
 	UiKit.Clear(detail)
 
 	if not creature then
@@ -60,57 +60,91 @@ local function RenderDetail(creature, items)
 	local xpLabel, xpFill = UiKit.Bar(detail, UiKit.TINTS.ACCENT)
 	UiKit.SetBar(xpFill, xpLabel, creature.XP, Evolution.XPToNext(creature.Level))
 
-	local canEvolve, reason = Evolution.CanEvolve(creature, 1e18)
-	local evolveText = if canEvolve
-		then `Évoluer (stade {creature.Stage + 1}, {Evolution.EvolveCost(creature)} Essence)`
-		else `Évolution : {reason}`
-	local evolveButton = UiKit.Button(detail, evolveText, UDim2.fromScale(1, 0.08))
-	if canEvolve then
-		evolveButton.Activated:Connect(function()
-			Net.EvolveCreature:FireServer(creature.Id)
-		end)
+	local unlocks = state.FeatureUnlocks or {}
+	local reasons = state.UnlockReasons or {}
+	if unlocks.Evolution == true then
+		local canEvolve, reason = Evolution.CanEvolve(creature, 1e18)
+		local evolveText = if canEvolve
+			then `Évoluer (stade {creature.Stage + 1}, {Evolution.EvolveCost(creature)} Essence)`
+			else `Évolution : {reason}`
+		local evolveButton = UiKit.Button(detail, evolveText, UDim2.fromScale(1, 0.08))
+		if canEvolve then
+			evolveButton.Activated:Connect(function()
+				Net.EvolveCreature:FireServer(creature.Id)
+			end)
+		else
+			evolveButton.BackgroundColor3 = UiKit.TINTS.DARK
+			evolveButton.TextColor3 = Color3.fromRGB(150, 150, 160)
+		end
 	else
-		evolveButton.BackgroundColor3 = UiKit.TINTS.DARK
-		evolveButton.TextColor3 = Color3.fromRGB(150, 150, 160)
+		local locked = UiKit.Button(detail, reasons.Evolution or "Évolution verrouillée", UDim2.fromScale(1, 0.08))
+		locked.BackgroundColor3 = UiKit.TINTS.DARK
+		locked.TextColor3 = Color3.fromRGB(150, 150, 160)
+		locked.Active = false
 	end
 
-	UiKit.Title(detail, `Équipement ({#creature.Equipment}/{Evolution.SlotsForStage(creature.Stage)})`, 14)
-	for _, item in creature.Equipment do
-		local row = UiKit.Cell(detail)
-		local label = UiKit.Create("TextLabel", {
-			BackgroundTransparency = 1,
-			TextColor3 = UiKit.TINTS.WHITE,
-			TextSize = 13,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.fromScale(1, 0),
-			AutomaticSize = Enum.AutomaticSize.Y,
-			Text = ItemName(item),
-			Parent = row,
-		})
-		label.Size = UDim2.new(0.6, 0, 0, 24)
-		local button = UiKit.Button(row, "Déséquiper", UDim2.new(0.4, 0, 0, 24), UDim2.fromScale(0.6, 0))
-		button.BackgroundColor3 = UiKit.TINTS.DARK
-		button.Activated:Connect(function()
-			Net.UnequipItem:FireServer(creature.Id, item.Id)
+	if unlocks.Equipment == true then
+		UiKit.Title(detail, `Équipement ({#creature.Equipment}/{Evolution.SlotsForStage(creature.Stage)})`, 14)
+	end
+	if unlocks.Equipment == true then
+		for _, item in creature.Equipment do
+			local row = UiKit.Cell(detail)
+			local label = UiKit.Create("TextLabel", {
+				BackgroundTransparency = 1,
+				TextColor3 = UiKit.TINTS.WHITE,
+				TextSize = 13,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				Text = ItemName(item),
+				Parent = row,
+			})
+			label.Size = UDim2.new(0.6, 0, 0, 24)
+			local button = UiKit.Button(row, "Déséquiper", UDim2.new(0.4, 0, 0, 24), UDim2.fromScale(0.6, 0))
+			button.BackgroundColor3 = UiKit.TINTS.DARK
+			button.Activated:Connect(function()
+				Net.UnequipItem:FireServer(creature.Id, item.Id)
+			end)
+		end
+
+		UiKit.Title(detail, "Inventaire", 14)
+		for _, item in items do
+			local row = UiKit.Cell(detail)
+			UiKit.Create("TextLabel", {
+				BackgroundTransparency = 1,
+				TextColor3 = UiKit.TINTS.WHITE,
+				TextSize = 13,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				Size = UDim2.new(0.6, 0, 0, 24),
+				Text = ItemName(item),
+				Parent = row,
+			})
+			local button = UiKit.Button(row, "Équiper", UDim2.new(0.4, 0, 0, 24), UDim2.fromScale(0.6, 0))
+			button.BackgroundColor3 = UiKit.TINTS.DARK
+			button.Activated:Connect(function()
+				Net.EquipItem:FireServer(creature.Id, item.Id)
+			end)
+		end
+	else
+		local locked = UiKit.Button(detail, reasons.Equipment or "Équipement verrouillé", UDim2.fromScale(1, 0.08))
+		locked.BackgroundColor3 = UiKit.TINTS.DARK
+		locked.TextColor3 = Color3.fromRGB(150, 150, 160)
+		locked.Active = false
+		return
+	end
+
+	local sharedCount = state.FeatureUnlocks and state.FeatureUnlocks.SharedSanctuaryCount or 0
+	for index = 1, sharedCount do
+		local sanctuaryId = `Sanctuary{index}`
+		local assign = UiKit.Button(detail, `Affecter au sanctuaire {index}`, UDim2.new(1, 0, 0, 30))
+		assign.Activated:Connect(function()
+			-- ponytail: l'UI affecte une créature à la fois; ajouter la multi-sélection si les playtests la réclament.
+			Net.AssignSanctuary:FireServer(sanctuaryId, { creature.Id })
 		end)
-	end
-
-	UiKit.Title(detail, "Inventaire", 14)
-	for _, item in items do
-		local row = UiKit.Cell(detail)
-		UiKit.Create("TextLabel", {
-			BackgroundTransparency = 1,
-			TextColor3 = UiKit.TINTS.WHITE,
-			TextSize = 13,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.new(0.6, 0, 0, 24),
-			Text = ItemName(item),
-			Parent = row,
-		})
-		local button = UiKit.Button(row, "Équiper", UDim2.new(0.4, 0, 0, 24), UDim2.fromScale(0.6, 0))
-		button.BackgroundColor3 = UiKit.TINTS.DARK
-		button.Activated:Connect(function()
-			Net.EquipItem:FireServer(creature.Id, item.Id)
+		local collect = UiKit.Button(detail, `Collecter le sanctuaire {index}`, UDim2.new(1, 0, 0, 30))
+		collect.BackgroundColor3 = UiKit.TINTS.DARK
+		collect.Activated:Connect(function()
+			Net.CollectSanctuary:FireServer(sanctuaryId)
 		end)
 	end
 end
@@ -123,7 +157,7 @@ function SanctuaryPanel.Create(parent)
 	})
 	UiKit.Padding(frame, 10)
 
-	UiKit.Title(frame, "Créatures")
+	UiKit.Title(frame, "Sanctuaires")
 
 	local header = UiKit.Create("Frame", {
 		Name = "Header",
@@ -307,7 +341,7 @@ function SanctuaryPanel.Refresh(state)
 		})
 		hit.Activated:Connect(function()
 			detail:SetAttribute("SelectedId", creature.Id)
-			RenderDetail(creature, state.Items)
+			RenderDetail(creature, state.Items, state)
 		end)
 		HoverCard.Hook(hit, {
 			SpeciesId = creature.SpeciesId,
@@ -318,7 +352,7 @@ function SanctuaryPanel.Refresh(state)
 			SuggestedPrice = CreatureHud.SuggestedPrice(creature.Rarity),
 		})
 		if creature.Id == selected then
-			RenderDetail(creature, state.Items)
+			RenderDetail(creature, state.Items, state)
 		end
 	end
 end

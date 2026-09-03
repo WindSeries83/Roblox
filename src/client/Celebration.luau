@@ -26,7 +26,7 @@ function Celebration.Hatch(rank: number)
 	local pos = camera.CFrame.Position - camera.CFrame.LookVector * 12
 
 	local Fx = require(script.Parent.Fx)
-	local Audio = require(script.Parent.Audio)
+	local Audio = require(script.Parent:WaitForChild("Audio"))
 	Fx.Confetti(pos, Color3.fromRGB(255, 215, 94), if tier == "epic" then 24 else 40)
 
 	if tier == "epic" then
