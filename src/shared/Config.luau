@@ -3,6 +3,27 @@ return {
 	SANCTUARY_LEVEL_BONUS = 0.2,
 
 	STARTER_ESSENCE = 100,
+	GROUP_ID = 0, -- ID humain requis avant publication ; 0 désactive proprement le bonus.
+	GROUP_ESSENCE_BONUS = 0.10,
+	GROUP_DAILY_EGG = "CommonEgg",
+
+	WORLDS = {
+		World1 = { Name = "Île crépusculaire", UnlockRebirths = 0, EssenceMult = 1 },
+		World2 = {
+			Name = "Rivage boréal",
+			UnlockRebirths = 1,
+			EssenceMult = 1.5,
+			Rush = {
+				TargetSeconds = 120,
+				Title = "Briseur de marée",
+				Cosmetic = "AuroraTrail",
+			},
+		},
+	},
+
+	COSMETICS = {
+		AuroraTrail = { Name = "Sillage boréal" },
+	},
 
 	EGG_PRICES = {
 		CommonEgg = 50,
@@ -332,6 +353,7 @@ return {
 		VIP = { Id = 0, Name = "VIP — chance permanente, tag doré, cadeau quotidien" },
 	},
 	DEV_PRODUCTS = {
+		RenameTicket = { Id = 0, Name = "Ticket de renommage", Kind = "RenameTicket" },
 		EssencePackSmall = { Id = 0, Name = "500 Essence", Amount = 500 },
 		EssencePackMedium = { Id = 0, Name = "2500 Essence", Amount = 2500 },
 		EssencePackLarge = { Id = 0, Name = "10000 Essence", Amount = 10000 },
@@ -406,4 +428,4 @@ return {
 	},
 }
 
--- SYNC_MARKER
+-- SYNC_MARKER_LOT4_WORLD2_RUSH_V9

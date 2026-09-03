@@ -9,6 +9,7 @@ local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 local SkillTree = require(ReplicatedStorage.Shared.SkillTree)
 local Pack = require(ReplicatedStorage.Shared.Pack)
 local Stages = require(ReplicatedStorage.Shared.Data.Stages)
+local GroupBonus = require(ReplicatedStorage.Shared.GroupBonus)
 
 local EconomySim = {}
 
@@ -28,6 +29,7 @@ local function NewProfile(thresholds)
 		SkillRanks = {},
 		SanctuaryLevel = 1,
 		Thresholds = thresholds,
+		CurrentWorld = "World1",
 	}
 end
 
@@ -36,7 +38,9 @@ local function GetRate(profile)
 	local sanctuaryMult = 1 + Config.SANCTUARY_LEVEL_BONUS * (profile.SanctuaryLevel - 1)
 	local indexMult = Index.ComputeMult(profile.Index)
 	local starMult = Rebirth.StarEssenceMult(profile.Stars)
+	local worldMult = Config.WORLDS[profile.CurrentWorld].EssenceMult
 	rate = rate * sanctuaryMult * indexMult * starMult * (1 + SkillTree.Effects(profile.SkillRanks).EssenceRate)
+	rate *= worldMult * GroupBonus.Mult(profile.GroupMember == true)
 	if profile.PackFriends then
 		rate *= Pack.Mult(profile.PackFriends)
 	end
@@ -129,6 +133,9 @@ local function TryRebirth(profile)
 	profile.Rebirths += 1
 	profile.SkillPoints += 1
 	profile.Essence = Config.STARTER_ESSENCE
+	if profile.Stars >= Config.WORLDS.World2.UnlockRebirths then
+		profile.CurrentWorld = "World2"
+	end
 	return true
 end
 
@@ -154,6 +161,10 @@ local function ApplyProfile(profile, kind)
 	if kind == "meute" then
 		-- f2p jouant avec 3 amis actifs dans le serveur (cap meute, bible §4.C).
 		profile.PackFriends = Config.PACK_MAX_FRIENDS
+		return profile
+	end
+	if kind == "groupe" then
+		profile.GroupMember = true
 		return profile
 	end
 	if kind == "f2p" then

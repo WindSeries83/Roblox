@@ -25,6 +25,7 @@ local ORDER = {
 	"AnalyticsService",
 	"SaveService",
 	"PackService",
+	"DepthService",
 	"FriendRegistry",
 	"SkillService",
 	"SessionLuck",

@@ -249,7 +249,9 @@ local function WinRift(player: Player)
 		Duration = os.time() - combat.StartedAt,
 		Total = profile.Data.Stats.RiftsCompleted,
 	})
-	analyticsService:Event("rift_complete", { Win = true, Duration = os.time() - combat.StartedAt })
+	local duration = os.time() - combat.StartedAt
+	analyticsService:Event("rift_complete", { Win = true, Duration = duration })
+	container:Get("DepthService"):OnRiftComplete(player, duration)
 
 	CleanupCombat(player)
 end
@@ -271,6 +273,7 @@ local function LoseRift(player: Player)
 	Net.RiftEnded:FireClient(player, { Win = false, RelicTier = defeatTier })
 	log:Economy("Rift", "Defeat", { Player = player.Name, Duration = os.time() - combat.StartedAt })
 	analyticsService:Event("rift_complete", { Win = false, Duration = os.time() - combat.StartedAt })
+	container:Get("DepthService"):OnRiftFailed(player)
 	CleanupCombat(player)
 end
 

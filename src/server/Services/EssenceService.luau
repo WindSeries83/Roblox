@@ -15,6 +15,7 @@ local dataSync
 local questService
 local skillService
 local packService
+local depthService
 local container
 
 function EssenceService.GetRate(player: Player): number
@@ -28,6 +29,8 @@ function EssenceService.GetRate(player: Player): number
 	local passMult = if profile.Data.Entitlements.PassiveBoost then 1.5 else 1
 	local skillMult = 1 + skillService:EffectsOf(profile).EssenceRate
 	local packMult = Pack.Mult(packService and packService:Count(player) or 0)
+	local world = Config.WORLDS[profile.Data.CurrentWorld] or Config.WORLDS.World1
+	local groupMult = depthService and depthService:GroupMult(player) or 1
 	return Gameplay.ComputeRate(profile.Data.Creatures)
 		* sanctuaryMult
 		* indexMult
@@ -35,6 +38,8 @@ function EssenceService.GetRate(player: Player): number
 		* passMult
 		* skillMult
 		* packMult
+		* world.EssenceMult
+		* groupMult
 end
 
 function EssenceService:Add(player: Player, amount: number, source: string)
@@ -91,6 +96,7 @@ end
 function EssenceService:Start()
 	questService = container:Get("QuestService")
 	packService = container:Get("PackService")
+	depthService = container:Get("DepthService")
 
 	local accumulator = 0
 	local lastLog = 0

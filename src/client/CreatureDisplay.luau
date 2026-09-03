@@ -337,6 +337,21 @@ function CreatureDisplay.Refresh(state)
 				emitter.Color = ColorSequence.new(displayColor)
 			end
 		end
+		local primary = model.PrimaryPart
+		if primary then
+			local trail = primary:FindFirstChild("AuroraTrail")
+			if creature.Cosmetic == "AuroraTrail" and not trail then
+				local emitter = Instance.new("ParticleEmitter")
+				emitter.Name = "AuroraTrail"
+				emitter.Color = ColorSequence.new(Color3.fromRGB(80, 220, 255), Color3.fromRGB(180, 100, 255))
+				emitter.Rate = 8
+				emitter.Lifetime = NumberRange.new(0.8, 1.4)
+				emitter.Speed = NumberRange.new(0.2, 0.8)
+				emitter.Parent = primary
+			elseif creature.Cosmetic ~= "AuroraTrail" and trail then
+				trail:Destroy()
+			end
+		end
 	end
 end
 

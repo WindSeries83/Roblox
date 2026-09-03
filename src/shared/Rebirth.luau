@@ -1,4 +1,5 @@
 local Config = require(script.Parent.Config)
+local WorldProgression = require(script.Parent.WorldProgression)
 
 local Rebirth = {}
 
@@ -36,6 +37,7 @@ function Rebirth.ApplyReset(data: any)
 	data.Rebirths += 1
 	data.SkillPoints = (data.SkillPoints or 0) + 1
 	data.Essence = Config.STARTER_ESSENCE
+	WorldProgression.SyncUnlocks(data)
 end
 
 return Rebirth

@@ -58,6 +58,7 @@ local essenceService
 local riftService
 local dataSync
 local skillService
+local depthService
 
 local function OnPlayerAdded(player: Player)
 	task.spawn(function()
@@ -74,6 +75,7 @@ local function OnPlayerAdded(player: Player)
 			player:Kick("Sauvegarde indisponible, réessaie.")
 			return
 		end
+		depthService:OnProfileLoaded(player, profile)
 
 		local elapsed = os.time() - profile.Data.LastPlayed
 		if profile.Data.LastPlayed > 0 and elapsed > 60 then
@@ -189,6 +191,7 @@ function PlayerDataService:Init(container)
 	riftService = container:Get("RiftService")
 	dataSync = container:Get("DataSync")
 	skillService = container:Get("SkillService")
+	depthService = container:Get("DepthService")
 end
 
 function PlayerDataService:Start()

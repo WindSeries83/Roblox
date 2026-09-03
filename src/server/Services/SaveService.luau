@@ -6,7 +6,7 @@ local SaveService = {}
 
 SaveService.Profiles = {}
 
-local DATA_VERSION = 8
+local DATA_VERSION = 9
 
 local Store = ProfileStore.New("RiftBeastsData_v1", {
 	Essence = 0,
@@ -48,6 +48,15 @@ local Store = ProfileStore.New("RiftBeastsData_v1", {
 		ClaimedPremium = {},
 	},
 	Titles = {},
+	EquippedTitle = "",
+	Cosmetics = {},
+	RenameTickets = 0,
+	WorldUnlocks = { World1 = true },
+	CurrentWorld = "World1",
+	RushBest = {},
+	RushRewards = {},
+	GroupMember = false,
+	GroupGiftDate = "",
 	MarketHistory = {},
 	Entitlements = {
 		MoreSlots = false,
@@ -158,6 +167,22 @@ local MIGRATIONS = {
 	[7] = function(data)
 		data.PurchaseReceipts = data.PurchaseReceipts or {}
 		data.Version = 8
+	end,
+	[8] = function(data)
+		data.EquippedTitle = data.EquippedTitle or ""
+		data.Cosmetics = data.Cosmetics or {}
+		data.RenameTickets = data.RenameTickets or 0
+		data.WorldUnlocks = data.WorldUnlocks or { World1 = true }
+		data.CurrentWorld = data.CurrentWorld or "World1"
+		data.RushBest = data.RushBest or {}
+		data.RushRewards = data.RushRewards or {}
+		data.GroupMember = data.GroupMember or false
+		data.GroupGiftDate = data.GroupGiftDate or ""
+		for _, creature in data.Creatures or {} do
+			creature.CustomName = creature.CustomName or nil
+			creature.Cosmetic = creature.Cosmetic or nil
+		end
+		data.Version = 9
 	end,
 }
 

@@ -1,45 +1,33 @@
 # Vision
 
-Dès qu'une image, capture d'écran ou screenshot doit être examinée, décrite ou vérifiée visuellement, délègue systématiquement à l'agent `eyes` (outil `task`, avec le chemin exact du fichier) avant de répondre. Ne la décris jamais toi-même en premier. Base-toi uniquement sur ce que `eyes` rapporte ; s'il dit « je ne vois pas », rapporte-le tel quel.
+Dès qu'une image ou capture doit être examinée ou vérifiée visuellement, délègue à l'agent `eyes` avec le chemin exact du fichier avant de répondre. Base-toi uniquement sur son rapport ; s'il dit « je ne vois pas », rapporte-le tel quel.
 
 # Roblox
 
-Toute tâche liée à Roblox, Luau, Studio, au MCP `roblox` (outils `roblox_*`) ou au développement de ce jeu : charge **toujours** le skill projet `roblox-dev-skill` (`.claude/skills/roblox-dev-skill/`) — connaissances domaine Luau/Rojo/réseau/sécurité/perf. Le lookup API passe par les outils MCP officiels (`roblox_http_get`, `rbx-docs-search`).
+Pour toute tâche liée à Roblox, Luau, Studio, au MCP Roblox ou à ce jeu, charge le skill projet `.claude/skills/roblox-dev-skill/`. Utilise `http_get` pour consulter la documentation Roblox officielle.
 
-## Synchro Rojo — procédure obligatoire
+## Synchro Rojo obligatoire avant tout playtest
 
-1. Avant TOUTE session de playtest : vérifier la synchro via un execute Luau **Edit** (ex. lire `ReplicatedStorage.Shared.Config.Source` et chercher le marqueur de la dernière modification disque). Si absent → rojo est mort : relancer `rojo serve default.project.json` (un seul processus), puis demander à l'humain de cliquer **Connect** dans le plugin Studio.
-2. Ne jamais diagnostiquer depuis une copie Play : Play est une copie figée au spawn. Les vérifications de code se font en Edit ; les vérifications visuelles uniquement après confirmation que la copie Play contient la dernière source.
-3. Un seul processus `rojo serve` à la fois (`Get-Process rojo` doit montrer ≤ 2 PID parent/enfant).
-4. Le message `[profilestore]: Roblox API services unavailable` est **attendu** en Studio non publié (mock) — ne pas le traiter comme une erreur.
-5. Sessions courtes : éviter les dumps complets de logs/captures dans les tours ; les longues boucles de diagnostic saturent le contexte et coupent la session.
+1. En mode **Edit**, exécuter du Luau pour vérifier que `ReplicatedStorage.Shared.Config.Source` contient le marqueur de la dernière modification disque.
+2. Si le marqueur manque, relancer un seul `rojo serve default.project.json`, puis demander à l'humain de cliquer **Connect** dans le plugin Studio.
+3. Ne jamais diagnostiquer le code depuis une copie Play figée. Ne vérifier visuellement qu'après confirmation que Play contient la dernière source.
+4. `Get-Process rojo` doit montrer au plus deux PID parent/enfant.
+5. `[profilestore]: Roblox API services unavailable` est attendu dans un Studio non publié utilisant le mock.
+6. Garder les sessions courtes et éviter les dumps complets de logs ou captures.
 
-# Orchestration des process
+# Process
 
-## Skills projet (`.claude/skills/`)
+Priorité : demande utilisateur → Superpowers → skills projet → Ponytail pour le style lean.
 
-- **Connaissance domaine** : `roblox-dev-skill` (+ `references/` — datastore, networking, sécurité, perf, UI, migration, monétisation).
-- **Process** : `playtest-report`, `bug-report`, `bug-triage`, `retrospective`, `scope-check`, `balance-check`.
-- **Templates** : `docs/templates/` — game-design-document, systems-index, milestone-definition, sprint-plan, post-mortem, prototype-report.
-
-## Précédence
-
-1. Demandes directes de l'utilisateur
-2. Superpowers (process) : brainstorming, writing-plans, systematic-debugging, test-driven-development, verification-before-completion
-3. Skills projet ci-dessus (domaine)
-4. Ponytail gouverne uniquement le style de sortie (lean, YAGNI)
-
-## Routage
-
-| Déclencheur | Chaîne |
+| Déclencheur | Chaîne minimale |
 |---|---|
-| Nouvelle feature / système | brainstorming → fiche GDD (`docs/templates/game-design-document.md`) si méritée → writing-plans |
+| Nouvelle feature | brainstorming → GDD si nécessaire → writing-plans |
 | Bug | bug-report → bug-triage → systematic-debugging → fix → verification-before-completion |
-| Fin de lot | retrospective (+ template post-mortem si lot majeur) |
-| Avant validation d'un lot | scope-check |
-| Session playtest MCP Studio | playtest-report |
-| Équilibrage économie / revenus | balance-check |
+| Fin de lot | retrospective ; post-mortem seulement si le lot est majeur |
+| Validation de lot | scope-check |
+| Playtest Studio | playtest-report |
+| Économie ou revenus | balance-check |
 
-Mode lean par défaut : les skills projet sautent leur cérémonie optionnelle sauf demande explicite.
+Les skills projet sont dans `.claude/skills/` et les templates dans `docs/templates/`. Sauter toute cérémonie optionnelle en mode lean.
 
-Sources tierces MIT : voir `THIRD_PARTY_NOTICES.md`.
+Sources tierces MIT : `THIRD_PARTY_NOTICES.md`.

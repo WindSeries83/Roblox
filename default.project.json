@@ -155,6 +155,21 @@
                                                                                   },
                                                             "LeaderboardDetail":  {
                                                                                        "$className":  "RemoteEvent"
+                                                                                   },
+                                                            "WorldSelect":  {
+                                                                                  "$className":  "RemoteEvent"
+                                                                              },
+                                                            "RushRequest":  {
+                                                                                  "$className":  "RemoteEvent"
+                                                                              },
+                                                            "RushSync":  {
+                                                                               "$className":  "RemoteEvent"
+                                                                           },
+                                                            "CustomizeCreature":  {
+                                                                                         "$className":  "RemoteEvent"
+                                                                                     },
+                                                            "EquipTitle":  {
+                                                                                 "$className":  "RemoteEvent"
                                                                                    }
                                                         }
                                        },

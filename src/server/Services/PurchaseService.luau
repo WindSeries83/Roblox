@@ -41,6 +41,12 @@ function PurchaseService.GrantProduct(player: Player, product: any, productId: n
 			return false
 		end
 		profile.Data.Offers.FirstPurchaseClaimed = true
+	elseif product.Kind == "RenameTicket" then
+		local profile = saveService:GetProfile(player)
+		if not profile then
+			return false
+		end
+		profile.Data.RenameTickets += 1
 	else
 		essenceService:Add(player, product.Amount, `DevProduct_{productId}`)
 	end

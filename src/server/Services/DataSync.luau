@@ -42,6 +42,15 @@ function DataSync:Send(player: Player)
 		SkillRanks = profile.Data.SkillRanks,
 		CompanionId = profile.Data.CompanionId,
 		Meute = packService and packService:Count(player) or 0,
+		WorldUnlocks = profile.Data.WorldUnlocks,
+		CurrentWorld = profile.Data.CurrentWorld,
+		RushBest = profile.Data.RushBest,
+		RushRewards = profile.Data.RushRewards,
+		Titles = profile.Data.Titles,
+		EquippedTitle = profile.Data.EquippedTitle,
+		Cosmetics = profile.Data.Cosmetics,
+		RenameTickets = profile.Data.RenameTickets,
+		GroupMember = profile.Data.GroupMember,
 	})
 end
 

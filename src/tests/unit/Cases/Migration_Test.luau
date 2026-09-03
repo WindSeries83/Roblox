@@ -3,7 +3,7 @@ return function(t)
 	local SaveService = require(game.ServerScriptService.Services.SaveService)
 
 	-- A v1 profile gains every new field through migration.
-	t.test("migration v1 to v8 completes creature fields", function()
+	t.test("migration v1 to v9 completes creature fields", function()
 		local data = {
 			Essence = 100,
 			Creatures = {
@@ -16,7 +16,7 @@ return function(t)
 			Version = 1,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 9)
 		expect.equal(data.CompanionId, nil)
 		expect.truthy(data.Index ~= nil)
 		expect.truthy(data.Items ~= nil)
@@ -62,7 +62,7 @@ return function(t)
 			Version = 2,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 9)
 		expect.equal(data.Stars, 3)
 		expect.equal(data.Rebirths, 2)
 		expect.equal(#data.Items, 1)
@@ -89,7 +89,7 @@ return function(t)
 			Version = 3,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 9)
 		expect.equal(data.Stats.TotalBred, 1)
 		expect.equal(data.Quests.Day, "2026-01-01")
 		expect.truthy(data.Quests.Achievements.FirstHatch)
@@ -132,7 +132,7 @@ return function(t)
 			Version = 4,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 9)
 		expect.equal(data.LoginStreak, 0)
 		expect.equal(data.LastLoginDate, "")
 		expect.equal(data.Stats.HatchesSinceRare, 0)
@@ -146,7 +146,7 @@ return function(t)
 	t.test("migration v5 to v8 adds lot2 fields", function()
 		local data = { Version = 5 }
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 9)
 		expect.equal(data.SkillPoints, 0)
 		expect.truthy(data.SkillRanks ~= nil)
 		expect.equal(data.Offers.FirstPurchaseEligible, false)
@@ -166,7 +166,7 @@ return function(t)
 			CompanionId = "comp_9",
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 9)
 		expect.equal(data.Stats.TotalHatched, 12)
 		expect.equal(data.SkillRanks.FarmRate1, 2)
 		expect.equal(data.Offers.FirstPurchaseClaimed, true)
@@ -178,17 +178,21 @@ return function(t)
 	t.test("migration v7 to v8 adds purchase receipts", function()
 		local data = { Version = 7, CompanionId = "comp_1" }
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 9)
 		expect.truthy(data.PurchaseReceipts ~= nil)
 		expect.equal(next(data.PurchaseReceipts), nil)
 		expect.equal(data.CompanionId, "comp_1")
 	end)
 
-	-- Un profil déjà en v8 garde ses receipts existants.
-	t.test("migration preserves existing purchase receipts", function()
+	-- Un profil déjà en v8 garde ses receipts et gagne les champs du lot 4.
+	t.test("migration v8 adds lot4 fields and preserves receipts", function()
 		local data = { Version = 8, PurchaseReceipts = { ["42_abc"] = true } }
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 8)
+		expect.equal(data.Version, 9)
 		expect.equal(data.PurchaseReceipts["42_abc"], true)
+		expect.equal(data.CurrentWorld, "World1")
+		expect.equal(data.WorldUnlocks.World1, true)
+		expect.equal(data.EquippedTitle, "")
+		expect.equal(data.RenameTickets, 0)
 	end)
 end

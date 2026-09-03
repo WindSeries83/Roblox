@@ -3,16 +3,18 @@
 -- le fallback couvre les sessions où le boot serveur n'a pas tourné.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local Species = require(script.Parent.Data.Species)
 
 local CreatureTemplates = {}
 
 function CreatureTemplates.Get(speciesId: string): Model?
+	local templateId = Species[speciesId] and Species[speciesId].TemplateId or speciesId
 	local folder = ReplicatedStorage:FindFirstChild("CreatureTemplates")
 	if folder then
-		return folder:FindFirstChild(speciesId)
+		return folder:FindFirstChild(templateId)
 	end
 	folder = Workspace:FindFirstChild("Creatures")
-	return if folder then folder:FindFirstChild(speciesId) else nil
+	return if folder then folder:FindFirstChild(templateId) else nil
 end
 
 return CreatureTemplates

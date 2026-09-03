@@ -69,7 +69,7 @@ function Gameplay.MutationWeights(bonus: number?): { [string]: number }
 	return weights
 end
 
-function Gameplay.RollEgg(tier: string, mutationBonus: number?, rarityWeights: { [string]: number }?)
+function Gameplay.RollEgg(tier: string, mutationBonus: number?, rarityWeights: { [string]: number }?, worldId: string?)
 	local weights = rarityWeights or Config.EGG_RARITY_WEIGHTS[tier]
 	assert(weights, `Unknown egg tier: {tostring(tier)}`)
 
@@ -78,7 +78,7 @@ function Gameplay.RollEgg(tier: string, mutationBonus: number?, rarityWeights: {
 
 	local pool = {}
 	for speciesId, def in Species do
-		if def.Rarity == rarity then
+		if def.Rarity == rarity and (def.World == nil or def.World == (worldId or "World1")) then
 			table.insert(pool, speciesId)
 		end
 	end

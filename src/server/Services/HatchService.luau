@@ -169,7 +169,8 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 	local roll = Gameplay.RollEgg(
 		egg.Tier,
 		CollarBonus(profile) + luck + eff.MutationBonus + eclipseService:MutationBonus(),
-		rarityWeights
+		rarityWeights,
+		profile.Data.CurrentWorld
 	)
 	if egg.AscendChance then
 		roll.Rarity = Ascension.RollFrom(roll.Rarity, luck, egg.AscendChance)
@@ -190,7 +191,7 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 	local rareRank = Gameplay.RarityRank("Rare")
 	local hatchesSinceRare = profile.Data.Stats.HatchesSinceRare or 0
 	if hatchesSinceRare >= Config.PITY_THRESHOLD - 1 and Gameplay.RarityRank(roll.Rarity) < rareRank then
-		roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile) + luck, { Rare = 100 })
+		roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile) + luck, { Rare = 100 }, profile.Data.CurrentWorld)
 		log:Economy("Hatch", "PityTriggered", { Player = player.Name, SinceRare = hatchesSinceRare })
 	end
 	if Gameplay.RarityRank(roll.Rarity) >= rareRank then

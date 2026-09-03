@@ -25,6 +25,8 @@ local equipButton: TextButton? = nil
 local companionButton: TextButton? = nil
 local evolveButton: TextButton? = nil
 local priceBox: TextBox? = nil
+local nameBox: TextBox? = nil
+local cosmeticButton: TextButton? = nil
 
 local currentId: string? = nil
 local lastState = nil
@@ -62,7 +64,7 @@ local function Render()
 
 	local species = Species[creature.SpeciesId]
 	local rarity = Rarities[creature.Rarity]
-	titleLabel.Text = `{species and species.Name or creature.SpeciesId} — {creature.Rarity}`
+	titleLabel.Text = `{creature.CustomName or (species and species.Name or creature.SpeciesId)} — {creature.Rarity}`
 	titleLabel.TextColor3 = if rarity then rarity.Color else TINTS.WHITE
 	stageLabel.Text = `Stade {creature.Stage} — Niveau {creature.Level} — Puissance {math.floor(creature.Power)}`
 
@@ -91,6 +93,9 @@ local function Render()
 		then `Évoluer ({Evolution.EvolveCost(creature)} Essence)`
 		else `Évoluer — {reason}`
 	evolveButton.AutoButtonColor = canEvolve
+	nameBox.Text = creature.CustomName or ""
+	local cosmetic = creature.Cosmetic and Config.COSMETICS[creature.Cosmetic]
+	cosmeticButton.Text = if cosmetic then `Cosmétique : {cosmetic.Name}` else "Cosmétique : aucun"
 end
 
 local function Build()
@@ -114,7 +119,7 @@ local function Build()
 	local panel = UiKit.Create("Frame", {
 		Name = "Panel",
 		BackgroundColor3 = TINTS.PANEL,
-		Size = UDim2.fromOffset(320, 300),
+		Size = UDim2.fromOffset(320, 420),
 		Position = UDim2.new(0.5, 0, 1, -16),
 		AnchorPoint = Vector2.new(0.5, 1),
 		ZIndex = 50,
@@ -130,7 +135,7 @@ local function Build()
 		Font = Enum.Font.GothamBold,
 		TextSize = 16,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Size = UDim2.fromScale(1, 0.12),
+		Size = UDim2.fromScale(1, 0.08),
 		ZIndex = 50,
 		Text = "",
 		Parent = panel,
@@ -143,18 +148,18 @@ local function Build()
 		Font = Enum.Font.Gotham,
 		TextSize = 13,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Position = UDim2.fromScale(0, 0.14),
-		Size = UDim2.fromScale(1, 0.1),
+		Position = UDim2.fromScale(0, 0.09),
+		Size = UDim2.fromScale(1, 0.07),
 		ZIndex = 50,
 		Text = "",
 		Parent = panel,
 	})
 
 	xpLabel, xpFill = UiKit.Bar(panel, TINTS.ACCENT)
-	xpLabel.Position = UDim2.fromScale(0, 0.26)
-	xpLabel.Size = UDim2.fromScale(1, 0.1)
+	xpLabel.Position = UDim2.fromScale(0, 0.17)
+	xpLabel.Size = UDim2.fromScale(1, 0.08)
 
-	equipButton = UiKit.Button(panel, "Équiper", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.37))
+	equipButton = UiKit.Button(panel, "Équiper", UDim2.fromScale(1, 0.1), UDim2.fromScale(0, 0.26))
 	equipButton.ZIndex = 50
 	equipButton.Activated:Connect(function()
 		local item = lastState and lastState.Items[1]
@@ -163,7 +168,7 @@ local function Build()
 		end
 	end)
 
-	companionButton = UiKit.Button(panel, "Faire suivre", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.52))
+	companionButton = UiKit.Button(panel, "Faire suivre", UDim2.fromScale(1, 0.1), UDim2.fromScale(0, 0.37))
 	companionButton.ZIndex = 50
 	companionButton.Activated:Connect(function()
 		local creature = CurrentCreature()
@@ -174,7 +179,7 @@ local function Build()
 		end
 	end)
 
-	evolveButton = UiKit.Button(panel, "Évoluer", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.67))
+	evolveButton = UiKit.Button(panel, "Évoluer", UDim2.fromScale(1, 0.1), UDim2.fromScale(0, 0.48))
 	evolveButton.ZIndex = 50
 	evolveButton.Activated:Connect(function()
 		local creature = CurrentCreature()
@@ -186,6 +191,46 @@ local function Build()
 		end
 	end)
 
+	nameBox = UiKit.Create("TextBox", {
+		Name = "CreatureName",
+		PlaceholderText = "Nom (ticket requis)",
+		BackgroundColor3 = TINTS.DARK,
+		TextColor3 = TINTS.WHITE,
+		Font = Enum.Font.Gotham,
+		TextSize = 14,
+		Text = "",
+		ClearTextOnFocus = false,
+		Size = UDim2.fromScale(0.62, 0.1),
+		Position = UDim2.fromScale(0, 0.59),
+		ZIndex = 50,
+		Parent = panel,
+	})
+	UiKit.Corner(nameBox)
+	local renameButton = UiKit.Button(panel, "Renommer", UDim2.fromScale(0.36, 0.1), UDim2.fromScale(0.64, 0.59))
+	renameButton.ZIndex = 50
+	renameButton.Activated:Connect(function()
+		if currentId then
+			Net.CustomizeCreature:FireServer("Rename", currentId, nameBox.Text)
+		end
+	end)
+
+	cosmeticButton = UiKit.Button(panel, "Cosmétique : aucun", UDim2.fromScale(1, 0.1), UDim2.fromScale(0, 0.70))
+	cosmeticButton.ZIndex = 50
+	cosmeticButton.Activated:Connect(function()
+		local creature = CurrentCreature()
+		if not creature then
+			return
+		end
+		local nextCosmetic = ""
+		if not creature.Cosmetic then
+			for id in lastState.Cosmetics or {} do
+				nextCosmetic = id
+				break
+			end
+		end
+		Net.CustomizeCreature:FireServer("Cosmetic", creature.Id, nextCosmetic)
+	end)
+
 	priceBox = UiKit.Create("TextBox", {
 		Name = "Price",
 		BackgroundColor3 = TINTS.DARK,
@@ -194,7 +239,7 @@ local function Build()
 		TextSize = 14,
 		Text = "",
 		ClearTextOnFocus = false,
-		Size = UDim2.fromScale(0.45, 0.13),
+		Size = UDim2.fromScale(0.45, 0.1),
 		Position = UDim2.fromScale(0, 0.81),
 		ZIndex = 50,
 		Parent = panel,
@@ -202,7 +247,7 @@ local function Build()
 	UiKit.Corner(priceBox)
 
 	local sellButton =
-		UiKit.Button(panel, "Vendre au marché", UDim2.fromScale(0.53, 0.13), UDim2.fromScale(0.47, 0.81))
+		UiKit.Button(panel, "Vendre au marché", UDim2.fromScale(0.53, 0.1), UDim2.fromScale(0.47, 0.81))
 	sellButton.ZIndex = 50
 	sellButton.Activated:Connect(function()
 		local price = tonumber(priceBox.Text)
@@ -221,7 +266,7 @@ local function Build()
 		TextSize = 11,
 		TextTransparency = 0.4,
 		Size = UDim2.fromScale(1, 0.05),
-		Position = UDim2.fromScale(0, 0.95),
+		Position = UDim2.fromScale(0, 0.92),
 		ZIndex = 50,
 		Text = "Clic ailleurs pour fermer",
 		Parent = panel,
