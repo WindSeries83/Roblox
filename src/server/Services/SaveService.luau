@@ -1,3 +1,5 @@
+--!strict
+
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local ProfileStore = require(ServerScriptService.ServerPackages.ProfileStore)
@@ -5,6 +7,7 @@ local ProfileStore = require(ServerScriptService.ServerPackages.ProfileStore)
 local SaveService = {}
 
 SaveService.Profiles = {}
+SaveService.ProfileLoaded = Instance.new("BindableEvent")
 
 local DATA_VERSION = 7
 
@@ -193,6 +196,7 @@ function SaveService:LoadProfileAsync(player: Player)
 		profile:Reconcile()
 		SaveService.Migrate(profile.Data)
 		self.Profiles[player] = profile
+		self.ProfileLoaded:Fire(player, profile)
 		profile.OnSessionEnd:Connect(function()
 			self.Profiles[player] = nil
 		end)

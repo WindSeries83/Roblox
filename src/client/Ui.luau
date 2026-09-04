@@ -1,3 +1,5 @@
+--!strict
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -632,7 +634,7 @@ local reveal = UiKit.Create("Frame", {
 })
 UiKit.Corner(reveal)
 
-local revealPortrait = CreaturePortrait.Create(reveal, UDim2.new(0, 6, 0, 6), UDim2.new(0.3, -6, 1, -12))
+local revealPortrait = CreaturePortrait.Create(reveal, UDim2.fromOffset(6, 6), UDim2.new(0.3, -6, 1, -12))
 revealPortrait.vp.ZIndex = 20
 
 local revealLabel = UiKit.Create("TextLabel", {

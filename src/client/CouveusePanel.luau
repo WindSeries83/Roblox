@@ -1,3 +1,5 @@
+--!strict
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
@@ -13,6 +15,7 @@ local panel: Frame? = nil
 local eggList: ScrollingFrame? = nil
 local buyButtons: { [string]: TextButton } = {}
 local lockedTiers: { [string]: number? } = {}
+local ratesLabels: { [string]: TextLabel } = {}
 
 local function RefreshBuyButtons()
 	for tier, button in buyButtons do
@@ -33,6 +36,10 @@ local function Refresh()
 	end
 	lockedTiers = Sanctuary.EggGate(lastState.SanctuaryLevel or 1)
 	RefreshBuyButtons()
+	for tier, label in ratesLabels do
+		label.Text =
+			UiKit.DropRatesText((lastState.EggRates and lastState.EggRates[tier]) or Config.EGG_RARITY_WEIGHTS[tier])
+	end
 	UiKit.Clear(eggList)
 	for i, egg in lastState.Eggs do
 		local row = UiKit.Cell(eggList)
@@ -109,7 +116,7 @@ function CouveusePanel.Start()
 		Parent = panel,
 	})
 	for i, tier in Sanctuary.EGG_TIERS do
-		UiKit.Create("TextLabel", {
+		ratesLabels[tier] = UiKit.Create("TextLabel", {
 			Name = `Rates{tier}`,
 			RichText = true,
 			BackgroundTransparency = 1,

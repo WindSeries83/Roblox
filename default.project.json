@@ -1,212 +1,23 @@
 {
-    "name":  "rift-beasts",
-    "tree":  {
-                 "$className":  "DataModel",
-                 "ServerScriptService":  {
-                                             "ServerScriptService":  {
-                                                                         "$path":  "src/server/Main.server.luau"
-                                                                     },
-                                             "Bootstrap":  {
-                                                               "$path":  "src/server/Bootstrap.luau"
-                                                           },
-                                             "Services":  {
-                                                              "$path":  "src/server/Services"
-                                                          },
-                                             "ServerPackages":  {
-                                                                    "$path":  "ServerPackages"
-                                                                },
-                                             "UnitTestRunner":  {
-                                                                    "$path":  "src/tests/UnitTestRunner.server.luau",
-                                                                    "$properties":  {
-                                                                                        "Disabled":  true
-                                                                                    }
-                                                                }
-                                         },
-                 "ServerStorage":  {
-                                        "UnitTest":  {
-                                                         "$path":  "src/tests/unit"
-                                                     },
-                                        "Tools":  {
-                                                       "$path":  "src/tools"
-                                                   }
-                                    },
-                 "ReplicatedStorage":  {
-                                           "Shared":  {
-                                                          "$path":  "src/shared"
-                                                      },
-                                           "Remotes":  {
-                                                           "$className":  "Folder",
-                                                           "BuyEgg":  {
-                                                                          "$className":  "RemoteEvent"
-                                                                      },
-                                                           "HatchEgg":  {
-                                                                            "$className":  "RemoteEvent"
-                                                                        },
-                                                           "RiftAttack":  {
-                                                                              "$className":  "RemoteEvent"
-                                                                          },
-                                                           "Sync":  {
-                                                                        "$className":  "RemoteEvent"
-                                                                    },
-                                                           "HatchResult":  {
-                                                                               "$className":  "RemoteEvent"
-                                                                           },
-                                                           "RareDrop":  {
-                                                                            "$className":  "RemoteEvent"
-                                                                        },
-                                                           "RiftSync":  {
-                                                                            "$className":  "RemoteEvent"
-                                                                        },
-                                                           "RiftEnded":  {
-                                                                             "$className":  "RemoteEvent"
-                                                                         },
-                                                            "RiftWorld":  {
-                                                                              "$className":  "RemoteEvent"
-                                                                          },
-                                                            "RiftRequest":  {
-                                                                               "$className":  "RemoteEvent"
-                                                                           },
-                                                           "EvolveCreature":  {
-                                                                                  "$className":  "RemoteEvent"
-                                                                              },
-                                                           "BuyItem":  {
-                                                                           "$className":  "RemoteEvent"
-                                                                       },
-                                                           "EquipItem":  {
-                                                                             "$className":  "RemoteEvent"
-                                                                         },
-                                                           "UnequipItem":  {
-                                                                               "$className":  "RemoteEvent"
-                                                                           },
-                                                           "BreedCreatures":  {
-                                                                                  "$className":  "RemoteEvent"
-                                                                              },
-                                                           "BreedResult":  {
-                                                                               "$className":  "RemoteEvent"
-                                                                           },
-                                                           "RebirthRequest":  {
-                                                                                  "$className":  "RemoteEvent"
-                                                                              },
-                                                           "RebirthPreview":  {
-                                                                                  "$className":  "RemoteEvent"
-                                                                              },
-                                                           "RebirthConfirm":  {
-                                                                                  "$className":  "RemoteEvent"
-                                                                              },
-                                                           "UpgradeSanctuary":  {
-                                                                                    "$className":  "RemoteEvent"
-                                                                                },
-                                                           "QuestsSync":  {
-                                                                              "$className":  "RemoteEvent"
-                                                                          },
-                                                           "QuestClaim":  {
-                                                                              "$className":  "RemoteEvent"
-                                                                          },
-                                                            "TutorialComplete":  {
-                                                                                     "$className":  "RemoteEvent"
-                                                                                 },
-                                                            "MarketList":  {
-                                                                              "$className":  "RemoteEvent"
-                                                                          },
-                                                            "MarketListings":  {
-                                                                                    "$className":  "RemoteEvent"
-                                                                                },
-                                                            "MarketBuy":  {
-                                                                               "$className":  "RemoteEvent"
-                                                                           },
-                                                            "MarketRemove":  {
-                                                                                  "$className":  "RemoteEvent"
-                                                                              },
-                                                            "MarketSync":  {
-                                                                               "$className":  "RemoteEvent"
-                                                                           },
-                                                            "DuelChallenge":  {
-                                                                                  "$className":  "RemoteEvent"
-                                                                              },
-                                                            "DuelAccept":  {
-                                                                               "$className":  "RemoteEvent"
-                                                                           },
-                                                            "DuelDecline":  {
-                                                                                 "$className":  "RemoteEvent"
-                                                                             },
-                                                            "DuelRequest":  {
-                                                                                "$className":  "RemoteEvent"
-                                                                            },
-                                                            "DuelResult":  {
-                                                                               "$className":  "RemoteEvent"
-                                                                           },
-                                                            "SeasonSync":  {
-                                                                               "$className":  "RemoteEvent"
-                                                                           },
-                                                            "SeasonRequest":  {
-                                                                                     "$className":  "RemoteEvent"
-                                                                                 },
-                                                            "SeasonClaim":  {
-                                                                               "$className":  "RemoteEvent"
-                                                                           },
-                                                            "LeaderboardRequest":  {
-                                                                                      "$className":  "RemoteEvent"
-                                                                                  },
-                                                            "LeaderboardSync":  {
-                                                                                      "$className":  "RemoteEvent"
-                                                                                  },
-                                                            "LeaderboardVisit":  {
-                                                                                      "$className":  "RemoteEvent"
-                                                                                  },
-                                                            "LeaderboardDetail":  {
-                                                                                       "$className":  "RemoteEvent"
-                                                                                   }
-                                                        }
-                                       },
-                 "StarterPlayer":  {
-                                       "StarterPlayerScripts":  {
-                                                                    "$path":  "src/client"
-                                                                }
-                                   },
-                 "StarterGui":  {
-                                    "UiLoader":  {
-                                                     "$path":  "src/client/UiLoader.client.luau"
-                                                 }
-                                },
-                 "Workspace":  {
-                                   "$properties":  {
-                                                       "FilteringEnabled":  true
-                                                   },
-                                   "SpawnLocation":  {
-                                                         "$className":  "SpawnLocation",
-                                                         "$properties":  {
-                                                                             "Anchored":  true,
-                                                                             "Neutral":  true,
-                                                                             "Position":  [
-                                                                                              0,
-                                                                                              8.7,
-                                                                                              0
-                                                                                          ],
-                                                                             "Size":  [
-                                                                                          16,
-                                                                                          1,
-                                                                                          16
-                                                                                      ]
-                                                                         }
-                                                     }
-                               },
-                 "Lighting":  {
-                                  "$properties":  {
-                                                      "Ambient":  [
-                                                                      0,
-                                                                      0,
-                                                                      0
-                                                                  ],
-                                                      "Brightness":  2,
-                                                      "GlobalShadows":  true,
-                                                      "Outlines":  false,
-                                                      "Technology":  "Voxel"
-                                                  }
-                              },
-                 "SoundService":  {
-                                      "$properties":  {
-                                                          "RespectFilteringEnabled":  true
-                                                      }
-                                  }
-             }
+  "name": "rift-beasts",
+  "tree": {
+    "$className": "DataModel",
+    "ServerScriptService": {
+      "ServerScriptService": { "$path": "src/server/Main.server.luau" },
+      "Bootstrap": { "$path": "src/server/Bootstrap.luau" },
+      "Services": { "$path": "src/server/Services" },
+      "ServerPackages": { "$path": "ServerPackages" },
+      "UnitTestRunner": { "$path": "src/tests/UnitTestRunner.server.luau", "$properties": { "Disabled": true } }
+    },
+    "ServerStorage": { "UnitTest": { "$path": "src/tests/unit" }, "Tools": { "$path": "src/tools" } },
+    "ReplicatedStorage": { "Shared": { "$path": "src/shared" }, "Remotes": { "$className": "Folder" } },
+    "StarterPlayer": { "StarterPlayerScripts": { "$path": "src/client" } },
+    "StarterGui": { "UiLoader": { "$path": "src/client/UiLoader.client.luau" } },
+    "Workspace": {
+      "$properties": { "FilteringEnabled": true },
+      "SpawnLocation": { "$className": "SpawnLocation", "$properties": { "Anchored": true, "Neutral": true, "Position": [0, 8.7, 0], "Size": [16, 1, 16] } }
+    },
+    "Lighting": { "$properties": { "Ambient": [0, 0, 0], "Brightness": 2, "GlobalShadows": true, "Outlines": false, "Technology": "Voxel" } },
+    "SoundService": { "$properties": { "RespectFilteringEnabled": true } }
+  }
 }

@@ -1,3 +1,5 @@
+--!strict
+
 local SafeStore = require(script.Parent.SafeStore)
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -17,6 +19,10 @@ local dataSync
 local luckService
 local boostService
 local analyticsService
+local policyService
+PurchaseService.EntitlementsReady = Instance.new("BindableEvent")
+local entitlementsReady: { [Player]: boolean } = {}
+local profileLoaded
 
 local ReceiptsStore = SafeStore.Get("RiftBeastsReceipts_v1", nil)
 
@@ -28,8 +34,16 @@ end
 -- (NotProcessedYet -> remboursement automatique par Roblox).
 function PurchaseService.GrantProduct(player: Player, product: any, productId: number): boolean
 	if product.Kind == "LuckPotion" then
+		if not policyService:CanUsePaidRandomItems(player) then
+			LogPurchase("PaidRandomRestricted", { PlayerId = player.UserId, ProductId = productId })
+			return false
+		end
 		luckService:GrantPotion(player, product.PotionKind)
 	elseif product.Kind == "ServerBoost" then
+		if not policyService:CanUsePaidRandomItems(player) then
+			LogPurchase("PaidRandomRestricted", { PlayerId = player.UserId, ProductId = productId })
+			return false
+		end
 		boostService:Activate(player)
 	elseif product.Kind == "FirstOffer" then
 		local profile = saveService:GetProfile(player)
@@ -140,16 +154,18 @@ end
 
 function PurchaseService:Init(container)
 	saveService = container:Get("SaveService")
+	profileLoaded = saveService.ProfileLoaded.Event
 	essenceService = container:Get("EssenceService")
 	dataSync = container:Get("DataSync")
 	luckService = container:Get("LuckService")
 	boostService = container:Get("BoostService")
 	analyticsService = container:Get("AnalyticsService")
+	policyService = container:Get("PolicyService")
 end
 
 function PurchaseService:Start()
-	-- Re-grant owned gamepasses on join (idempotent : flags déjà posés)
-	Players.PlayerAdded:Connect(function(player)
+	-- Re-grant owned gamepasses after profile load (idempotent).
+	profileLoaded:Connect(function(player: Player)
 		task.spawn(function()
 			for passKey, def in Config.GAMEPASSES do
 				if def.Id ~= 0 then
@@ -161,7 +177,12 @@ function PurchaseService:Start()
 					end
 				end
 			end
+			entitlementsReady[player] = true
+			self.EntitlementsReady:Fire(player)
 		end)
+	end)
+	Players.PlayerRemoving:Connect(function(player)
+		entitlementsReady[player] = nil
 	end)
 
 	MarketplaceService.ProcessReceipt = function(receiptInfo)
@@ -222,6 +243,12 @@ function PurchaseService:Start()
 		analyticsService:Event("purchase", { ProductId = productId, Kind = product.Kind or "Essence" })
 		analyticsService:Funnel(saveService:GetProfile(player), "FirstPurchaseAt")
 		return Enum.ProductPurchaseDecision.PurchaseGranted
+	end
+end
+
+function PurchaseService:WaitForEntitlements(player: Player)
+	while not entitlementsReady[player] do
+		self.EntitlementsReady.Event:Wait()
 	end
 end
 

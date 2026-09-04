@@ -1,5 +1,8 @@
+--!strict
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local Net = require(ReplicatedStorage.Shared.Net)
 
 local Bootstrap = {}
 
@@ -24,6 +27,7 @@ local ORDER = {
 	"Log",
 	"AnalyticsService",
 	"SaveService",
+	"PolicyService",
 	"PackService",
 	"FriendRegistry",
 	"SkillService",
@@ -55,6 +59,7 @@ local ORDER = {
 }
 
 function Bootstrap:Init()
+	Net.EnsureRemotes()
 	RelocateTemplates()
 	for _, name in ORDER do
 		local service = require(script.Parent.Services[name])

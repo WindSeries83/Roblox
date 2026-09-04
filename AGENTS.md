@@ -1,5 +1,13 @@
 # Vision
 
+## Priorités produit
+
+Lire `docs/product/NORTH_STAR.md`, puis `docs/product/NON_GOALS.md` et `docs/product/ROADMAP.md` pour toute tâche gameplay. Le vertical slice de `docs/production/VERTICAL_SLICE.md` est prioritaire. Ne pas implémenter une nouvelle feature majeure sans problème joueur observé ou mesuré.
+
+## Politique Luau
+
+Tout nouveau fichier Luau et tout fichier Luau modifié doit commencer par `--!strict`. La migration de `src/` existant est progressive; ne pas l'imposer aveuglément.
+
 Dès qu'une image, capture d'écran ou screenshot doit être examinée, décrite ou vérifiée visuellement, délègue systématiquement à l'agent `eyes` (outil `task`, avec le chemin exact du fichier) avant de répondre. Ne la décris jamais toi-même en premier. Base-toi uniquement sur ce que `eyes` rapporte ; s'il dit « je ne vois pas », rapporte-le tel quel.
 
 # Roblox

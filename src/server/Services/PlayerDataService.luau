@@ -1,3 +1,5 @@
+--!strict
+
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -58,6 +60,7 @@ local essenceService
 local riftService
 local dataSync
 local skillService
+local purchaseService
 
 local function OnPlayerAdded(player: Player)
 	task.spawn(function()
@@ -129,24 +132,18 @@ local function OnPlayerAdded(player: Player)
 			end)
 		end
 
-		-- VIP : le re-grant des passes (PurchaseService:Start) tourne en parallele,
-		-- ordre non garanti -> delai de 5 s avant le check cadeau + cosmétiques.
-		task.delay(5, function()
-			if not player:IsDescendantOf(game) then
-				return
+		purchaseService:WaitForEntitlements(player)
+		if profile.Data.Entitlements.VIP then
+			if Vip.GiftDue(profile.Data.VipGiftDate or "", today) then
+				essenceService:Add(player, Config.VIP_DAILY_GIFT, "VipDailyGift")
+				profile.Data.VipGiftDate = today
+				Net.QuestsSync:FireClient(player, {
+					Quests = profile.Data.Quests,
+					Notice = { Type = "VipGift", Name = "VIP", Amount = Config.VIP_DAILY_GIFT },
+				})
 			end
-			if profile.Data.Entitlements.VIP then
-				if Vip.GiftDue(profile.Data.VipGiftDate or "", today) then
-					essenceService:Add(player, Config.VIP_DAILY_GIFT, "VipDailyGift")
-					profile.Data.VipGiftDate = today
-					Net.QuestsSync:FireClient(player, {
-						Quests = profile.Data.Quests,
-						Notice = { Type = "VipGift", Name = "VIP", Amount = Config.VIP_DAILY_GIFT },
-					})
-				end
-				ApplyVipCosmetics(player)
-			end
-		end)
+			ApplyVipCosmetics(player)
+		end
 
 		-- Retours J2/J7 : cadeau d'essence une seule fois par palier.
 		-- Garde lastSeen > 0 : sinon un nouveau joueur (0) aurait un elapsed énorme.
@@ -189,6 +186,7 @@ function PlayerDataService:Init(container)
 	riftService = container:Get("RiftService")
 	dataSync = container:Get("DataSync")
 	skillService = container:Get("SkillService")
+	purchaseService = container:Get("PurchaseService")
 end
 
 function PlayerDataService:Start()

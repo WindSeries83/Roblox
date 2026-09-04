@@ -1,3 +1,5 @@
+--!strict
+
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,6 +20,9 @@ local boostLabel
 local eclipseLabel
 local offerBanner
 local passRows: { [string]: TextButton } = {}
+local paidRandomButtons: { TextButton } = {}
+local paidRandomLabels: { [TextButton]: string } = {}
+local paidRandomAllowed = false
 local luckPotion
 local boostUntil = 0
 local eclipseActive = false
@@ -71,6 +76,7 @@ local function SectionTitle(parent, text: string, layoutOrder: number)
 end
 
 local function ProductRow(parent, def, key, layoutOrder: number)
+	local isPaidRandom = def.Kind == "LuckPotion" or def.Kind == "ServerBoost"
 	local button = UiKit.Create("TextButton", {
 		Name = `Shop_{key}`,
 		BackgroundColor3 = TINTS.DARK,
@@ -80,13 +86,23 @@ local function ProductRow(parent, def, key, layoutOrder: number)
 		TextWrapped = true,
 		Size = UDim2.new(0.32, -6, 0, 52),
 		LayoutOrder = layoutOrder,
-		Text = def.Name .. if (def.Id or 0) == 0 then "\n(produit à configurer)" else "",
+		Text = if isPaidRandom and not paidRandomAllowed
+			then "Indisponible pour ce joueur"
+			else def.Name .. if (def.Id or 0) == 0 then "\n(produit à configurer)" else "",
+		AutoButtonColor = not isPaidRandom or paidRandomAllowed,
 		Parent = parent,
 	})
 	UiKit.Corner(button)
 	button.Activated:Connect(function()
+		if isPaidRandom and not paidRandomAllowed then
+			return
+		end
 		Prompt(def.Id)
 	end)
+	if isPaidRandom then
+		table.insert(paidRandomButtons, button)
+		paidRandomLabels[button] = button.Text
+	end
 	return button
 end
 
@@ -319,6 +335,14 @@ Net.EclipseState.OnClientEvent:Connect(function(state)
 	eclipseActive = state.Active == true
 	eclipseUntil = state.Until or 0
 	eclipseBonus = state.Bonus or 0
+end)
+
+Net.PolicyState.OnClientEvent:Connect(function(policy)
+	paidRandomAllowed = policy and policy.ArePaidRandomItemsRestricted ~= true
+	for _, button in paidRandomButtons do
+		button.AutoButtonColor = paidRandomAllowed
+		button.Text = if paidRandomAllowed then paidRandomLabels[button] else "Indisponible pour ce joueur"
+	end
 end)
 
 return ShopPanel

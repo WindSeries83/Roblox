@@ -1,5 +1,9 @@
 # RIFT BEASTS
 
+Jeu Roblox de collection de créatures orienté idle/optimisation. Le chantier actuel valide le vertical slice du Monde 1 avant toute expansion.
+
+Commencer par `AGENTS.md`, puis [`docs/product/NORTH_STAR.md`](docs/product/NORTH_STAR.md).
+
 Jeu de collection de créatures orienté idle/optimisation pour Roblox (public adulte).
 Vanilla Luau maison + ProfileStore. Voir `docs/` pour le design et le plan de production.
 
@@ -43,9 +47,9 @@ Les tests vivent dans `src/tests/unit/` (mappés sur `ServerStorage.UnitTest`).
 require(game.ServerStorage.UnitTest.RunUnitTest)()
 ```
 
-Attendu : `[SUMMARY] 59 run, 59 passed, 0 failed`.
+La validation Studio est la source de vérité du runner actuel; aucun nombre de tests n'est figé ici.
 
-## Architecture
+## Architecture réelle
 
 ```
 src/
@@ -59,12 +63,20 @@ src/
     Gameplay.luau         -> Logique pure (rolls, création, taux) — testée
     Net.luau              -> Remotes typés
     Data/                 -> Rarités, Mutations, Espèces
-  client/
-    init.client.luau
-    Ui.luau               -> UI générée en code (ScreenGui)
+  client/                  -> contrôleurs, UI et présentation
 ```
 
 Règles :
 - Toute logique d'argent/drop côté serveur uniquement.
 - Toute transaction économique passe par `Log:Economy` (logs `[ECON]`).
 - La logique pure va dans `shared/Gameplay.luau` pour rester testable sans Play.
+
+## Documentation canonique
+
+- Produit : [`NORTH_STAR.md`](docs/product/NORTH_STAR.md), [`NON_GOALS.md`](docs/product/NON_GOALS.md), [`ROADMAP.md`](docs/product/ROADMAP.md)
+- Validation : [`VERTICAL_SLICE.md`](docs/production/VERTICAL_SLICE.md), [`DEFINITION_OF_DONE.md`](docs/production/DEFINITION_OF_DONE.md), [`execution-status.md`](docs/production/execution-status.md)
+- Technique : [`docs/technical/`](docs/technical/)
+
+## For AI agents
+
+Read `AGENTS.md` first. For gameplay/product work, read the North Star and check the feature freeze before editing code.

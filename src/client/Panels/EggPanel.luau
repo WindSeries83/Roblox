@@ -1,3 +1,5 @@
+--!strict
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local UiKit = require(script.Parent.Parent.UiKit)
@@ -14,6 +16,7 @@ local itemShopRow
 local pityLabel
 local buyButtons: { [string]: TextButton } = {}
 local lockedTiers: { [string]: number? } = {}
+local ratesLabels: { [string]: TextLabel } = {}
 
 local function RefreshPity(hatchesSinceRare: number)
 	local remaining = Config.PITY_THRESHOLD - hatchesSinceRare
@@ -86,7 +89,7 @@ function EggPanel.Create(parent)
 		Parent = ratesRow,
 	})
 	for _, tier in Sanctuary.EGG_TIERS do
-		UiKit.Create("TextLabel", {
+		ratesLabels[tier] = UiKit.Create("TextLabel", {
 			Name = `Rates{tier}`,
 			RichText = true,
 			BackgroundTransparency = 1,
@@ -180,6 +183,9 @@ function EggPanel.Refresh(state)
 	lockedTiers = Sanctuary.EggGate(state.SanctuaryLevel or 1)
 	RefreshBuyButtons()
 	local stats = state.Stats or {}
+	for tier, label in ratesLabels do
+		label.Text = UiKit.DropRatesText((state.EggRates and state.EggRates[tier]) or Config.EGG_RARITY_WEIGHTS[tier])
+	end
 	RefreshPity(stats.HatchesSinceRare or 0)
 	for i, egg in state.Eggs do
 		local row = UiKit.Cell(eggList)

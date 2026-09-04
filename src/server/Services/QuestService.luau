@@ -1,3 +1,5 @@
+--!strict
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -9,6 +11,7 @@ local QuestService = {}
 local log
 local saveService
 local essenceService
+local profileLoaded
 
 local container
 
@@ -216,6 +219,7 @@ function QuestService:Init(cont)
 	container = cont
 	log = cont:Get("Log")
 	saveService = cont:Get("SaveService")
+	profileLoaded = saveService.ProfileLoaded.Event
 	essenceService = cont:Get("EssenceService")
 end
 
@@ -259,7 +263,7 @@ function QuestService:Start()
 		})
 	end)
 
-	Players.PlayerAdded:Connect(function(player)
+	profileLoaded:Connect(function(player: Player)
 		EnsureQuests(player)
 	end)
 

@@ -1,3 +1,5 @@
+--!strict
+
 local MessagingService = game:GetService("MessagingService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -9,6 +11,7 @@ local SafeStore = require(script.Parent.SafeStore)
 local LeaderboardService = {}
 
 local saveService
+local profileLoaded
 
 local Store = SafeStore.Get("RiftBeastsLeaderboard_v1", nil)
 
@@ -99,6 +102,7 @@ end
 
 function LeaderboardService:Init(container)
 	saveService = container:Get("SaveService")
+	profileLoaded = saveService.ProfileLoaded.Event
 end
 
 function LeaderboardService:Start()
@@ -121,11 +125,8 @@ function LeaderboardService:Start()
 		end)
 	end
 
-	Players.PlayerAdded:Connect(function(player)
-		local profile = saveService:GetProfile(player)
-		if profile then
-			entries[player.UserId] = LeaderboardService.BuildEntry(player.UserId, player.Name, profile)
-		end
+	profileLoaded:Connect(function(player: Player, profile)
+		entries[player.UserId] = LeaderboardService.BuildEntry(player.UserId, player.Name, profile)
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		cooldowns[player] = nil

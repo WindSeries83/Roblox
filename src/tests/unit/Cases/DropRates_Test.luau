@@ -1,3 +1,5 @@
+--!strict
+
 return function(t)
 	local expect = t.expect
 	local Config = require(game.ReplicatedStorage.Shared.Config)
@@ -40,5 +42,26 @@ return function(t)
 	t.test("empty or nil weights yield an empty table", function()
 		expect.deepEqual(Gameplay.DropRates({}), {})
 		expect.deepEqual(Gameplay.DropRates(nil), {})
+	end)
+
+	t.test("final rarity weights include ascension and still normalize", function()
+		local base = { Common = 9, Rare = 1 }
+		local final = Gameplay.FinalRarityWeights("CommonEgg", 0, 0.5, base)
+		expect.near(final.Common, 4.5)
+		expect.near(final.Uncommon, 4.5)
+		expect.near(final.Rare, 0.5)
+		expect.near(final.Epic, 0.5)
+	end)
+
+	t.test("final hatch weights include first-hatch protection", function()
+		local final = Gameplay.FinalHatchWeights("CommonEgg", 0, nil, 0, 0)
+		expect.equal(final.Common, 40)
+		expect.equal(final.Uncommon, 40)
+		expect.equal(final.Rare, 20)
+	end)
+
+	t.test("final hatch weights expose pity guarantee", function()
+		local final = Gameplay.FinalHatchWeights("CommonEgg", 0, nil, 3, Config.PITY_THRESHOLD - 1)
+		expect.deepEqual(final, { Rare = 100 })
 	end)
 end

@@ -1,3 +1,5 @@
+--!strict
+
 local HttpService = game:GetService("HttpService")
 
 local Config = require(script.Parent.Config)
@@ -5,6 +7,7 @@ local Rarities = require(script.Parent.Data.Rarities)
 local Mutations = require(script.Parent.Data.Mutations)
 local Species = require(script.Parent.Data.Species)
 local Evolution = require(script.Parent.Evolution)
+local Probability = require(script.Parent.Probability)
 
 local Gameplay = {}
 
@@ -67,6 +70,37 @@ function Gameplay.MutationWeights(bonus: number?): { [string]: number }
 		end
 	end
 	return weights
+end
+
+function Gameplay.FinalRarityWeights(
+	tier: string,
+	luck: number?,
+	ascendChance: number?,
+	baseWeights: { [string]: number }?
+): { [string]: number }
+	local source = baseWeights or Config.EGG_RARITY_WEIGHTS[tier]
+	assert(source, `Unknown egg tier: {tostring(tier)}`)
+	return Probability.FinalRarityWeights(source, Rarities.ORDER, luck, ascendChance)
+end
+
+function Gameplay.FinalHatchWeights(
+	tier: string,
+	luck: number?,
+	ascendChance: number?,
+	totalHatched: number,
+	hatchesSinceRare: number
+): { [string]: number }
+	return Probability.FinalHatchWeights(
+		tier,
+		Config.EGG_RARITY_WEIGHTS,
+		Config.FIRST_HATCH_WEIGHTS,
+		Rarities.ORDER,
+		Config.PITY_THRESHOLD,
+		luck,
+		ascendChance,
+		totalHatched,
+		hatchesSinceRare
+	)
 end
 
 function Gameplay.RollEgg(tier: string, mutationBonus: number?, rarityWeights: { [string]: number }?)

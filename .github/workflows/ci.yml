@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: paradoxum-games/setup-rokit@v3
+      - run: rokit install
+      - run: stylua --check src tests
+      - run: selene src tests
+      - run: lune run tests/run_tests.luau
+      - run: wally install
+      - run: rojo build -o rift-beasts.rbxlx
+      - run: git diff --check

@@ -1,3 +1,5 @@
+--!strict
+
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -158,19 +160,19 @@ function HatchService:HatchEggById(player: Player, eggId: string, worldHatch: bo
 		eff.HatchLuck,
 		if profile.Data.Entitlements.VIP then Config.VIP_LUCK_BONUS else 0
 	)
-	local rarityWeights = nil
-	if profile.Data.Stats.TotalHatched == 0 and egg.Tier == "CommonEgg" then
-		rarityWeights = Config.FIRST_HATCH_WEIGHTS
-	end
+	local rarityWeights = Gameplay.FinalHatchWeights(
+		egg.Tier,
+		luck,
+		egg.AscendChance,
+		profile.Data.Stats.TotalHatched,
+		profile.Data.Stats.HatchesSinceRare or 0
+	)
 	-- Bonus mutation de l'Éclipse ajouté APRÈS Luck.Combine : événement serveur, hors cap de chance achetable.
 	local roll = Gameplay.RollEgg(
 		egg.Tier,
 		CollarBonus(profile) + luck + eff.MutationBonus + eclipseService:MutationBonus(),
 		rarityWeights
 	)
-	if egg.AscendChance then
-		roll.Rarity = Ascension.RollFrom(roll.Rarity, luck, egg.AscendChance)
-	end
 	if
 		Ascension.SecretTrigger(
 			egg.Tier,

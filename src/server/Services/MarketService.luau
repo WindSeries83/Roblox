@@ -1,3 +1,5 @@
+--!strict
+
 local HttpService = game:GetService("HttpService")
 local MessagingService = game:GetService("MessagingService")
 local Players = game:GetService("Players")
@@ -18,6 +20,7 @@ local essenceService
 local dataSync
 local skillService
 local analyticsService
+local policyService
 
 local ListingsKey = "Listings"
 
@@ -197,6 +200,9 @@ end
 --[[ Remotes ]]
 
 local function OnMarketList(player: Player, creatureId: any, price: any)
+	if not policyService:CanTradePaidItems(player) then
+		return
+	end
 	if not Gameplay.CheckCooldown(cooldowns, player, "List", Config.MARKET_COOLDOWN) then
 		return
 	end
@@ -255,6 +261,9 @@ local function OnMarketList(player: Player, creatureId: any, price: any)
 end
 
 local function OnMarketBuy(player: Player, listingId: any)
+	if not policyService:CanTradePaidItems(player) then
+		return
+	end
 	if not Gameplay.CheckCooldown(cooldowns, player, "Buy", Config.MARKET_COOLDOWN) then
 		return
 	end
@@ -302,6 +311,9 @@ local function OnMarketBuy(player: Player, listingId: any)
 end
 
 local function OnMarketRemove(player: Player, listingId: any)
+	if not policyService:CanTradePaidItems(player) then
+		return
+	end
 	if not Gameplay.CheckCooldown(cooldowns, player, "Remove", Config.MARKET_COOLDOWN) then
 		return
 	end
@@ -357,6 +369,7 @@ function MarketService:Init(container)
 	dataSync = container:Get("DataSync")
 	skillService = container:Get("SkillService")
 	analyticsService = container:Get("AnalyticsService")
+	policyService = container:Get("PolicyService")
 end
 
 function MarketService:Start()
@@ -387,10 +400,7 @@ function MarketService:Start()
 		end
 	end)
 
-	for _, player in Players:GetPlayers() do
-		LoadPending(player.UserId)
-	end
-	Players.PlayerAdded:Connect(function(player)
+	local function ApplyPending(player: Player)
 		task.defer(function()
 			local userId = player.UserId
 			LoadPending(userId)
@@ -403,7 +413,13 @@ function MarketService:Start()
 				log:Economy("Market", "PendingCredit", { Player = player.Name, Amount = amount })
 			end
 		end)
-	end)
+	end
+	saveService.ProfileLoaded.Event:Connect(ApplyPending)
+	for _, player in Players:GetPlayers() do
+		if saveService:GetProfile(player) then
+			ApplyPending(player)
+		end
+	end
 	Players.PlayerRemoving:Connect(function(player)
 		cooldowns[player] = nil
 	end)
