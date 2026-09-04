@@ -133,7 +133,7 @@ function PurchaseService.GrantPass(player: Player, passKey: string, receiptKey: 
 	end
 	if
 		PaidRandomPolicy.RequiresEligibility({
-			Kind = if passKey == "VIP" then "Vip" else nil,
+			Kind = if passKey == "VIP" then "Vip" else passKey,
 			Creature = effect.Creature,
 		}) and not policyService:CanUsePaidRandomItems(player)
 	then

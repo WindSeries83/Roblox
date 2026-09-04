@@ -12,10 +12,11 @@ local Net = {}
 local function Event(name: string): RemoteEvent
 	local existing = Remotes:FindFirstChild(name)
 	if existing then
-		return existing :: RemoteEvent
+		assert(existing:IsA("RemoteEvent"), `Remote is not a RemoteEvent: {name}`)
+		return existing
 	end
 	if not RunService:IsServer() then
-		error(`Missing server remote: {name}`)
+		return Remotes:WaitForChild(name) :: RemoteEvent
 	end
 	local remote = Instance.new("RemoteEvent")
 	remote.Name = name

@@ -4,8 +4,13 @@
 
 - rendre le dépôt lisible et ses preuves fiables;
 - stabiliser le lifecycle profil, les remotes, l'économie et les disclosures;
+- conserver une politique commerciale inactive : aucune offre sans SKU/prix validés, et aucun achat paid-random sans policy permissive;
 - faire fonctionner la séquence compte vierge → sanctuaire → créature → Faille → optimisation;
 - mesurer compréhension, hésitations, plaisir et retour de vrais joueurs.
+
+## Règle saison et monétisation
+
+La piste gratuite reste toujours lisible. La piste premium est un achat séparé, désactivé avant validation humaine, et classé paid-random-sensitive tant que ses récompenses peuvent fournir de l'Essence, une créature ou un modificateur qui entre dans un parcours aléatoire. Cette règle s'applique aux offres, aux attributions serveur et à l'interface.
 
 ## Ensuite — itération du Monde 1
 

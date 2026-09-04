@@ -1,3 +1,5 @@
+--!strict
+
 return function(t)
 	local expect = t.expect
 	local Offers = require(game.ReplicatedStorage.Shared.Offers)
@@ -82,6 +84,7 @@ return function(t)
 			LuckPotionBig = true,
 			Vip30Days = true,
 			StarterBundle = true,
+			SeasonPremium = true,
 			ServerBoost = true,
 		}
 		local products = {
@@ -96,12 +99,14 @@ return function(t)
 		for _, key in { "LuckPotionSmall", "LuckPotionBig", "Vip30Days", "StarterBundle" } do
 			expect.falsy(restricted[key])
 		end
+		expect.falsy(restricted.SeasonPremium)
 		expect.truthy(restricted.ServerBoost)
 		local unrestricted =
 			Offers.FilterPaidRandom(catalog, { Loaded = true, ArePaidRandomItemsRestricted = false }, products)
 		expect.truthy(unrestricted.LuckPotionSmall)
 		expect.truthy(unrestricted.Vip30Days)
 		expect.truthy(unrestricted.ServerBoost)
+		expect.truthy(unrestricted.SeasonPremium)
 	end)
 
 	t.test("return day thresholds", function()

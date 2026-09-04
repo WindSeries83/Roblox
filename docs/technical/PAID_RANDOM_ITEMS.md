@@ -6,6 +6,8 @@ When real purchases are enabled, `PolicyService` must confirm `ArePaidRandomItem
 
 `NotProcessedYet` means Roblox retries the receipt; it is not an automatic refund decision. Receipt grants remain idempotent and are acknowledged only after the profile ledger is durably saved.
 
+Season Premium is also paid-random-sensitive: its premium rewards include Essence and creatures, and Essence can buy random eggs. `PaidRandomPolicy.RequiresEligibility` is the shared classifier for developer products, game-pass grants, and offer filtering. Restrictive or unavailable policy blocks a new premium entitlement; existing saved entitlement data is not deleted. Free season progression remains visible.
+
 ## Secret disclosure rule
 
 `SecretGate` can alter the final outcome after normal rarity weighting. This hidden path must remain inaccessible through a paid random-item route unless the current Roblox disclosure requirements are satisfied. Hidden lore and prerequisites may remain mysterious, but paid numerical outcomes cannot rely on hidden probability when disclosure is required.

@@ -1,3 +1,5 @@
+--!strict
+
 local DAY = 86400
 local PaidRandomPolicy = require(script.Parent.PaidRandomPolicy)
 
@@ -181,7 +183,7 @@ function Offers.FilterPaidRandom(
 	local filtered = table.clone(catalog)
 	for key in filtered do
 		local definition = Offers.All[key]
-		local product = definition and products[definition.ConfigKey]
+		local product = definition and (products[definition.ConfigKey] or definition)
 		if
 			PaidRandomPolicy.RequiresEligibility(product)
 			and (not policy or not policy.Loaded or policy.ArePaidRandomItemsRestricted)

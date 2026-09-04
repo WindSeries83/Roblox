@@ -1,6 +1,6 @@
-# RIFT BEASTS - registre d'execution
+# RIFT BEASTS - registre d'execution canonique
 
-Plan canonique : `docs/superpowers/plans/2026-08-28-prelaunch-rebaseline.md` et plan produit six mois conserve dans l'objectif durable du chat.
+Ce fichier est la source de verite de l'etat d'execution. Les documents produit definissent l'intention ; les plans historiques ne constituent pas une preuve.
 
 Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix et dates LiveOps desactives jusqu'a validation humaine.
 
@@ -8,8 +8,8 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 
 | Phase | Etat | Preuve actuelle | Prochain verrou |
 |---|---|---|---|
-| 0 - vertical slice | En cours | 253/253 tests purs, 8 skips live ; sources Rojo synchronisees mais cache require Studio stale ; StyLua et Selene verts ; achat/incubation/hatch, 5 etapes, boss et Renaissance prouves ; 0 cible <44 px sur 4 formats | redemarrer Studio puis runner global ; timings 15-20/30-40 min ; focus/B/Echap manuel ; persistance publiee |
-| 1 - soft launch | Partiel | offres bloquees ; boucles de retention et instrumentation locale branchees ; suite headless a 253/253, 8 skips live | cohorte/metriques reelles ; vrais SKU/prix ; prompts/receipts publies |
+| 0 - vertical slice | En cours | 256/256 tests purs, 8 skips live ; Selene vert ; synchronisation Rojo et execution Studio a refaire apres cette modification ; achat/incubation/hatch, 5 etapes, boss et Renaissance prouves | smoke test Studio actuel ; timings 15-20/30-40 min ; focus/B/Echap manuel ; persistance publiee |
+| 1 - soft launch | Partiel | offres bloquees ; boucles de retention et instrumentation locale branchees ; suite headless a 256/256, 8 skips live | cohorte/metriques reelles ; vrais SKU/prix ; prompts/receipts publies |
 | 2 - quatre mondes | Partiel | contrat quatre mondes distincts, cinq etapes, boss et Rush persistant/idempotent ; 30 especes data ; guards et benefices des cinq systemes de progression | modeles/portraits/animations Blender, runtime UI et Rush publie/reconnexion |
 | 3 - social/economie | Partiel | marche/ledger purs ; social session avec amis, invitations expirees, rejoindre/visiter et meute plafonnee ; duel transactionnel par ChallengeId localement valide | deux serveurs publies ; escrow duel et invitations en place publiee ; UI/appareils runtime |
 | 4 - lignees/index | Partiel | lignee compatible legacy et index de base testes | arbre/ comparaison/validite cyclique et objectifs avances complets |
@@ -17,11 +17,11 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 
 ## Dernieres preuves
 
-- `lune run tests/run_tests.luau` : 247 passes, 0 echec, 8 skips live.
-- Runner Studio : sources Rush/Species synchronisees, mais cache `require` de la session conserve les anciens modules (288/293) ; redemarrage Studio requis avant nouvelle preuve.
-- `stylua --check src` : passe.
+- `lune run tests/run_tests.luau` : 256 passes, 0 echec, 8 skips live (preuve du 4 septembre 2026).
 - `selene src` : 0 erreur, 0 warning.
-- `rojo build default.project.json` : passe, 661706 octets.
+- `git diff --check` : passe.
+- `stylua --check src` : echoue actuellement sur les fins de ligne CRLF/LF existantes ; aucune validation verte ne doit etre declaree avant correction de cet ecart.
+- `rojo build default.project.json` : a relancer avec une sortie explicite apres la modification.
 - Studio Edit synchronise : la source `Ui` contient le marqueur `returnTarget`.
 - Studio Play : ouverture Oeufs selectionne `Content.TabBar.Tab2`; fermeture restaure `ActionBar.Bar_Oeufs`.
 - Migration/reconnexion : les profils v13 purgent aussi les incubateurs invalides ; test Studio cible `Migration_Test=12` et `Incubation_Test=9` passe.
@@ -31,6 +31,7 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 - Vertical slice runtime : TwilightGrove etapes 1-5 puis boss checkpointes ; Renaissance corrigee pour exiger le monde indexe par `Rebirths`; resultat `Stars=1`, `Rebirths=1`, oeufs/incubateurs vides, creature/equipement conserves et point d'arbre accorde.
 - Appareils : iPhone paysage, iPad paysage, desktop et Xbox mesurent 0 bouton sous 44 px et 0 bouton non selectable ; rendu/focus visuel et B/Echap restent a confirmer manuellement car viewport MCP 1x1 et CoreGUI bloque l'injection.
 - Offres : flux unique `Offers.All -> snapshot visible -> ShopPanel -> prompt`; Starter, deux potions, Server Boost, VIP 30 jours, retour D2/D7 et piste saison couverts ; tous restent `Enabled=false`, `Sku=0`, prix a definir et `PURCHASES_ENABLED=false`.
+- Conformite paid-random : Season Premium est classe sensible car sa piste peut donner Essence et creature ; le serveur refuse une nouvelle attribution quand la policy est restrictive ou indisponible, et le snapshot retire l'offre achetable sans masquer la piste gratuite.
 - Retention : trois quetes quotidiennes data-driven avec reset/dedupe persistes ; streak cyclique 7 jours idempotent ; pity Rare+ a 20 ; ticker hebdomadaire avec queue/throttle, rollover et reprise apres echec d'ecriture ; retours D2/D7 a claim unique. Les analytics streak/retour restent a cabler.
 - Oeuf rotatif : catalogue hebdomadaire data-driven, fenetres calculees sur l'heure serveur, snapshot avec prix/taux/pity/caps, achat via le flux d'oeuf/incubation existant et evenements proposition/achat/hatch ; aucun champ commercial active.
 - Analytics Phase 1 : enveloppe stable `Name/Version/Timestamp/Properties`, jalons funnel idempotents et evenements streak, retour D2/D7 et tutoriel branches. D1/D7, conversion et ARPDAU restent des mesures de cohorte publiee.
@@ -38,7 +39,7 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 - Bestiaire data : 30 especes exactement ; raretes 8/8/5/4/3/2, familles 11/10/9, roles AFK 10/10/10 et repartition sur quatre mondes. Balance-check sans outlier ; assets premium encore non livres.
 - Progression : Index, arbre, equipement, evolution et elevage ont des paliers explicites, raisons snapshot et guards serveur ; bonus Index neutralise avant revelation, equipement/evolution mesurables et elevage garde a Renaissance 3.
 - Social : presence MemoryStore, invitations MessagingService 60 s, validation d'amitie serveur, rate limits, rejoindre via TeleportService, plots lecture seule et bonus de meute plafonne ; panneau Amis raccorde et helpers d'expiration testes. Deux serveurs publies restent requis.
-- Duels transactionnels : `DuelTransaction` impose `Created -> ChallengerEscrowed -> Accepted -> Resolved -> WinnerApplied -> LoserApplied -> Settled`, avec branches `Declined/TimedOut -> RefundApplied -> Settled`. Escrow par profil `DuelLedger[ChallengeId]`, confirmation `SaveProfile`, snapshot/restore en cas d'echec, messages durables pour gagnant/perdant/remboursement hors ligne, scan `Active` borne a 256 et guards `FeatureUnlocks.Duels`. Etat saisonnier durable minimal (`DuelSeason` rating/wins/losses) expose dans le snapshot ; aucun faux classement public n'est declare. Tests purs : 253/253, StyLua, Selene et `git diff --check` verts. Reconnexion publiee, double serveur, receipts DataStore reels et UI runtime restent non prouves.
+- Duels transactionnels : `DuelTransaction` impose `Created -> ChallengerEscrowed -> Accepted -> Resolved -> WinnerApplied -> LoserApplied -> Settled`, avec branches `Declined/TimedOut -> RefundApplied -> Settled`. Escrow par profil `DuelLedger[ChallengeId]`, confirmation `SaveProfile`, snapshot/restore en cas d'echec, messages durables pour gagnant/perdant/remboursement hors ligne, scan `Active` borne a 256 et guards `FeatureUnlocks.Duels`. Etat saisonnier durable minimal (`DuelSeason` rating/wins/losses) expose dans le snapshot ; aucun faux classement public n'est declare. Tests purs precedents : 253/253 ; la suite courante est a 256/256, mais le smoke Studio reste non prouve.
 
 ## Travail delegue
 
