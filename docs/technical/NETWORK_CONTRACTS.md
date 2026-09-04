@@ -20,5 +20,3 @@ All client â†’ server payloads are untrusted. Handlers validate type, owner
 | `SkillBuy` | Câ†’S: `nodeId: string` | known node, prerequisites, points, not already maxed | spends points once or rejects |
 
 No client-supplied price, drop, creature, reward or balance is trusted. Errors are silent rejection plus an economy log where relevant. Remote names not listed above follow the same authority rule and are documented by their owning service.
-
-
