@@ -158,11 +158,7 @@ function HatchService:Reserve(player: Player, egg): ({ [string]: any }?, string?
 	assert(context, "probability context unavailable")
 	local rarityWeights = context.RarityWeights
 	-- Bonus mutation de l'Éclipse ajouté APRÈS Luck.Combine : événement serveur, hors cap de chance achetable.
-	local roll = Gameplay.RollEgg(
-		egg.Tier,
-		nil,
-		rarityWeights
-	)
+	local roll = Gameplay.RollEgg(egg.Tier, nil, rarityWeights)
 	local mutationRoll = Gameplay.WeightedRoll(context.MutationWeights)
 	roll.Mutation = if mutationRoll == "None" then false else mutationRoll
 	-- Bride l'ascension : Mythique+ réservé aux œufs de la Faille.

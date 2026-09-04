@@ -66,7 +66,8 @@ function DataSync:Send(player: Player)
 	end
 	local policyService = container:Get("PolicyService")
 	local policy = policyService:GetState(player)
-	local catalog = Offers.FilterPaidRandom(Offers.VisibleFor(profile.Data, featureUnlocks, now), policy, Config.DEV_PRODUCTS)
+	local catalog =
+		Offers.FilterPaidRandom(Offers.VisibleFor(profile.Data, featureUnlocks, now), policy, Config.DEV_PRODUCTS)
 	Net.Sync:FireClient(player, {
 		Policy = policy,
 		Essence = math.floor(profile.Data.Essence),

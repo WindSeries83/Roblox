@@ -131,10 +131,12 @@ function PurchaseService.GrantPass(player: Player, passKey: string, receiptKey: 
 	if not profile then
 		return false
 	end
-	if PaidRandomPolicy.RequiresEligibility({
-		Kind = if passKey == "VIP" then "Vip" else nil,
-		Creature = effect.Creature,
-	}) and not policyService:CanUsePaidRandomItems(player) then
+	if
+		PaidRandomPolicy.RequiresEligibility({
+			Kind = if passKey == "VIP" then "Vip" else nil,
+			Creature = effect.Creature,
+		}) and not policyService:CanUsePaidRandomItems(player)
+	then
 		return false
 	end
 	local firstGrant = not profile.Data.Entitlements[effect.Flag]

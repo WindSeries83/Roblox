@@ -91,12 +91,14 @@ return function(t)
 			FirstPurchaseOffer = { Kind = "FirstOffer", Creature = { Rarity = "Rare" } },
 			ServerBoostProduct = { Kind = "ServerBoost" },
 		}
-		local restricted = Offers.FilterPaidRandom(catalog, { Loaded = true, ArePaidRandomItemsRestricted = true }, products)
+		local restricted =
+			Offers.FilterPaidRandom(catalog, { Loaded = true, ArePaidRandomItemsRestricted = true }, products)
 		for _, key in { "LuckPotionSmall", "LuckPotionBig", "Vip30Days", "StarterBundle" } do
 			expect.falsy(restricted[key])
 		end
 		expect.truthy(restricted.ServerBoost)
-		local unrestricted = Offers.FilterPaidRandom(catalog, { Loaded = true, ArePaidRandomItemsRestricted = false }, products)
+		local unrestricted =
+			Offers.FilterPaidRandom(catalog, { Loaded = true, ArePaidRandomItemsRestricted = false }, products)
 		expect.truthy(unrestricted.LuckPotionSmall)
 		expect.truthy(unrestricted.Vip30Days)
 		expect.truthy(unrestricted.ServerBoost)
