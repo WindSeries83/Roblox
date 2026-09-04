@@ -1,3 +1,5 @@
+--!strict
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -8,6 +10,7 @@ local Offers = require(ReplicatedStorage.Shared.Offers)
 local RotatingEgg = require(ReplicatedStorage.Shared.RotatingEgg)
 local Rush = require(ReplicatedStorage.Shared.Rush)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 
 local DataSync = {}
 
@@ -37,6 +40,19 @@ function DataSync:Send(player: Player)
 	local nextAction = Objective.Pick(profile.Data, nil)
 	local offerState = profile.Data.Offers or {}
 	local rotatingSnapshot = RotatingEgg.Snapshot(now, profile.Data.Stats.HatchesSinceRare)
+	local hatchService = container:Get("HatchService")
+	local eggProbabilityContext = {}
+	for _, tier in Sanctuary.EGG_TIERS do
+		local context = hatchService:ContextFor(player, { Tier = tier })
+		if context then
+			eggProbabilityContext[tier] = {
+				RarityRates = context.RarityWeights,
+				MutationRates = context.MutationWeights,
+				Luck = context.Luck,
+				PityForced = context.PityForced,
+			}
+		end
+	end
 	if rotatingSnapshot then
 		local proposalKey = tostring(rotatingSnapshot.WindowIndex)
 		if player:GetAttribute("RotatingEggProposal") ~= proposalKey then
@@ -88,6 +104,7 @@ function DataSync:Send(player: Player)
 		ServerBoostUntil = boostService and boostService:Until() or 0,
 		Meute = packService and packService:Count(player) or 0,
 		RotatingEgg = rotatingSnapshot,
+		EggProbabilityContext = eggProbabilityContext,
 		Rush = Rush.Snapshot(profile.Data.Rush and profile.Data.Rush.Active, now),
 	})
 end

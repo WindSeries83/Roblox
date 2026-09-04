@@ -1,3 +1,5 @@
+--!strict
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local UiKit = require(script.Parent.Parent.UiKit)
@@ -16,6 +18,7 @@ local pityLabel
 local buyButtons: { [string]: TextButton } = {}
 local rotatingButton: TextButton?
 local lockedTiers: { [string]: number? } = {}
+local ratesLabels: { [string]: TextLabel } = {}
 local currentEssence = 0
 local rotatingEgg
 
@@ -115,7 +118,7 @@ function EggPanel.Create(parent)
 		Parent = ratesRow,
 	})
 	for i, tier in Sanctuary.EGG_TIERS do
-		UiKit.Create("TextLabel", {
+		local label = UiKit.Create("TextLabel", {
 			Name = `Rates{tier}`,
 			LayoutOrder = i,
 			RichText = true,
@@ -127,6 +130,7 @@ function EggPanel.Create(parent)
 			Text = UiKit.DropRatesText(Config.EGG_RARITY_WEIGHTS[tier]),
 			Parent = ratesRow,
 		})
+		ratesLabels[tier] = label
 	end
 
 	pityLabel = UiKit.Create("TextLabel", {
@@ -233,6 +237,11 @@ function EggPanel.Refresh(state)
 	lockedTiers = Sanctuary.EggGate(state.SanctuaryLevel or 1)
 	currentEssence = math.floor(state.Essence or 0)
 	rotatingEgg = state.RotatingEgg
+	for tier, context in state.EggProbabilityContext or {} do
+		if ratesLabels[tier] and context.RarityRates then
+			ratesLabels[tier].Text = UiKit.DropRatesText(context.RarityRates)
+		end
+	end
 	RefreshBuyButtons()
 	local stats = state.Stats or {}
 	RefreshPity(stats.HatchesSinceRare or 0)

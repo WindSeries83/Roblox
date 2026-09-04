@@ -15,6 +15,18 @@ Pour une tâche Roblox/Luau qui touche Studio, l'API Roblox, le réseau, la pers
 - `[profilestore]: Roblox API services unavailable` est attendu dans un Studio non publié utilisant le mock.
 - Garder les sessions et sorties Studio courtes.
 
+# Priorités produit
+
+Pour toute tâche gameplay, lire `docs/product/NORTH_STAR.md`, puis `docs/product/NON_GOALS.md` et `docs/product/ROADMAP.md`. Le vertical slice de `docs/production/VERTICAL_SLICE.md` est prioritaire. Ne pas ajouter de feature majeure sans problème joueur observé ou mesuré.
+
+## Politique Luau
+
+Tout fichier Luau nouveau ou modifié commence par `--!strict`. Les migrations de `src/` existant restent progressives.
+
+## Orchestration
+
+Pour un bug, tracer les appelants et corriger la racine partagée. Avant un playtest, vérifier la synchronisation Rojo en mode Edit; ne jamais diagnostiquer depuis une copie Play. Un seul `rojo serve default.project.json` doit tourner. Le message ProfileStore indiquant que les API Roblox sont indisponibles est attendu dans Studio non publié.
+
 # Skills de process
 
 Utiliser `playtest-report`, `bug-report`, `bug-triage`, `retrospective`, `scope-check` ou `balance-check` uniquement lorsque la demande correspond explicitement à leur finalité. Ne pas inventorier ni charger les autres skills par défaut.

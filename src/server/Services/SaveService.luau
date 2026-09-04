@@ -1,4 +1,7 @@
+--!strict
+
 local ServerScriptService = game:GetService("ServerScriptService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -11,6 +14,7 @@ local PurchaseLedger = require(ReplicatedStorage.Shared.PurchaseLedger)
 local SaveService = {}
 
 SaveService.Profiles = {}
+SaveService.ProfileLoaded = Instance.new("BindableEvent")
 
 local DATA_VERSION = 16
 
@@ -424,6 +428,7 @@ function SaveService:LoadProfileAsync(player: Player)
 		profile:Reconcile()
 		SaveService.Migrate(profile.Data)
 		self.Profiles[player] = profile
+		self.ProfileLoaded:Fire(player, profile)
 		profile:MessageHandler(function(message, processed)
 			if type(message) ~= "table" then
 				processed()
@@ -527,6 +532,22 @@ end
 
 function SaveService:GetProfile(player: Player)
 	return self.Profiles[player]
+end
+
+function SaveService:WaitForProfile(player: Player, timeout: number?): any
+	local profile = self:GetProfile(player)
+	if profile then
+		return profile
+	end
+	local deadline = os.clock() + (timeout or 10)
+	while player:IsDescendantOf(Players) and os.clock() < deadline do
+		task.wait(0.1)
+		profile = self:GetProfile(player)
+		if profile then
+			return profile
+		end
+	end
+	return nil
 end
 
 function SaveService:SaveProfile(player: Player, proof: ((any) -> boolean)?): boolean

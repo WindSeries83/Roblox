@@ -1,3 +1,5 @@
+--!strict
+
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -14,6 +16,7 @@ local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
 local Vip = require(ReplicatedStorage.Shared.Vip)
 local Net = require(ReplicatedStorage.Shared.Net)
 local RotatingEgg = require(ReplicatedStorage.Shared.RotatingEgg)
+local Probability = require(ReplicatedStorage.Shared.Probability)
 
 local HatchService = {}
 
@@ -125,10 +128,10 @@ function HatchService:Init(cont)
 	secretGate = cont:Get("SecretGate")
 end
 
-function HatchService:Reserve(player: Player, egg): ({ [string]: any }?, string?)
+function HatchService:ContextFor(player: Player, egg): any?
 	local profile = saveService:GetProfile(player)
 	if not profile then
-		return nil, "Sauvegarde indisponible"
+		return nil
 	end
 	local eff = skillService:EffectsOf(profile)
 	local luck = Luck.Combine(
@@ -138,19 +141,33 @@ function HatchService:Reserve(player: Player, egg): ({ [string]: any }?, string?
 		eff.HatchLuck,
 		if Vip.IsActive(profile.Data.VipExpiresAt, os.time()) then Config.VIP_LUCK_BONUS else 0
 	)
-	local rarityWeights = nil
-	if profile.Data.Stats.TotalHatched == 0 and egg.Tier == "CommonEgg" then
-		rarityWeights = Config.FIRST_HATCH_WEIGHTS
+	return Probability.Build({
+		tier = egg.Tier,
+		totalHatched = profile.Data.Stats.TotalHatched,
+		hatchesSinceRare = profile.Data.Stats.HatchesSinceRare or 0,
+		luck = luck,
+		ascendChance = egg.AscendChance,
+		mutationBonus = CollarBonus(profile) + luck + eff.MutationBonus + eclipseService:MutationBonus(),
+	})
+end
+
+function HatchService:Reserve(player: Player, egg): ({ [string]: any }?, string?)
+	local profile = saveService:GetProfile(player)
+	if not profile then
+		return nil, "Sauvegarde indisponible"
 	end
+	local eff = skillService:EffectsOf(profile)
+	local context = self:ContextFor(player, egg)
+	assert(context, "probability context unavailable")
+	local rarityWeights = context.RarityWeights
 	-- Bonus mutation de l'Éclipse ajouté APRÈS Luck.Combine : événement serveur, hors cap de chance achetable.
 	local roll = Gameplay.RollEgg(
 		egg.Tier,
-		CollarBonus(profile) + luck + eff.MutationBonus + eclipseService:MutationBonus(),
+		nil,
 		rarityWeights
 	)
-	if egg.AscendChance then
-		roll.Rarity = Ascension.RollFrom(roll.Rarity, luck, egg.AscendChance)
-	end
+	local mutationRoll = Gameplay.WeightedRoll(context.MutationWeights)
+	roll.Mutation = if mutationRoll == "None" then false else mutationRoll
 	-- Bride l'ascension : Mythique+ réservé aux œufs de la Faille.
 	roll.Rarity = Ascension.ClampToSource(roll.Rarity, egg.Source or "Purchase")
 	if
@@ -166,8 +183,10 @@ function HatchService:Reserve(player: Player, egg): ({ [string]: any }?, string?
 
 	local rareRank = Gameplay.RarityRank("Rare")
 	local hatchesSinceRare = profile.Data.Stats.HatchesSinceRare or 0
-	if hatchesSinceRare >= Config.PITY_THRESHOLD - 1 and Gameplay.RarityRank(roll.Rarity) < rareRank then
-		roll = Gameplay.RollEgg(egg.Tier, CollarBonus(profile) + luck, { Rare = 100 })
+	if context.PityForced and Gameplay.RarityRank(roll.Rarity) < rareRank then
+		roll = Gameplay.RollEgg(egg.Tier, nil, { Rare = 100 })
+		local pityMutation = Gameplay.WeightedRoll(context.MutationWeights)
+		roll.Mutation = if pityMutation == "None" then false else pityMutation
 		log:Economy("Hatch", "PityTriggered", { Player = player.Name, SinceRare = hatchesSinceRare })
 		analyticsService:Event("pity_triggered", { SinceRare = hatchesSinceRare, Threshold = Config.PITY_THRESHOLD })
 	end

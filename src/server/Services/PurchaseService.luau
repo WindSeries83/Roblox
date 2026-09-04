@@ -22,6 +22,7 @@ local dataSync
 local luckService
 local boostService
 local analyticsService
+local policyService
 
 local ReceiptsStore = SafeStore.Get("RiftBeastsReceipts_v1", nil)
 
@@ -178,6 +179,7 @@ function PurchaseService:Init(container)
 	luckService = container:Get("LuckService")
 	boostService = container:Get("BoostService")
 	analyticsService = container:Get("AnalyticsService")
+	policyService = container:Get("PolicyService")
 end
 
 function PurchaseService:Start()
@@ -214,8 +216,16 @@ function PurchaseService:Start()
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		end
 		local player = Players:GetPlayerByUserId(receiptInfo.PlayerId)
-		local profile = if player then saveService:GetProfile(player) else nil
+		local profile = if player then saveService:WaitForProfile(player, 10) else nil
 		if not player or not profile then
+			return Enum.ProductPurchaseDecision.NotProcessedYet
+		end
+		-- Essence can indirectly buy random eggs; keep it gated by Roblox policy.
+		if product.Amount and not policyService:CanUsePaidRandomItems(player) then
+			LogPurchase(
+				"ReceiptPolicyRestricted",
+				{ PlayerId = receiptInfo.PlayerId, ProductId = receiptInfo.ProductId }
+			)
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		end
 		profile.Data.PurchaseReceipts = profile.Data.PurchaseReceipts or {}
