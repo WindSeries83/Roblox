@@ -12,7 +12,7 @@ jobs:
 
       - name: Install toolchain (rokit)
         run: |
-          curl -fsSL https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | sh
+          curl -fsSL https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash
           echo "$HOME/.rokit/bin" >> "$GITHUB_PATH"
 
       - name: Pin tools from rokit.toml
