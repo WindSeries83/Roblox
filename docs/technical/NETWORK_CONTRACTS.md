@@ -21,3 +21,5 @@ All client → server payloads are untrusted. Handlers validate type, ownership,
 | `PolicyState` | S→C: policy booleans | produced by server `PolicyService` after profile load | presentation/gating only; server gates paid actions too |
 
 No client-supplied price, drop, creature, reward or balance is trusted. Errors are silent rejection plus an economy log where relevant. Remote names not listed above follow the same authority rule and are documented by their owning service.
+
+Policy is delivered in the normal `Sync` snapshot; there is no `PolicyState` remote.

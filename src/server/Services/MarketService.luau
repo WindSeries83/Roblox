@@ -19,6 +19,7 @@ local log
 local saveService
 local essenceService
 local dataSync
+local policyService
 
 local Store = SafeStore.Get("RiftBeastsMarket_v1", nil)
 local listings: { [string]: any } = {}
@@ -275,7 +276,7 @@ local function OnMarketList(player: Player, creatureId: any, price: any)
 		return
 	end
 	local profile = saveService:GetProfile(player)
-	if not profile then
+	if not profile or not policyService:CanTradePaidItems(player) then
 		return
 	end
 	local creature = Gameplay.FindCreature(profile.Data.Creatures, creatureId)
@@ -339,7 +340,7 @@ local function OnMarketBuy(player: Player, listingId: any)
 	end
 	local profile = saveService:GetProfile(player)
 	local listing = listings[listingId]
-	if not profile or not listing then
+	if not profile or not listing or not policyService:CanTradePaidItems(player) then
 		return
 	end
 	local bonusSlots = if profile.Data.Entitlements.MoreSlots then Config.GAMEPASSES.MoreSlots.BonusSlots else 0
@@ -450,6 +451,7 @@ function MarketService:Init(container)
 	saveService = container:Get("SaveService")
 	essenceService = container:Get("EssenceService")
 	dataSync = container:Get("DataSync")
+	policyService = container:Get("PolicyService")
 end
 
 function MarketService:Start()

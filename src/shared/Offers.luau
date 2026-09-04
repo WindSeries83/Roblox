@@ -1,4 +1,5 @@
 local DAY = 86400
+local PaidRandomPolicy = require(script.Parent.PaidRandomPolicy)
 
 local Offers = {}
 
@@ -170,6 +171,20 @@ function Offers.VisibleFor(data: any, featureUnlocks: any, now: number?): { [str
 		end
 	end
 	return visible
+end
+
+function Offers.FilterPaidRandom(catalog: { [string]: any }, policy: any, products: { [string]: any }): { [string]: any }
+	local filtered = table.clone(catalog)
+	for key in filtered do
+		local definition = Offers.All[key]
+		local product = definition and products[definition.ConfigKey]
+		if PaidRandomPolicy.RequiresEligibility(product)
+			and (not policy or not policy.Loaded or policy.ArePaidRandomItemsRestricted)
+		then
+			filtered[key] = nil
+		end
+	end
+	return filtered
 end
 
 -- Jour de retour : D2 dès 1 jour d'absence, D7 dès 6 jours.

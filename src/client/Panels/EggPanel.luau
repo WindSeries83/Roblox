@@ -239,7 +239,7 @@ function EggPanel.Refresh(state)
 	rotatingEgg = state.RotatingEgg
 	for tier, context in state.EggProbabilityContext or {} do
 		if ratesLabels[tier] and context.RarityRates then
-			ratesLabels[tier].Text = UiKit.DropRatesText(context.RarityRates)
+			ratesLabels[tier].Text = `Rareté : {UiKit.DropRatesText(context.RarityRates)}\nMutation : {UiKit.DropRatesText(context.MutationRates)}`
 		end
 	end
 	RefreshBuyButtons()

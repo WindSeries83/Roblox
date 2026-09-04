@@ -76,6 +76,32 @@ return function(t)
 		end
 	end)
 
+	t.test("policy filters paid random offers by their server definitions", function()
+		local catalog = {
+			LuckPotionSmall = true,
+			LuckPotionBig = true,
+			Vip30Days = true,
+			StarterBundle = true,
+			ServerBoost = true,
+		}
+		local products = {
+			LuckPotionSmall = { Kind = "LuckPotion" },
+			LuckPotionBig = { Kind = "LuckPotion" },
+			Vip30Days = { Kind = "Vip" },
+			FirstPurchaseOffer = { Kind = "FirstOffer", Creature = { Rarity = "Rare" } },
+			ServerBoostProduct = { Kind = "ServerBoost" },
+		}
+		local restricted = Offers.FilterPaidRandom(catalog, { Loaded = true, ArePaidRandomItemsRestricted = true }, products)
+		for _, key in { "LuckPotionSmall", "LuckPotionBig", "Vip30Days", "StarterBundle" } do
+			expect.falsy(restricted[key])
+		end
+		expect.truthy(restricted.ServerBoost)
+		local unrestricted = Offers.FilterPaidRandom(catalog, { Loaded = true, ArePaidRandomItemsRestricted = false }, products)
+		expect.truthy(unrestricted.LuckPotionSmall)
+		expect.truthy(unrestricted.Vip30Days)
+		expect.truthy(unrestricted.ServerBoost)
+	end)
+
 	t.test("return day thresholds", function()
 		expect.equal(Offers.ReturnDay(0), nil)
 		expect.equal(Offers.ReturnDay(DAY - 1), nil)

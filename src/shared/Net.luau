@@ -1,9 +1,12 @@
 --!strict
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local RemoteRegistry = require(script.Parent.RemoteRegistry)
 
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 
+assert(RemoteRegistry.Validate(RemoteRegistry.Names), "Invalid remote registry")
 local Net = {}
 
 local function Event(name: string): RemoteEvent
@@ -11,87 +14,17 @@ local function Event(name: string): RemoteEvent
 	if existing then
 		return existing :: RemoteEvent
 	end
+	if not RunService:IsServer() then
+		error(`Missing server remote: {name}`)
+	end
 	local remote = Instance.new("RemoteEvent")
 	remote.Name = name
 	remote.Parent = Remotes
 	return remote
 end
 
-Net.BuyEgg = Event("BuyEgg")
-Net.PlaceEgg = Event("PlaceEgg")
-Net.StartIncubation = Event("StartIncubation")
-Net.ClaimIncubation = Event("ClaimIncubation")
-Net.RiftAttack = Event("RiftAttack")
-Net.Sync = Event("Sync")
-Net.EconomySync = Event("EconomySync")
-Net.ActionResult = Event("ActionResult")
-Net.HatchResult = Event("HatchResult")
-Net.RareDrop = Event("RareDrop")
-Net.RiftSync = Event("RiftSync")
-Net.RiftEnded = Event("RiftEnded")
-Net.RiftWorld = Event("RiftWorld")
-Net.RiftRequest = Event("RiftRequest")
-Net.ExpeditionRequest = Event("ExpeditionRequest")
-Net.ExpeditionAction = Event("ExpeditionAction")
-Net.ExpeditionSync = Event("ExpeditionSync")
-Net.ExpeditionEnded = Event("ExpeditionEnded")
-Net.RushStart = Event("RushStart")
-Net.RushComplete = Event("RushComplete")
-Net.RushClaim = Event("RushClaim")
-Net.EvolveCreature = Event("EvolveCreature")
-Net.BuyItem = Event("BuyItem")
-Net.EquipItem = Event("EquipItem")
-Net.UnequipItem = Event("UnequipItem")
-Net.BreedCreatures = Event("BreedCreatures")
-Net.BreedResult = Event("BreedResult")
-Net.RebirthRequest = Event("RebirthRequest")
-Net.RebirthPreview = Event("RebirthPreview")
-Net.RebirthConfirm = Event("RebirthConfirm")
-Net.UpgradeSanctuary = Event("UpgradeSanctuary")
-Net.SetCompanion = Event("SetCompanion")
-Net.AssignSanctuary = Event("AssignSanctuary")
-Net.CollectSanctuary = Event("CollectSanctuary")
-Net.InviteSanctuary = Event("InviteSanctuary")
-Net.VisitSanctuary = Event("VisitSanctuary")
-Net.SetDuelDefense = Event("SetDuelDefense")
-Net.QuestsSync = Event("QuestsSync")
-Net.QuestClaim = Event("QuestClaim")
-Net.TutorialComplete = Event("TutorialComplete")
-Net.OrbClaimed = Event("OrbClaimed")
-Net.SkillBuy = Event("SkillBuy")
-
-Net.FriendsSync = Event("FriendsSync")
-Net.JoinFriend = Event("JoinFriend")
-Net.InviteFriend = Event("InviteFriend")
-Net.RespondFriendInvite = Event("RespondFriendInvite")
-Net.FriendInvite = Event("FriendInvite")
-Net.VisitPlot = Event("VisitPlot")
-
-Net.BoostState = Event("BoostState")
-Net.EclipseState = Event("EclipseState")
-
-Net.GlobalDrop = Event("GlobalDrop")
-Net.GlobalStats = Event("GlobalStats")
-
-Net.MarketList = Event("MarketList")
-Net.MarketListings = Event("MarketListings")
-Net.MarketBuy = Event("MarketBuy")
-Net.MarketRemove = Event("MarketRemove")
-Net.MarketSync = Event("MarketSync")
-
-Net.DuelChallenge = Event("DuelChallenge")
-Net.DuelAccept = Event("DuelAccept")
-Net.DuelDecline = Event("DuelDecline")
-Net.DuelRequest = Event("DuelRequest")
-Net.DuelResult = Event("DuelResult")
-
-Net.SeasonSync = Event("SeasonSync")
-Net.SeasonRequest = Event("SeasonRequest")
-Net.SeasonClaim = Event("SeasonClaim")
-
-Net.LeaderboardRequest = Event("LeaderboardRequest")
-Net.LeaderboardSync = Event("LeaderboardSync")
-Net.LeaderboardVisit = Event("LeaderboardVisit")
-Net.LeaderboardDetail = Event("LeaderboardDetail")
+for _, name in RemoteRegistry.Names do
+	Net[name] = Event(name)
+end
 
 return Net

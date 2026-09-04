@@ -11,7 +11,6 @@ local RotatingEgg = require(ReplicatedStorage.Shared.RotatingEgg)
 local Rush = require(ReplicatedStorage.Shared.Rush)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
-local PaidRandomPolicy = require(ReplicatedStorage.Shared.PaidRandomPolicy)
 
 local DataSync = {}
 
@@ -67,15 +66,7 @@ function DataSync:Send(player: Player)
 	end
 	local policyService = container:Get("PolicyService")
 	local policy = policyService:GetState(player)
-	local catalog = Offers.VisibleFor(profile.Data, featureUnlocks, now)
-	for key, offer in catalog do
-		local product = Config.DEV_PRODUCTS[offer.ConfigKey]
-		if PaidRandomPolicy.RequiresEligibility(product)
-			and (not policy.Loaded or policy.ArePaidRandomItemsRestricted)
-		then
-			catalog[key] = nil
-		end
-	end
+	local catalog = Offers.FilterPaidRandom(Offers.VisibleFor(profile.Data, featureUnlocks, now), policy, Config.DEV_PRODUCTS)
 	Net.Sync:FireClient(player, {
 		Policy = policy,
 		Essence = math.floor(profile.Data.Essence),
