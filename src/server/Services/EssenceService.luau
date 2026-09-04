@@ -1,3 +1,5 @@
+--!strict
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -16,6 +18,7 @@ local saveService
 local questService
 local skillService
 local packService
+local boostService
 local container
 
 function EssenceService.GetRate(player: Player): number
@@ -29,6 +32,7 @@ function EssenceService.GetRate(player: Player): number
 	local passMult = if profile.Data.Entitlements.PassiveBoost then 1.5 else 1
 	local skillMult = 1 + skillService:EffectsOf(profile).EssenceRate
 	local packMult = Pack.Mult(packService and packService:Count(player) or 0)
+	local boostMult = 1 + (boostService and boostService:CurrentBonus() or 0)
 	return Gameplay.ComputeRate(profile.Data.Creatures)
 		* sanctuaryMult
 		* indexMult
@@ -36,6 +40,7 @@ function EssenceService.GetRate(player: Player): number
 		* passMult
 		* skillMult
 		* packMult
+		* boostMult
 end
 
 function EssenceService:Add(player: Player, amount: number, source: string)
@@ -104,6 +109,7 @@ end
 function EssenceService:Start()
 	questService = container:Get("QuestService")
 	packService = container:Get("PackService")
+	boostService = container:Get("BoostService")
 
 	local accumulator = 0
 	local lastLog = 0

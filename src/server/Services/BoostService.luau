@@ -1,7 +1,8 @@
+--!strict
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
-local Luck = require(ReplicatedStorage.Shared.Luck)
 local Net = require(ReplicatedStorage.Shared.Net)
 local SafeStore = require(script.Parent.SafeStore)
 
@@ -64,7 +65,7 @@ function BoostService:Activate(player: Player, receiptKey: string?): boolean
 	end
 
 	workspace:SetAttribute("BoostActiveUntil", boostUntil)
-	workspace:SetAttribute("BoostLuckBonus", boostBonus)
+	workspace:SetAttribute("BoostEssenceBonus", boostBonus)
 	Net.BoostState:FireAllClients({ Bonus = boostBonus, Until = boostUntil })
 
 	if changed then
@@ -78,14 +79,11 @@ function BoostService:Activate(player: Player, receiptKey: string?): boolean
 end
 
 function BoostService:CurrentBonus(): number
-	if not Luck.Active(boostUntil, os.time()) then
-		return 0
-	end
-	return boostBonus
+	return if boostUntil > os.time() then boostBonus else 0
 end
 
 function BoostService:Until(): number
-	return if Luck.Active(boostUntil, os.time()) then boostUntil else 0
+	return if boostUntil > os.time() then boostUntil else 0
 end
 
 function BoostService:Init(container)

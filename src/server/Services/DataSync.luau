@@ -11,6 +11,7 @@ local RotatingEgg = require(ReplicatedStorage.Shared.RotatingEgg)
 local Rush = require(ReplicatedStorage.Shared.Rush)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
+local PaidRandomPolicy = require(ReplicatedStorage.Shared.PaidRandomPolicy)
 
 local DataSync = {}
 
@@ -64,7 +65,19 @@ function DataSync:Send(player: Player)
 			})
 		end
 	end
+	local policyService = container:Get("PolicyService")
+	local policy = policyService:GetState(player)
+	local catalog = Offers.VisibleFor(profile.Data, featureUnlocks, now)
+	for key, offer in catalog do
+		local product = Config.DEV_PRODUCTS[offer.ConfigKey]
+		if PaidRandomPolicy.RequiresEligibility(product)
+			and (not policy.Loaded or policy.ArePaidRandomItemsRestricted)
+		then
+			catalog[key] = nil
+		end
+	end
 	Net.Sync:FireClient(player, {
+		Policy = policy,
 		Essence = math.floor(profile.Data.Essence),
 		Creatures = profile.Data.Creatures,
 		Eggs = profile.Data.Eggs,
@@ -91,7 +104,7 @@ function DataSync:Send(player: Player)
 		Offers = {
 			FirstPurchaseEligible = offerState.FirstPurchaseEligible == true,
 			FirstPurchaseClaimed = offerState.FirstPurchaseClaimed == true,
-			Catalog = Offers.VisibleFor(profile.Data, featureUnlocks, now),
+			Catalog = catalog,
 		},
 		Luck = sessionLuck.For(player),
 		LuckPotion = profile.Data.LuckPotion,

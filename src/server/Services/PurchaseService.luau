@@ -13,6 +13,7 @@ local Species = require(ReplicatedStorage.Shared.Data.Species)
 local Vip = require(ReplicatedStorage.Shared.Vip)
 local SafeStore = require(script.Parent.SafeStore)
 local Log = require(script.Parent.Log)
+local PaidRandomPolicy = require(ReplicatedStorage.Shared.PaidRandomPolicy)
 
 local PurchaseService = {}
 
@@ -130,6 +131,12 @@ function PurchaseService.GrantPass(player: Player, passKey: string, receiptKey: 
 	if not profile then
 		return false
 	end
+	if PaidRandomPolicy.RequiresEligibility({
+		Kind = if passKey == "VIP" then "Vip" else nil,
+		Creature = effect.Creature,
+	}) and not policyService:CanUsePaidRandomItems(player) then
+		return false
+	end
 	local firstGrant = not profile.Data.Entitlements[effect.Flag]
 	if firstGrant then
 		if effect.Essence > 0 then
@@ -183,10 +190,10 @@ function PurchaseService:Init(container)
 end
 
 function PurchaseService:Start()
-	Players.PlayerAdded:Connect(function(player)
+	local function restorePasses(player: Player)
 		task.spawn(function()
 			for passKey, def in Config.GAMEPASSES do
-				if def.Id ~= 0 then
+				if def.Id ~= 0 and player:IsDescendantOf(Players) then
 					local ok, owns = pcall(function()
 						return MarketplaceService:UserOwnsGamePassAsync(player.UserId, def.Id)
 					end)
@@ -196,6 +203,12 @@ function PurchaseService:Start()
 				end
 			end
 		end)
+	end
+	saveService.ProfileLoaded.Event:Connect(restorePasses)
+	policyService.PolicyLoaded.Event:Connect(function(player: Player)
+		if saveService:GetProfile(player) then
+			restorePasses(player)
+		end
 	end)
 
 	MarketplaceService.ProcessReceipt = function(receiptInfo)
@@ -220,8 +233,7 @@ function PurchaseService:Start()
 		if not player or not profile then
 			return Enum.ProductPurchaseDecision.NotProcessedYet
 		end
-		-- Essence can indirectly buy random eggs; keep it gated by Roblox policy.
-		if product.Amount and not policyService:CanUsePaidRandomItems(player) then
+		if PaidRandomPolicy.RequiresEligibility(product) and not policyService:CanUsePaidRandomItems(player) then
 			LogPurchase(
 				"ReceiptPolicyRestricted",
 				{ PlayerId = receiptInfo.PlayerId, ProductId = receiptInfo.ProductId }

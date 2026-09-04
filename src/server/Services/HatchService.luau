@@ -27,7 +27,6 @@ local indexService
 local questService
 local sessionLuck
 local luckService
-local boostService
 local analyticsService
 local skillService
 local tickerService
@@ -121,7 +120,6 @@ function HatchService:Init(cont)
 	questService = cont:Get("QuestService")
 	sessionLuck = cont:Get("SessionLuck")
 	luckService = cont:Get("LuckService")
-	boostService = cont:Get("BoostService")
 	skillService = cont:Get("SkillService")
 	analyticsService = cont:Get("AnalyticsService")
 	incubationService = cont:Get("IncubationService")
@@ -137,7 +135,6 @@ function HatchService:ContextFor(player: Player, egg): any?
 	local luck = Luck.Combine(
 		sessionLuck.For(player),
 		luckService:PotionBonus(player),
-		boostService:CurrentBonus(),
 		eff.HatchLuck,
 		if Vip.IsActive(profile.Data.VipExpiresAt, os.time()) then Config.VIP_LUCK_BONUS else 0
 	)
