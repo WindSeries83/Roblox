@@ -1,3 +1,5 @@
+--!strict
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -17,6 +19,7 @@ local dataSync
 local questService
 local sessionLuck
 local skillService
+local analyticsService
 
 local container
 
@@ -32,6 +35,7 @@ function BreedingService:Init(cont)
 	questService = cont:Get("QuestService")
 	sessionLuck = cont:Get("SessionLuck")
 	skillService = cont:Get("SkillService")
+	analyticsService = cont:Get("AnalyticsService")
 end
 
 function BreedingService:Start()
@@ -152,6 +156,13 @@ function BreedingService:Start()
 			Generation = child.Generation,
 			ChildId = child.Id,
 		})
+		analyticsService:Event("breed", {
+			Father = father.Id,
+			Mother = mother.Id,
+			Species = child.SpeciesId,
+			Rarity = child.Rarity,
+			Mutation = tostring(child.Mutation),
+		}, player)
 	end)
 end
 

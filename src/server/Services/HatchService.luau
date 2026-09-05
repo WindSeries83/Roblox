@@ -82,6 +82,11 @@ local function Announce(player: Player, roll)
 	if tickerService then
 		tickerService:Publish(payload)
 	end
+	analyticsService:Event("rare_drop", {
+		Rarity = roll.Rarity,
+		Mutation = tostring(roll.Mutation),
+		World = "Sanctuary",
+	}, player)
 	log:Economy("Hatch", "Announce", payload)
 end
 

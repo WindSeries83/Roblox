@@ -20,6 +20,7 @@ local saveService
 local essenceService
 local dataSync
 local policyService
+local analyticsService
 
 local Store = SafeStore.Get("RiftBeastsMarket_v1", nil)
 local listings: { [string]: any } = {}
@@ -256,6 +257,13 @@ local function SettleBuyerApplied(listing: any): boolean
 	end
 	listings[listing.Id] = nil
 	RemoveListing(listing.Id)
+	local buyer = Players:GetPlayerByUserId(listing.BuyerUserId or listing.SoldBy)
+	analyticsService:Event("market_sale", {
+		ListingId = listing.Id,
+		Price = listing.Price,
+		Payout = MarketService.Payout(listing.Price, Config.MARKET_FEE),
+		SellerUserId = listing.SellerUserId,
+	}, buyer)
 	return true
 end
 
@@ -452,6 +460,7 @@ function MarketService:Init(container)
 	essenceService = container:Get("EssenceService")
 	dataSync = container:Get("DataSync")
 	policyService = container:Get("PolicyService")
+	analyticsService = container:Get("AnalyticsService")
 end
 
 function MarketService:Start()

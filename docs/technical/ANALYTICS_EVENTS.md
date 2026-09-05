@@ -9,4 +9,4 @@ Schema version: `1`. Events use stable snake_case names and are emitted server-s
 | `purchase`, `market_sale` | `user_id`, product/listing identifiers, server-authoritative amount |
 | `session_start`, `session_end`, `return_visit` | `user_id`, `session_id`, `at`, `days_since_last` where applicable |
 
-Current implementation is partial; emitted names must be audited against this contract before analytics are used for decisions.
+The server emits the session envelope and the listed core funnel, hatch, Rift, breeding, purchase and market milestones. Cohort metrics such as D1/D7 retention, conversion and ARPDAU still require published telemetry before they can drive decisions.
