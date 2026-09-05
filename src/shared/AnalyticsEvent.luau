@@ -9,6 +9,8 @@ export type Event = {
 	Properties: { [string]: any },
 }
 
+export type Properties = { [string]: any }
+
 function AnalyticsEvent.New(name: any, properties: any, now: number?): Event?
 	if type(name) ~= "string" or name == "" or type(properties) ~= "table" then
 		return nil
@@ -19,6 +21,15 @@ function AnalyticsEvent.New(name: any, properties: any, now: number?): Event?
 		Timestamp = now or os.time(),
 		Properties = properties,
 	}
+end
+
+function AnalyticsEvent.WithContext(properties: Properties, userId: number, sessionId: string, at: number?): Properties
+	local enriched = table.clone(properties)
+	enriched.user_id = userId
+	enriched.session_id = sessionId
+	enriched.at = at or os.time()
+	enriched.schema_version = 1
+	return enriched
 end
 
 function AnalyticsEvent.Validate(event: any): boolean

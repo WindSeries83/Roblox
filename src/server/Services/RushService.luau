@@ -23,9 +23,9 @@ local function snapshot(player: Player)
 	return Rush.Snapshot(profile.Data.Rush and profile.Data.Rush.Active, os.time())
 end
 
-local function event(name: string, properties: { [string]: any })
+local function event(name: string, properties: { [string]: any }, player: Player)
 	if analyticsService then
-		analyticsService:Event(name, properties)
+		analyticsService:Event(name, properties, player)
 	end
 end
 
@@ -40,7 +40,7 @@ local function respond(player: Player, action: string, ok: boolean, reason: stri
 end
 
 local function reject(player: Player, action: string, reason: string)
-	event("rush_reject", { Action = action, Reason = reason })
+	event("rush_reject", { Action = action, Reason = reason }, player)
 	respond(player, action, false, reason)
 end
 
@@ -85,7 +85,7 @@ local function StartRush(player: Player, worldId: any)
 		profile.Data.Rush.Active = previous
 		return reject(player, "start", "save_failed")
 	end
-	event("rush_start", { WorldId = world.Id, TargetSeconds = world.Rush.TargetSeconds })
+	event("rush_start", { WorldId = world.Id, TargetSeconds = world.Rush.TargetSeconds }, player)
 	dataSync:Send(player)
 	respond(player, "start", true)
 end
@@ -124,7 +124,7 @@ local function CompleteRush(player: Player)
 		profile.Data.Rush.Active = before
 		return reject(player, "complete", "save_failed")
 	end
-	event("rush_complete", { WorldId = state.WorldId, Duration = state.CompletedAt - state.StartedAt })
+	event("rush_complete", { WorldId = state.WorldId, Duration = state.CompletedAt - state.StartedAt }, player)
 	dataSync:Send(player)
 	respond(player, "complete", true, nil, { Reward = reward, State = snapshot(player) })
 end
@@ -173,7 +173,7 @@ local function ClaimRush(player: Player)
 		PurchaseLedger.Restore(profile.Data, before)
 		return reject(player, "claim", "save_failed")
 	end
-	event("rush_claim", { WorldId = state.WorldId, Amount = granted })
+	event("rush_claim", { WorldId = state.WorldId, Amount = granted }, player)
 	dataSync:Send(player)
 	respond(player, "claim", true, nil, { Reward = { Essence = granted }, State = snapshot(player) })
 end
@@ -202,7 +202,7 @@ local function Expire(player: Player)
 		state.Expired = false
 		return
 	end
-	event("rush_reject", { Action = "complete", Reason = "timeout", WorldId = state.WorldId })
+	event("rush_reject", { Action = "complete", Reason = "timeout", WorldId = state.WorldId }, player)
 	dataSync:Send(player)
 end
 

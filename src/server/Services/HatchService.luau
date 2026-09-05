@@ -181,7 +181,11 @@ function HatchService:Reserve(player: Player, egg): ({ [string]: any }?, string?
 		local pityMutation = Gameplay.WeightedRoll(context.MutationWeights)
 		roll.Mutation = if pityMutation == "None" then false else pityMutation
 		log:Economy("Hatch", "PityTriggered", { Player = player.Name, SinceRare = hatchesSinceRare })
-		analyticsService:Event("pity_triggered", { SinceRare = hatchesSinceRare, Threshold = Config.PITY_THRESHOLD })
+		analyticsService:Event(
+			"pity_triggered",
+			{ SinceRare = hatchesSinceRare, Threshold = Config.PITY_THRESHOLD },
+			player
+		)
 	end
 	if Gameplay.RarityRank(roll.Rarity) >= rareRank then
 		profile.Data.Stats.HatchesSinceRare = 0
@@ -273,17 +277,17 @@ function HatchService:ClaimReserved(player: Player, record, worldHatch: boolean?
 		Source = record.EggTier or "Incubation",
 		RotatingEggId = record.RotatingEggId,
 	}
-	analyticsService:Event("hatch", hatchProperties)
+	analyticsService:Event("hatch", hatchProperties, player)
 	if record.RotatingEggId then
-		analyticsService:Event("rotating_egg_hatch", { Id = record.RotatingEggId, Tier = record.EggTier })
+		analyticsService:Event("rotating_egg_hatch", { Id = record.RotatingEggId, Tier = record.EggTier }, player)
 	end
-	analyticsService:Funnel(profile, "FirstHatchAt")
+	analyticsService:Funnel(profile, "FirstHatchAt", player)
 	local rareRank = Gameplay.RarityRank("Rare")
 	if rank >= rareRank then
-		analyticsService:Funnel(profile, "FirstRarePlusAt")
+		analyticsService:Funnel(profile, "FirstRarePlusAt", player)
 	end
 	if rank >= Gameplay.RarityRank("Epic") then
-		analyticsService:Funnel(profile, "FirstEpicPlusAt")
+		analyticsService:Funnel(profile, "FirstEpicPlusAt", player)
 		profile.Data.Offers.FirstPurchaseEligible = true
 	end
 
@@ -334,7 +338,11 @@ function HatchService:Start()
 		end
 		self:GrantEgg(player, purchaseTier, if rotatingEggId then "Rotating" else "Purchase", nil, rotatingEggId)
 		if rotatingEggId then
-			analyticsService:Event("rotating_egg_purchase", { Id = rotatingEggId, Tier = purchaseTier, Price = price })
+			analyticsService:Event(
+				"rotating_egg_purchase",
+				{ Id = rotatingEggId, Tier = purchaseTier, Price = price },
+				player
+			)
 		end
 		if profile and profile.Data.Entitlements.AutoHatch then
 			-- Éclosion auto : dernier œuf fraîchement accordé (Source="Purchase").

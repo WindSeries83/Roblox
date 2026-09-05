@@ -284,7 +284,7 @@ local function WinRift(player: Player)
 		Duration = os.time() - combat.StartedAt,
 		Total = profile.Data.Stats.RiftsCompleted,
 	})
-	analyticsService:Event("rift_complete", { Win = true, Duration = os.time() - combat.StartedAt })
+	analyticsService:Event("rift_complete", { Win = true, Duration = os.time() - combat.StartedAt }, player)
 
 	CleanupCombat(player)
 end
@@ -310,7 +310,7 @@ local function LoseRift(player: Player)
 		Stage = combat.Stage,
 	})
 	log:Economy("Rift", "Defeat", { Player = player.Name, Duration = os.time() - combat.StartedAt })
-	analyticsService:Event("rift_complete", { Win = false, Duration = os.time() - combat.StartedAt })
+	analyticsService:Event("rift_complete", { Win = false, Duration = os.time() - combat.StartedAt }, player)
 	CleanupCombat(player)
 end
 

@@ -61,7 +61,7 @@ function DataSync:Send(player: Player)
 				Id = rotatingSnapshot.Id,
 				Tier = rotatingSnapshot.Tier,
 				WindowIndex = rotatingSnapshot.WindowIndex,
-			})
+			}, player)
 		end
 	end
 	local policyService = container:Get("PolicyService")

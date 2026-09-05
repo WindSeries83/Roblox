@@ -1,3 +1,4 @@
+--!strict
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -108,6 +109,7 @@ local function OnPlayerAdded(player: Player)
 		end
 		local lastSeen = profile.Data.LastPlayed
 		profile.Data.LastPlayed = os.time()
+		analyticsService:SessionStart(player, if lastSeen > 0 then elapsed / 86400 else 0)
 
 		local today = os.date("%Y-%m-%d")
 		local previousLoginDate = profile.Data.LastLoginDate
@@ -129,7 +131,7 @@ local function OnPlayerAdded(player: Player)
 				Amount = amount,
 				Consecutive = consecutive,
 				Broken = broken,
-			})
+			}, player)
 			-- delai : laisse l'UI client finir de monter avant d'afficher le toast
 			task.delay(5, function()
 				if not player:IsDescendantOf(game) then
@@ -167,7 +169,11 @@ local function OnPlayerAdded(player: Player)
 		if returnDay then
 			if Offers.ReturnGiftDue(profile.Data, returnDay) then
 				local amount = Config.RETURN_GIFTS[returnDay]
-				analyticsService:Event("return_gift_proposed", { OfferId = `Return{returnDay}`, Day = returnDay })
+				analyticsService:Event(
+					"return_gift_proposed",
+					{ OfferId = `Return{returnDay}`, Day = returnDay },
+					player
+				)
 				local granted = essenceService:Add(player, amount, `ReturnGift_{returnDay}`)
 				if granted > 0 then
 					profile.Data.Offers.ReturnGifts[returnDay] = true
@@ -175,7 +181,7 @@ local function OnPlayerAdded(player: Player)
 						OfferId = `Return{returnDay}`,
 						Day = returnDay,
 						Amount = granted,
-					})
+					}, player)
 					task.delay(5, function()
 						if not player:IsDescendantOf(game) then
 							return
@@ -192,7 +198,7 @@ local function OnPlayerAdded(player: Player)
 		end
 
 		if not profile.Data.TutorialDone then
-			analyticsService:Event("tutorial_entered", { FirstSession = isNewPlayer })
+			analyticsService:Event("tutorial_entered", { FirstSession = isNewPlayer }, player)
 		end
 
 		dataSync:Send(player)
@@ -203,6 +209,7 @@ local function OnPlayerAdded(player: Player)
 end
 
 local function OnPlayerRemoving(player: Player)
+	analyticsService:SessionEnd(player)
 	saveService:ReleaseProfile(player)
 	log:Economy("Players", "Left", { Player = player.Name })
 end

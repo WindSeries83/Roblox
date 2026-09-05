@@ -175,8 +175,8 @@ function PurchaseService.GrantPass(player: Player, passKey: string, receiptKey: 
 	profile.Data.LastPlayed = os.time()
 	dataSync:Send(player)
 	if firstGrant then
-		analyticsService:Event("purchase", { Pass = passKey })
-		analyticsService:Funnel(profile, "FirstPurchaseAt")
+		analyticsService:Event("purchase", { Pass = passKey }, player)
+		analyticsService:Funnel(profile, "FirstPurchaseAt", player)
 	end
 	return true
 end
@@ -282,8 +282,12 @@ function PurchaseService:Start()
 			Kind = product.Kind or "Essence",
 			PurchaseId = receiptInfo.PurchaseId,
 		})
-		analyticsService:Event("purchase", { ProductId = receiptInfo.ProductId, Kind = product.Kind or "Essence" })
-		analyticsService:Funnel(profile, "FirstPurchaseAt")
+		analyticsService:Event(
+			"purchase",
+			{ ProductId = receiptInfo.ProductId, Kind = product.Kind or "Essence" },
+			player
+		)
+		analyticsService:Funnel(profile, "FirstPurchaseAt", player)
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end
 end

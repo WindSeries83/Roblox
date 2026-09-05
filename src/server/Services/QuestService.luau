@@ -171,7 +171,7 @@ local function EnsureQuests(player: Player)
 	local quests = profile.Data.Quests
 	local day = os.date("%Y-%m-%d")
 	if QuestService.ResetDaily(quests, day, player.UserId) and analyticsService then
-		analyticsService:Event("daily_quest_reset", { Day = day, Count = #quests.Daily })
+		analyticsService:Event("daily_quest_reset", { Day = day, Count = #quests.Daily }, player)
 	end
 	return quests
 end
@@ -215,7 +215,7 @@ local function ProgressDaily(player: Player, questId: string, amount: number, ev
 		notice = { Type = "QuestComplete", Name = Config.DAILY_QUESTS[questId].Name }
 		log:Economy("Quests", "DailyComplete", { Player = player.Name, Quest = questId })
 		if analyticsService then
-			analyticsService:Event("daily_quest_complete", { Quest = questId })
+			analyticsService:Event("daily_quest_complete", { Quest = questId }, player)
 		end
 		SyncQuests(player, notice)
 	end
@@ -304,7 +304,7 @@ function QuestService:Start()
 					Reward = def.Reward,
 				})
 				if analyticsService then
-					analyticsService:Event("daily_quest_claim", { Quest = questId, Reward = def.Reward })
+					analyticsService:Event("daily_quest_claim", { Quest = questId, Reward = def.Reward }, player)
 				end
 				SyncQuests(player)
 				container:Get("DataSync"):Send(player)
@@ -350,7 +350,7 @@ function QuestService:Start()
 				Reward = Config.TUTORIAL_REWARD,
 				TotalHatched = profile.Data.Stats.TotalHatched,
 				RiftsCompleted = profile.Data.Stats.RiftsCompleted,
-			})
+			}, player)
 		end
 		container:Get("DataSync"):Send(player)
 		Net.ActionResult:FireClient(player, {
