@@ -1,6 +1,7 @@
 --!strict
 
 local DAY = 86400
+local Config = require(script.Parent.Config)
 local PaidRandomPolicy = require(script.Parent.PaidRandomPolicy)
 
 local Offers = {}
@@ -141,15 +142,29 @@ Offers.All = {
 	},
 }
 
+function Offers.Sku(offer: any): number
+	if type(offer) ~= "table" then
+		return 0
+	end
+	if type(offer.Sku) == "number" and offer.Sku > 0 then
+		return offer.Sku
+	end
+	local developerProduct = Config.DEV_PRODUCTS[offer.ConfigKey]
+	if developerProduct and type(developerProduct.Id) == "number" then
+		return developerProduct.Id
+	end
+	local gamePass = Config.GAMEPASSES[offer.ConfigKey]
+	return if gamePass and type(gamePass.Id) == "number" then gamePass.Id else 0
+end
+
 function Offers.IsAvailable(offer: any): boolean
+	local sku = Offers.Sku(offer)
 	return type(offer) == "table"
 		and offer.Enabled == true
 		and type(offer.Id) == "string"
 		and offer.Id ~= ""
 		and offer.Id ~= "0"
-		and type(offer.Sku) == "number"
-		and offer.Sku > 0
-		and offer.Sku == math.floor(offer.Sku)
+		and sku == math.floor(sku)
 		and type(offer.Audience) == "string"
 		and offer.Audience ~= ""
 		and type(offer.Trigger) == "string"
@@ -197,7 +212,7 @@ function Offers.VisibleFor(data: any, featureUnlocks: any, now: number?): { [str
 		if Offers.IsVisible(offer, data, featureUnlocks, now) then
 			visible[key] = {
 				Id = offer.Id,
-				Sku = offer.Sku,
+				Sku = Offers.Sku(offer),
 				Kind = offer.Kind,
 				Audience = offer.Audience,
 				Trigger = offer.Trigger,

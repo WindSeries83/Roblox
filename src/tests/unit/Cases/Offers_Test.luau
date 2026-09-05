@@ -45,6 +45,14 @@ return function(t)
 		end
 	end)
 
+	t.test("catalog resolves its SKU from Config", function()
+		local offer = Offers.All.EssencePackSmall
+		local previous = Config.DEV_PRODUCTS.EssencePackSmall.Id
+		Config.DEV_PRODUCTS.EssencePackSmall.Id = 123
+		expect.equal(Offers.Sku(offer), 123)
+		Config.DEV_PRODUCTS.EssencePackSmall.Id = previous
+	end)
+
 	t.test("commercial offers stay unavailable until a real SKU is validated", function()
 		for _, offer in Offers.All do
 			expect.falsy(Offers.IsAvailable(offer))

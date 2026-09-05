@@ -91,7 +91,7 @@ function PurchaseService.ResolveOffer(sku: number)
 		return nil
 	end
 	for _, offer in Offers.All do
-		if offer.Sku == sku and Offers.IsAvailable(offer) then
+		if Offers.Sku(offer) == sku and Offers.IsAvailable(offer) then
 			return offer
 		end
 	end
