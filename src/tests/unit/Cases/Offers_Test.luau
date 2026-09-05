@@ -17,6 +17,9 @@ return function(t)
 		ReturnD2 = true,
 		ReturnD7 = true,
 		SeasonPremium = true,
+		SupportSmall = true,
+		SupportMedium = true,
+		SupportLarge = true,
 	}
 
 	t.test("catalog covers the required offer journeys", function()
@@ -29,7 +32,7 @@ return function(t)
 			end
 			expect.equal(offer.Enabled, false)
 		end
-		expect.equal(count, 11)
+		expect.equal(count, 14)
 	end)
 
 	t.test("every developer product has a catalog offer", function()

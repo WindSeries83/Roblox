@@ -25,6 +25,7 @@ end
 local ORDER = {
 	"Log",
 	"AnalyticsService",
+	"RecognitionService",
 	"SaveService",
 	"PackService",
 	"FriendRegistry",

@@ -25,6 +25,7 @@ local boostService
 local analyticsService
 local policyService
 local vipService
+local recognitionService
 
 local ReceiptsStore = SafeStore.Get("RiftBeastsReceipts_v1", nil)
 
@@ -67,6 +68,15 @@ function PurchaseService.GrantProduct(player: Player, product: any, productId: n
 			profile.Data.EconomyLedger[receiptKey] = true
 		end
 		return true
+	elseif product.Kind == "Support" then
+		if not profile or not receiptKey or type(product.Tier) ~= "string" then
+			return false
+		end
+		local granted = recognitionService:RecordSupport(player, product.Tier, receiptKey)
+		if granted then
+			MarkPaidPurchase(profile, `Product_{productId}`)
+		end
+		return granted
 	elseif product.Kind == "FirstOffer" then
 		if not profile then
 			return false
@@ -215,6 +225,7 @@ function PurchaseService:Init(container)
 	analyticsService = container:Get("AnalyticsService")
 	policyService = container:Get("PolicyService")
 	vipService = container:Get("VipService")
+	recognitionService = container:Get("RecognitionService")
 end
 
 function PurchaseService:Start()

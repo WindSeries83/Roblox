@@ -34,6 +34,7 @@ local eclipseService
 local incubationService
 local dataSync
 local secretGate
+local recognitionService
 
 local container
 
@@ -130,6 +131,7 @@ function HatchService:Init(cont)
 	analyticsService = cont:Get("AnalyticsService")
 	incubationService = cont:Get("IncubationService")
 	secretGate = cont:Get("SecretGate")
+	recognitionService = cont:Get("RecognitionService")
 end
 
 function HatchService:ContextFor(player: Player, egg): any?
@@ -248,6 +250,11 @@ function HatchService:ClaimReserved(player: Player, record, worldHatch: boolean?
 
 	local species = Species[reserved.Species]
 	local mutationName = reserved.Mutation and Mutations[reserved.Mutation].Name or nil
+	if reserved.Rarity == "Secret" then
+		task.spawn(function()
+			recognitionService:RecordSecret(player, species.Name, creature.Id, mutationName)
+		end)
+	end
 	local announced = Gameplay.RarityRank(reserved.Rarity) >= Gameplay.RarityRank(Config.ANNOUNCE_MIN_RARITY)
 	questService:OnHatch(player, reserved.Mutation ~= nil, `{record.EggId}:{record.IncubatorId}`)
 	container:Get("SeasonService"):OnHatch(player)

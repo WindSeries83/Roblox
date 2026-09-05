@@ -114,6 +114,11 @@ return {
 	SECRET_RITUAL_POSITION = Vector3.new(0, 3, 90),
 	SECRET_RITUAL_REWARD = 5000,
 	SECRET_TITLE = "Veilleur des quatre failles",
+	SECRET_WALL_POSITION = Vector3.new(-42, 6, 42),
+	SUPPORT_WALL_POSITION = Vector3.new(42, 6, 42),
+	PUBLIC_WALL_LIMIT = 50,
+	SECRET_WALL_STORE = "RiftBeastsSecretWall_v1",
+	SUPPORT_WALL_STORE = "RiftBeastsSupportWall_v1",
 	LUCK_HARD_CAP = 1,
 
 	-- Bonus meute (bible §4.C) : +10 % Essence par ami actif, cap ×3. Jamais achetable.
@@ -366,6 +371,9 @@ return {
 		LuckPotionBig = { Id = 0, Name = "Potion de chance +35 % (30 min)", Kind = "LuckPotion", PotionKind = "Big" },
 		ServerBoostProduct = { Id = 0, Name = "Boost de serveur +25 % (15 min)", Kind = "ServerBoost" },
 		FirstPurchaseOffer = { Id = 0, Name = "Offre 1re fois — Pack de départ -50 %", Kind = "FirstOffer" },
+		SupportSmall = { Id = 0, Name = "Soutien bronze", Kind = "Support", Tier = "Bronze" },
+		SupportMedium = { Id = 0, Name = "Soutien argent", Kind = "Support", Tier = "Argent" },
+		SupportLarge = { Id = 0, Name = "Soutien or", Kind = "Support", Tier = "Or" },
 	},
 
 	RETURN_GIFTS = { D2 = 500, D7 = 2000 },
