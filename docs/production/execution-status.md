@@ -37,7 +37,7 @@ Plan accepte : [COMPLETE_RELEASE.md](COMPLETE_RELEASE.md). Les lots contenu, bet
 - Studio Edit courant non synchronisé : `Config` contient `SYNC_MARKER`, mais `SaveService` dans Studio ne contient pas encore `WaitForProfile`, présent dans la source disque du HEAD ; le serveur Rojo unique écoute sur `localhost:34872` et attend `Connect`.
 - Preuve Studio précédente invalidée pour la session courante : elle a démarré sur cette copie Play obsolète ; elle ne doit pas servir de preuve du HEAD jusqu'à reconnexion Rojo et nouveau Play.
 - Migration/reconnexion : les profils v13 purgent aussi les incubateurs invalides ; test Studio cible `Migration_Test=12` et `Incubation_Test=9` passe.
-- EconomySim : matrice AFK/attentif/payeur modere sur 1/7/30 jours ; panier payeur strictement simulation-only et plafonne ; metriques non modelisees signalees au lieu d'etre inventees.
+- EconomySim : matrice AFK/attentif/payeur modere sur 1/7/14/30 jours ; panier payeur strictement simulation-only et plafonne ; metriques non modelisees signalees au lieu d'etre inventees.
 - Receipts : un echec de sauvegarde restaure tout le profil et le replay accorde une seule fois ; test pur et test Studio cible passes.
 - Marche : rollback vendeur et acheteur, reouverture durable du claim et reprise apres reconnexion testes ; validations deux serveurs encore requises.
 - Vertical slice runtime : TwilightGrove etapes 1-5 puis boss checkpointes ; Renaissance corrigee pour exiger le monde indexe par `Rebirths`; resultat `Stars=1`, `Rebirths=1`, oeufs/incubateurs vides, creature/equipement conserves et point d'arbre accorde.

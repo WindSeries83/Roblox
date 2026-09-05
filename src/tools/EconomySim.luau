@@ -597,7 +597,7 @@ end
 function EconomySim.RunMatrix(strategy: string?, options)
 	options = options or {}
 	local profiles = options.profiles or { "afk", "attentive", "moderate_payer" }
-	local durations = options.durations or { 1, 7, 30 }
+	local durations = options.durations or { 1, 7, 14, 30 }
 	local results = {}
 	for _, profileKind in profiles do
 		local canonical = ResolveProfileKind(profileKind)

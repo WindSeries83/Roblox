@@ -28,10 +28,10 @@ return function(t)
 		end
 	end)
 
-	t.test("la matrice couvre les trois profils et 1, 7, 30 jours", function()
+	t.test("la matrice couvre les trois profils et 1, 7, 14, 30 jours", function()
 		local matrix = EconomySim.RunMatrix("progression", { runs = 1 })
 		for _, profile in { "afk", "attentive", "moderate_payer" } do
-			for _, days in { 1, 7, 30 } do
+			for _, days in { 1, 7, 14, 30 } do
 				local result = matrix.Results[profile][days]
 				expect.truthy(result ~= nil)
 				expect.equal(result.Profile, profile)
