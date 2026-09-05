@@ -1268,6 +1268,8 @@ Net.ActionResult.OnClientEvent:Connect(function(result)
 			Audio.Play("CoinReward")
 		elseif result.Action == "VipEgg" then
 			ShowAnnouncement(`Oeuf VIP obtenu : {result.Tier or "LegendaryEgg"} !`)
+		elseif result.Action == "RenameCreature" then
+			ShowAnnouncement(if result.Name then `Créature renommée : {result.Name}` else "Créature renommée !")
 		elseif result.Action == "SetTitle" then
 			ShowAnnouncement(if result.Title then `Titre équipé : {result.Title}` else "Titre retiré.")
 		end
@@ -1276,8 +1278,12 @@ Net.ActionResult.OnClientEvent:Connect(function(result)
 			QuestsPanel.Refresh(state)
 		elseif result.Action == "SkillBuy" and state then
 			SkillPanel.Refresh(state)
+		elseif result.Action == "RenamePrompt" then
+			ShowAnnouncement("Un ticket de renommage est requis.")
 		end
-		ShowAnnouncement(result.Reason or "Action refusée")
+		if result.Action ~= "RenamePrompt" then
+			ShowAnnouncement(result.Reason or "Action refusée")
+		end
 	end
 end)
 
