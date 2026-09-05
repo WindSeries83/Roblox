@@ -1,4 +1,13 @@
+--!strict
+
+local Audio = require(script.Parent:WaitForChild("Audio"))
+
 local Fx = {}
+
+local function ParticleCount(count: number?, fallback: number): number
+	local amount = count or fallback
+	return if Audio.AreEffectsReduced() then math.min(amount, 6) else amount
+end
 
 function Fx.Burst(part: BasePart, color: Color3, count: number?)
 	local emitter = Instance.new("ParticleEmitter")
@@ -13,7 +22,7 @@ function Fx.Burst(part: BasePart, color: Color3, count: number?)
 	emitter.ZOffset = 0.5
 	emitter.Parent = part
 
-	for _ = 1, count or 24 do
+	for _ = 1, ParticleCount(count, 24) do
 		emitter:Emit(1)
 	end
 	task.delay(1.2, function()
@@ -44,7 +53,7 @@ function Fx.Confetti(position: Vector3, color: Color3, count: number?)
 	emitter.LightEmission = 0.4
 	emitter.Parent = part
 
-	for _ = 1, count or 16 do
+	for _ = 1, ParticleCount(count, 16) do
 		emitter:Emit(1)
 	end
 	task.delay(2, function()

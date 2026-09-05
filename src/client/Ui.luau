@@ -473,6 +473,85 @@ skillBadge.Activated:Connect(function()
 	end
 end)
 
+local settingsPanel = UiKit.Create("Frame", {
+	Name = "SettingsPanel",
+	BackgroundColor3 = TINTS.PANEL,
+	Size = UDim2.fromOffset(if compact then 300 else 340, 230),
+	Position = UDim2.fromScale(0.5, 0.5),
+	AnchorPoint = Vector2.new(0.5, 0.5),
+	Visible = false,
+	ZIndex = 40,
+	Parent = ui,
+})
+UiKit.Corner(settingsPanel)
+UiKit.Padding(settingsPanel, 12)
+local settingsTitle = UiKit.Title(settingsPanel, "Réglages", 18)
+settingsTitle.ZIndex = 40
+UiKit.Create("TextLabel", {
+	BackgroundTransparency = 1,
+	TextColor3 = TINTS.WHITE,
+	TextSize = 12,
+	TextWrapped = true,
+	TextXAlignment = Enum.TextXAlignment.Left,
+	Size = UDim2.new(1, 0, 0, 30),
+	Position = UDim2.fromOffset(0, 28),
+	Text = "Les textes, taux et récompenses restent toujours visibles.",
+	ZIndex = 40,
+	Parent = settingsPanel,
+})
+local settingsSfx = UiKit.Button(settingsPanel, "Sons : activés", UDim2.new(1, 0, 0, 44), UDim2.fromOffset(0, 62))
+settingsSfx.ZIndex = 41
+local settingsMusic =
+	UiKit.Button(settingsPanel, "Musique : activée", UDim2.new(1, 0, 0, 44), UDim2.fromOffset(0, 112))
+settingsMusic.ZIndex = 41
+local settingsEffects =
+	UiKit.Button(settingsPanel, "Effets réduits : désactivés", UDim2.new(1, 0, 0, 44), UDim2.fromOffset(0, 162))
+settingsEffects.ZIndex = 41
+
+local function RefreshSettings()
+	settingsSfx.Text = `Sons : {if Audio.IsSfxEnabled() then "activés" else "désactivés"}`
+	settingsMusic.Text = `Musique : {if Audio.IsMusicEnabled() then "activée" else "désactivée"}`
+	settingsEffects.Text = `Effets réduits : {if Audio.AreEffectsReduced() then "activés" else "désactivés"}`
+end
+
+settingsSfx.Activated:Connect(function()
+	Audio.SetSfxEnabled(not Audio.IsSfxEnabled())
+	RefreshSettings()
+end)
+settingsMusic.Activated:Connect(function()
+	Audio.SetMusicEnabled(not Audio.IsMusicEnabled())
+	RefreshSettings()
+end)
+settingsEffects.Activated:Connect(function()
+	Audio.SetReducedEffects(not Audio.AreEffectsReduced())
+	RefreshSettings()
+end)
+
+local settingsButton = UiKit.Create("TextButton", {
+	Name = "SettingsButton",
+	BackgroundColor3 = TINTS.PANEL,
+	TextColor3 = TINTS.WHITE,
+	Font = Enum.Font.GothamBold,
+	TextSize = 18,
+	Size = UDim2.fromOffset(24, 24),
+	Position = UDim2.new(1, -62, 0, -6),
+	AnchorPoint = Vector2.new(1, 0),
+	ZIndex = 5,
+	Text = "⚙",
+	Parent = topBar,
+})
+UiKit.Corner(settingsButton)
+settingsButton.Activated:Connect(function()
+	if menuOpen then
+		SetMenuOpen(false)
+	end
+	settingsPanel.Visible = not settingsPanel.Visible
+	RefreshSettings()
+	if settingsPanel.Visible then
+		GuiService.SelectedObject = settingsSfx
+	end
+end)
+
 local ShowAnnouncement: (string) -> ()
 
 -- Barre d'action permanente en bas (bible §4.B) : les 3 gestes du jeu + Plus.
@@ -554,6 +633,9 @@ end)
 -- Manette (B) et Échap referment le menu ouvert.
 UserInputService.InputBegan:Connect(function(input, _gameProcessedEvent)
 	if input.KeyCode == Enum.KeyCode.ButtonB or input.KeyCode == Enum.KeyCode.Escape then
+		if settingsPanel.Visible then
+			settingsPanel.Visible = false
+		end
 		if menuOpen then
 			SetMenuOpen(false)
 		end
@@ -810,6 +892,9 @@ function ShowAnnouncement(text: string)
 end
 
 local function Flash(intensity: number)
+	if Audio.AreEffectsReduced() then
+		return
+	end
 	flashOverlay.BackgroundTransparency = 1 - intensity
 	flashOverlay.Visible = true
 	TweenService:Create(flashOverlay, TweenInfo.new(0.25), {
@@ -1207,6 +1292,7 @@ local function ApplyLayout()
 	end)
 	compact = if ok then width < 700 else false
 	topBar.Size = UDim2.fromOffset(if compact then 240 else 320, if compact then 76 else 84)
+	settingsPanel.Size = UDim2.fromOffset(if compact then 300 else 340, 230)
 	menuTargetSize = UDim2.fromScale(if compact then 0.96 else 0.72, if compact then 0.96 else 0.72)
 	if not menuOpen then
 		content.Size = menuTargetSize
