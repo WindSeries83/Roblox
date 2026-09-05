@@ -126,7 +126,7 @@ function LeaderboardService:Start()
 				end
 				local rows = if type(message.General) == "table" then message.General else message
 				for _, row in rows do
-					if type(row.UserId) == "number" and type(row.Essence) == "number" then
+					if type(row) == "table" and type(row.UserId) == "number" and type(row.Essence) == "number" then
 						local entry = entries[row.UserId]
 						if not entry then
 							entry = {
