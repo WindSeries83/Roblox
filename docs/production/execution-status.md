@@ -17,8 +17,8 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 
 ## Dernieres preuves
 
-- `lune run tests/run_tests.luau` : 257 passes, 0 echec, 8 skips live (preuve du 5 septembre 2026).
-- CI GitHub Actions `33951289837` : succes sur `0d81150` ; Format check (StyLua), lint Selene, tests headless, Wally, build Rojo et Check diff passent.
+- `lune run tests/run_tests.luau` : 258 passes, 0 echec, 8 skips live (preuve du 5 septembre 2026).
+- CI GitHub Actions `33951513228` : succes sur `f7c7c84` ; Format check (StyLua), lint Selene, tests headless, Wally, build Rojo et Check diff passent.
 - Checks locaux : `selene src/ tests/` passe ; `wally install` passe ; `rojo build -o <fichier temporaire>` passe ; le `--check` StyLua Windows ne reflète pas la CI Linux à cause des fins de ligne CRLF du checkout.
 - Studio Edit courant non synchronisé : `Config` contient `SYNC_MARKER`, mais `SaveService` dans Studio ne contient pas encore `WaitForProfile`, présent dans la source disque du HEAD ; le serveur Rojo unique écoute sur `localhost:34872` et attend `Connect`.
 - Preuve Studio précédente invalidée pour la session courante : elle a démarré sur cette copie Play obsolète ; elle ne doit pas servir de preuve du HEAD jusqu'à reconnexion Rojo et nouveau Play.
