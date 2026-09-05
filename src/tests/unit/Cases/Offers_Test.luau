@@ -3,19 +3,23 @@
 return function(t)
 	local expect = t.expect
 	local Offers = require(game.ReplicatedStorage.Shared.Offers)
+	local Config = require(game.ReplicatedStorage.Shared.Config)
 	local DAY = 86400
 	local required = {
 		StarterBundle = true,
 		LuckPotionSmall = true,
 		LuckPotionBig = true,
 		ServerBoost = true,
+		EssencePackSmall = true,
+		EssencePackMedium = true,
+		EssencePackLarge = true,
 		Vip30Days = true,
 		ReturnD2 = true,
 		ReturnD7 = true,
 		SeasonPremium = true,
 	}
 
-	t.test("catalog covers the six required offer journeys", function()
+	t.test("catalog covers the required offer journeys", function()
 		local count = 0
 		for key, offer in Offers.All do
 			count += 1
@@ -25,7 +29,20 @@ return function(t)
 			end
 			expect.equal(offer.Enabled, false)
 		end
-		expect.equal(count, 8)
+		expect.equal(count, 11)
+	end)
+
+	t.test("every developer product has a catalog offer", function()
+		for key in Config.DEV_PRODUCTS do
+			local found = false
+			for _, offer in Offers.All do
+				if offer.ConfigKey == key then
+					found = true
+					break
+				end
+			end
+			expect.truthy(found)
+		end
 	end)
 
 	t.test("commercial offers stay unavailable until a real SKU is validated", function()
