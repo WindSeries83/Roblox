@@ -8,7 +8,7 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 
 | Phase | Etat | Preuve actuelle | Prochain verrou |
 |---|---|---|---|
-| 0 - vertical slice | En cours | Headless 267/267, 8 skips live ; CI 33965573605 verte sur 462aea4 ; smoke Studio frais passe sur la source synchronisee (72/72 remotes, boucle oeuf, Rift, UI) | timings 15-20/30-40 min ; focus/B/Echap manuel ; persistance publiee |
+| 0 - vertical slice | En cours | Headless 267/267, 8 skips live ; CI 33966168926 verte sur ef2daff ; smoke Studio frais passe sur le parent 462aea4 (72/72 remotes, boucle oeuf, Rift, UI) | resynchroniser Studio et rejouer le smoke sur ef2daff ; timings 15-20/30-40 min ; focus/B/Echap manuel ; persistance publiee |
 | 1 - soft launch | Partiel | offres bloquees ; boucles de retention et instrumentation locale branchees ; suite headless a 267/267, 8 skips live | cohorte/metriques reelles ; vrais SKU/prix ; prompts/receipts publies |
 | 2 - quatre mondes | Partiel | contrat quatre mondes distincts, cinq etapes, boss et Rush persistant/idempotent ; 30 especes data ; selection de region, secret serveur et fallback creature/boss branches sur la candidate | modeles/portraits/animations artistiques, runtime UI et Rush publie/reconnexion |
 | 3 - social/economie | Partiel | marche/ledger purs ; social session avec amis, invitations expirees, rejoindre/visiter et meute plafonnee ; duel transactionnel par ChallengeId localement valide ; VIP et classement leger branches | deux serveurs publies ; escrow duel et invitations en place publiee ; UI/appareils runtime |
@@ -21,21 +21,21 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 
 Plan accepte : [COMPLETE_RELEASE.md](COMPLETE_RELEASE.md). Les lots contenu, beta et publication restent a realiser ; Studio n'est pas le seul travail restant.
 
-- Dernier HEAD applicatif de la candidate : `462aea4` (code) ; les commits documentaires suivants ne modifient pas le runtime.
+- Dernier HEAD applicatif de la candidate : `ef2daff` (code) ; les commits documentaires suivants ne modifient pas le runtime.
 - HEADLESS local : 267 passes, 0 echec, 8 skips live. Les skips concernent les modules qui exigent des services Studio/publication.
-- CI GitHub Actions : [run 33965573605](https://github.com/WindSeries83/Roblox/actions/runs/33965573605), succes sur le HEAD de preuve `462aea4` ; StyLua, Selene, tests headless (267/267, 8 skips), Wally, build Rojo et Check diff passent. Le commit documentaire courant ne modifie pas le runtime.
-- Implementation candidate : secret gratuit persiste et autorise par victoires de boss, zone/coffre/oeuf VIP avec expiration et rollback, classement leger inter-serveurs, selection des quatre mondes, fallback procedural des creatures/boss, murs publics de reconnaissance, titres equipables, renommage de creature avec ticket, reglages audio/effets locaux et nettoyage serveur des remotes legacy/doublons.
+- CI GitHub Actions : [run 33966168926](https://github.com/WindSeries83/Roblox/actions/runs/33966168926), succes sur `ef2daff` ; StyLua, Selene, tests headless (267/267, 8 skips), Wally, build Rojo et Check diff passent. Le correctif `SafeStore` isole maintenant les donnees de Studio en memoire.
+- Implementation candidate : secret gratuit persiste et autorise par victoires de boss, zone/coffre/oeuf VIP avec expiration et rollback, classement leger inter-serveurs, selection des quatre mondes, fallback procedural des creatures/boss, murs publics de reconnaissance, titres equipables, renommage de creature avec ticket, reglages audio/effets locaux, nettoyage serveur des remotes legacy/doublons et isolation SafeStore Studio/production.
 - STUDIO : smoke frais execute apres synchronisation Rojo. Boot serveur/client sans erreur applicative ; `RemoteRegistry` = 72/72 `RemoteEvent`, aucun manquant, extra ou mauvaise classe. `Net.Sync.Policy` contient `Loaded=true`, `ArePaidRandomItemsRestricted=false`, `IsPaidItemTradingAllowed=true` (mock Studio permissif, pas un compte restreint reel). Achat/placement/incubation/hatch verifies avec reception de `HatchResult` ; taux visibles pour `CommonEgg` (rarete 75/20/5, mutations 88/10/1.7/0.2/0.07/0.02/0.01). Rift ouvert par helper dev temporaire, entree `TwilightGrove` et attaque verifiees (`GuardianHP` 57 -> 43). Gameplay, Oeufs et Boutique montes avec TopBar/ActionBar. Le ServerBoost n'est pas active : achats desactives, SKU 0 ; le code ne l'applique qu'au taux d'Essence, pas au contexte de probabilite. Les seuls messages attendus sont l'indisponibilite Roblox API/MemoryStore en place Studio non publiee.
 - PUBLISHED/MULTI-SERVER : reception analytics, policy reelle, receipts, transactions et synchronisation distante non valides par ces tests purs.
 - PLAYTEST HUMAIN : parcours Monde 1 et beta complete toujours requis.
 
 ### Preuves precedentes (ne valident pas les correctifs de la reprise)
 
-- `lune run tests/run_tests.luau` : 259 passes, 0 echec, 8 skips live (preuve du 5 septembre 2026).
+- `lune run tests/run_tests.luau` : 267 passes, 0 echec, 8 skips live (preuve du 5 septembre 2026).
 - CI precedent : `33951821124` sur `cbf8b48` ; conserve comme historique, remplace par le run de la candidate ci-dessus pour l'etat courant.
 - Checks locaux : `selene src/ tests/` passe ; `wally install` passe ; `rojo build -o <fichier temporaire>` passe ; la CI Linux confirme le `--check` StyLua sur la candidate malgré les fins de ligne CRLF du checkout Windows.
-- Studio Edit courant synchronisé : `SaveService` contient `WaitForProfile`, `RenameService` et `RemoteRegistry` reflètent le HEAD applicatif ; le serveur Rojo unique écoute sur `localhost:34872`. Le test a réinjecté `HatchEgg`, un doublon `Sync` et une mauvaise classe `BuyEgg` ; `Net` les a automatiquement supprimés au boot serveur avant le Play frais.
-- Preuve Studio courante : le Play frais ci-dessus est valide pour le runtime du HEAD ; elle ne couvre pas la policy d'un vrai compte restreint, les achats/receipts publiés ni le multi-serveur.
+- Studio Edit courant : le serveur Rojo unique écoute sur `localhost:34872`, mais le plugin n'est pas reconnecté ; la source Edit reste donc à resynchroniser vers `ef2daff`. La dernière preuve a réinjecté `HatchEgg`, un doublon `Sync` et une mauvaise classe `BuyEgg` ; `Net` les a automatiquement supprimés au boot serveur avant le Play frais du parent.
+- Preuve Studio courante : le Play frais du parent reste valide pour le runtime précédent ; il ne couvre pas l'isolation SafeStore du HEAD `ef2daff`, la policy d'un vrai compte restreint, les achats/receipts publiés ni le multi-serveur.
 - Migration/reconnexion : les profils v13 purgent aussi les incubateurs invalides ; test Studio cible `Migration_Test=12` et `Incubation_Test=9` passe.
 - EconomySim : matrice AFK/attentif/payeur modere sur 1/7/14/30 jours ; panier payeur strictement simulation-only et plafonne ; metriques non modelisees signalees au lieu d'etre inventees.
 - Receipts : un echec de sauvegarde restaure tout le profil et le replay accorde une seule fois ; test pur et test Studio cible passes.
