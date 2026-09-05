@@ -22,8 +22,8 @@ Ces points decrivent l'implementation sur disque ; ils ne remplacent pas les pre
 - [x] Rejeter les SKU payants nuls, negatifs, non entiers et non finis ; distinguer cadeaux gratuits et prompts payants.
 - [x] Corriger la signature de LogCustomEvent et transmettre les dimensions supportees ; rendre les echecs visibles.
 - [ ] Verifier la coherence catalogue/prompt/receipt avec des produits configures et la reception analytics publiee.
-- [ ] Synchroniser Studio Edit avec les sources disque, puis demarrer un Play neuf.
-- [ ] Smoke : boot client/serveur, RemoteRegistry, Policy Sync, achat/placement/incubation/hatch et HatchResult, taux rarete/mutation, ServerBoost Essence sans hatch luck, Rift et interfaces Eggs/Shop/HUD.
+- [x] Synchroniser Studio Edit avec les sources disque, puis demarrer un Play neuf (preuve Studio courante dans `execution-status.md`).
+- [x] Smoke : boot client/serveur, RemoteRegistry, Policy Sync, achat/placement/incubation/hatch et HatchResult, taux rarete/mutation, Rift et interfaces Eggs/Shop/HUD ; ServerBoost verifie par configuration et separation du contexte de probabilite, activation d'achat impossible tant que les produits restent desactives.
 - [ ] Compte vierge sans helpers : creature, production comprise, Faille, recompense, retour, optimisation, prochain objectif. Enregistrer desktop et telephone paysage.
 
 ## 2. Contenu apres validation humaine du Monde 1
