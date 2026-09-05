@@ -1,3 +1,5 @@
+--!strict
+
 return function(t)
 	local expect = t.expect
 	local SaveService = require(game.ServerScriptService.Services.SaveService)
@@ -16,7 +18,7 @@ return function(t)
 			Version = 1,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 16)
+		expect.equal(data.Version, 17)
 		expect.equal(data.CompanionId, nil)
 		expect.truthy(data.Index ~= nil)
 		expect.truthy(data.Items ~= nil)
@@ -54,6 +56,11 @@ return function(t)
 		expect.equal(data.DuelSeason.Rating, 1000)
 		expect.equal(data.VipExpiresAt, 0)
 		expect.truthy(data.Incubators ~= nil)
+		expect.equal(data.Stats.Funnel.FirstInteractionAt, 0)
+		expect.equal(data.Stats.Funnel.FirstEggAt, 0)
+		expect.equal(data.Stats.Funnel.FirstRiftAt, 0)
+		expect.equal(data.Stats.Funnel.FirstWinAt, 0)
+		expect.equal(data.Stats.Funnel.FirstOptimizationAt, 0)
 	end)
 
 	-- A v2 profile gains quest fields and keeps its data.
@@ -70,7 +77,7 @@ return function(t)
 			Version = 2,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 16)
+		expect.equal(data.Version, 17)
 		expect.equal(data.Stars, 3)
 		expect.equal(data.Rebirths, 2)
 		expect.equal(#data.Items, 1)
@@ -97,7 +104,7 @@ return function(t)
 			Version = 3,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 16)
+		expect.equal(data.Version, 17)
 		expect.equal(data.Stats.TotalBred, 1)
 		expect.equal(data.Quests.Day, "2026-01-01")
 		expect.truthy(data.Quests.Achievements.FirstHatch)
@@ -140,7 +147,7 @@ return function(t)
 			Version = 4,
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 16)
+		expect.equal(data.Version, 17)
 		expect.equal(data.LoginStreak, 0)
 		expect.equal(data.LastLoginDate, "")
 		expect.equal(data.Stats.HatchesSinceRare, 0)
@@ -154,7 +161,7 @@ return function(t)
 	t.test("migration v5 to v11 adds lot2 fields", function()
 		local data = { Version = 5 }
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 16)
+		expect.equal(data.Version, 17)
 		expect.equal(data.SkillPoints, 0)
 		expect.truthy(data.SkillRanks ~= nil)
 		expect.equal(data.Offers.FirstPurchaseEligible, false)
@@ -174,7 +181,7 @@ return function(t)
 			CompanionId = "comp_9",
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 16)
+		expect.equal(data.Version, 17)
 		expect.equal(data.Stats.TotalHatched, 12)
 		expect.equal(data.SkillRanks.FarmRate1, 2)
 		expect.equal(data.Offers.FirstPurchaseClaimed, true)
@@ -186,7 +193,7 @@ return function(t)
 	t.test("migration v7 to v11 adds transaction ledgers", function()
 		local data = { Version = 7, CompanionId = "comp_1" }
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 16)
+		expect.equal(data.Version, 17)
 		expect.truthy(data.PurchaseReceipts ~= nil)
 		expect.truthy(data.PurchaseReceiptOrder ~= nil)
 		expect.truthy(data.MarketLedger ~= nil)
@@ -198,7 +205,7 @@ return function(t)
 	t.test("migration v9 to v11 adds incubators and preserves receipts", function()
 		local data = { Version = 9, PurchaseReceipts = { ["42_abc"] = true } }
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 16)
+		expect.equal(data.Version, 17)
 		expect.equal(data.PurchaseReceipts["42_abc"], true)
 		expect.truthy(data.Incubators ~= nil)
 	end)
@@ -206,7 +213,7 @@ return function(t)
 	t.test("migration v10 adds an empty incubator list", function()
 		local data = { Version = 10 }
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 16)
+		expect.equal(data.Version, 17)
 		expect.truthy(data.Incubators ~= nil)
 		expect.equal(#data.Incubators, 0)
 	end)
@@ -234,7 +241,7 @@ return function(t)
 			},
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 16)
+		expect.equal(data.Version, 17)
 		expect.equal(#data.Incubators, 1)
 		expect.equal(data.Incubators[1].IncubatorId, "incubator_1")
 	end)
@@ -263,7 +270,7 @@ return function(t)
 			},
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 16)
+		expect.equal(data.Version, 17)
 		expect.equal(data.WorldProgress.TwilightGrove.HighestStage, 3)
 		expect.truthy(data.WorldProgress.TwilightGrove.BossDefeated)
 		expect.equal(data.WorldProgress.Unknown, nil)
@@ -286,7 +293,7 @@ return function(t)
 			},
 		}
 		SaveService.Migrate(data)
-		expect.equal(data.Version, 16)
+		expect.equal(data.Version, 17)
 		expect.equal(data.Rush.Active.WorldId, "AshForge")
 		expect.equal(data.Rush.Active.AttemptId, "attempt-legacy")
 		expect.truthy(data.Rush.Active.Completed)

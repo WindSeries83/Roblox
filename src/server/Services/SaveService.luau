@@ -16,7 +16,7 @@ local SaveService = {}
 SaveService.Profiles = {}
 SaveService.ProfileLoaded = Instance.new("BindableEvent")
 
-local DATA_VERSION = 16
+local DATA_VERSION = 17
 
 local function NormalizeIncubators(data)
 	local valid = {}
@@ -89,7 +89,12 @@ local Store = ProfileStore.New("RiftBeastsData_v1", {
 		MarketSales = 0,
 		HatchesSinceRare = 0,
 		Funnel = {
+			FirstInteractionAt = 0,
+			FirstEggAt = 0,
 			FirstHatchAt = 0,
+			FirstRiftAt = 0,
+			FirstWinAt = 0,
+			FirstOptimizationAt = 0,
 			FirstRarePlusAt = 0,
 			FirstEpicPlusAt = 0,
 			FirstPurchaseAt = 0,
@@ -234,7 +239,12 @@ local MIGRATIONS = {
 		data.Stats = data.Stats or {}
 		data.Stats.Funnel = data.Stats.Funnel
 			or {
+				FirstInteractionAt = 0,
+				FirstEggAt = 0,
 				FirstHatchAt = 0,
+				FirstRiftAt = 0,
+				FirstWinAt = 0,
+				FirstOptimizationAt = 0,
 				FirstRarePlusAt = 0,
 				FirstEpicPlusAt = 0,
 				FirstPurchaseAt = 0,
@@ -345,6 +355,28 @@ local MIGRATIONS = {
 			then math.max(0, math.floor(data.DuelSeason.Losses))
 			else 0
 		data.Version = 16
+	end,
+	[16] = function(data)
+		data.Stats = if type(data.Stats) == "table" then data.Stats else {}
+		data.Stats.Funnel = if type(data.Stats.Funnel) == "table" then data.Stats.Funnel else {}
+		for _, key in
+			{
+				"FirstInteractionAt",
+				"FirstEggAt",
+				"FirstHatchAt",
+				"FirstRiftAt",
+				"FirstWinAt",
+				"FirstOptimizationAt",
+				"FirstRarePlusAt",
+				"FirstEpicPlusAt",
+				"FirstPurchaseAt",
+			}
+		do
+			if type(data.Stats.Funnel[key]) ~= "number" then
+				data.Stats.Funnel[key] = 0
+			end
+		end
+		data.Version = 17
 	end,
 }
 

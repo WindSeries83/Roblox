@@ -16,7 +16,12 @@ local sessions: { [Player]: string } = {}
 local sessionStartedAt: { [Player]: number } = {}
 
 local FUNNEL_EVENTS = {
+	FirstInteractionAt = "first_interaction",
+	FirstEggAt = "first_egg",
 	FirstHatchAt = "first_hatch",
+	FirstRiftAt = "first_rift",
+	FirstWinAt = "first_win",
+	FirstOptimizationAt = "first_optimization",
 	FirstRarePlusAt = "first_rare_plus",
 	FirstEpicPlusAt = "first_epic_plus",
 	FirstPurchaseAt = "first_purchase",

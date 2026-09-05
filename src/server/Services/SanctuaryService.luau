@@ -1,3 +1,5 @@
+--!strict
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Sanctuary = require(ReplicatedStorage.Shared.Sanctuary)
@@ -12,6 +14,7 @@ local saveService
 local essenceService
 local dataSync
 local skillService
+local analyticsService
 local invitations: { [number]: { [number]: boolean } } = {}
 
 function SanctuaryService:Init(container)
@@ -20,6 +23,7 @@ function SanctuaryService:Init(container)
 	essenceService = container:Get("EssenceService")
 	dataSync = container:Get("DataSync")
 	skillService = container:Get("SkillService")
+	analyticsService = container:Get("AnalyticsService")
 end
 
 function SanctuaryService:Start()
@@ -105,6 +109,7 @@ function SanctuaryService:Start()
 		end
 		profile.Data.SanctuaryLevel += 1
 		profile.Data.LastPlayed = os.time()
+		analyticsService:Funnel(profile, "FirstOptimizationAt", player)
 
 		log:Economy("Sanctuary", "Upgrade", {
 			Player = player.Name,

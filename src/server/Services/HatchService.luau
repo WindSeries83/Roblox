@@ -58,6 +58,7 @@ function HatchService:GrantEgg(
 	}
 	table.insert(profile.Data.Eggs, egg)
 	profile.Data.LastPlayed = os.time()
+	analyticsService:Funnel(profile, "FirstEggAt", player)
 	log:Economy("Eggs", "Grant", { Player = player.Name, Tier = tier, Source = source, EggId = egg.Id })
 end
 
@@ -322,6 +323,9 @@ function HatchService:Start()
 			return
 		end
 		local profile = saveService:GetProfile(player)
+		if profile then
+			analyticsService:Funnel(profile, "FirstInteractionAt", player)
+		end
 		if profile and profile.Data.Entitlements.AutoHatch and #profile.Data.Incubators > 0 then
 			Net.ActionResult:FireClient(player, { Action = "BuyEgg", Success = false, Reason = "Couveuse occupee" })
 			return

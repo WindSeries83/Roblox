@@ -1,3 +1,5 @@
+--!strict
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
@@ -231,8 +233,12 @@ local function WinRift(player: Player)
 	if not combat then
 		return
 	end
-
 	local profile = saveService:GetProfile(player)
+	if not profile then
+		return
+	end
+	analyticsService:Funnel(profile, "FirstWinAt", player)
+
 	local eff = skillService:EffectsOf(profile)
 	local rate = essenceService.GetRate(player)
 	local essence = math.max(
@@ -337,6 +343,7 @@ local function JoinRift(player: Player, _character: Model?, requestedWorldId: st
 		return
 	end
 	player:SetAttribute("InRiftCombat", true)
+	analyticsService:Funnel(profile, "FirstRiftAt", player)
 
 	local power = TeamPower(player)
 	local tutorial = profile.Data.Stats.RiftsCompleted == 0 and not profile.Data.TutorialDone

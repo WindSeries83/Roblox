@@ -105,6 +105,7 @@ local function OnPlayerAdded(player: Player)
 				Timestamp = os.time(),
 				Source = "Nest",
 			})
+			analyticsService:Funnel(profile, "FirstEggAt", player)
 			log:Economy("Players", "Starter", { Player = player.Name })
 		end
 		local lastSeen = profile.Data.LastPlayed
