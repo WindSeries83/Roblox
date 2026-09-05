@@ -562,6 +562,7 @@ end)
 
 local riftActiveState = false
 local riftNextAt = 0
+local worldPicker
 
 local function UpdateFailleButton()
 	if riftActiveState then
@@ -748,6 +749,51 @@ local riftStatusLabel = UiKit.Create("TextLabel", {
 })
 UiKit.Corner(riftStatusLabel)
 
+worldPicker = UiKit.Create("Frame", {
+	Name = "WorldPicker",
+	BackgroundColor3 = TINTS.PANEL,
+	Size = UDim2.fromOffset(if compact then 330 else 380, if compact then 260 else 280),
+	Position = UDim2.fromScale(0.5, 0.24),
+	AnchorPoint = Vector2.new(0.5, 0),
+	Visible = false,
+	ZIndex = 12,
+	Parent = ui,
+})
+UiKit.Corner(worldPicker)
+UiKit.Padding(worldPicker, 10)
+
+local function RenderWorldPicker(worlds)
+	if not worldPicker then
+		return
+	end
+	UiKit.Clear(worldPicker)
+	UiKit.Title(worldPicker, "Choisis une région", 16).ZIndex = 12
+	local list = UiKit.Create("Frame", {
+		BackgroundTransparency = 1,
+		Position = UDim2.fromOffset(0, 30),
+		Size = UDim2.new(1, 0, 1, -30),
+		ZIndex = 12,
+		Parent = worldPicker,
+	})
+	UiKit.Create("UIListLayout", {
+		Padding = UDim.new(0, 5),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Parent = list,
+	})
+	for index, world in ipairs(worlds or {}) do
+		local button = UiKit.Button(list, world.Name or world.Id or "Région", UDim2.new(1, 0, 0, 44))
+		button.LayoutOrder = index
+		button.ZIndex = 12
+		button.Text = `{world.Name or world.Id} — étape suivante`
+		button.Activated:Connect(function()
+			worldPicker.Visible = false
+			Net.ExpeditionRequest:FireServer(world.Id)
+			ShowAnnouncement(`Entrée demandée : {world.Name or world.Id}`)
+		end)
+	end
+	worldPicker.Visible = true
+end
+
 function ShowAnnouncement(text: string)
 	announcementLabel.Text = text
 	announcement.Visible = true
@@ -780,6 +826,9 @@ local lastPlayerHP: number? = nil
 local function ShowRiftSync(state)
 	if not state.InRift then
 		riftHud.Visible = false
+		if worldPicker then
+			worldPicker.Visible = false
+		end
 		lastGuardianHP = nil
 		lastPlayerHP = nil
 		return
@@ -1004,6 +1053,11 @@ task.spawn(function()
 end)
 
 Net.RiftWorld.OnClientEvent:Connect(function(world)
+	if world.Worlds and world.Active then
+		RenderWorldPicker(world.Worlds)
+	elseif worldPicker then
+		worldPicker.Visible = false
+	end
 	if world.Active then
 		if riftCountdown then
 			coroutine.close(riftCountdown)
@@ -1088,6 +1142,22 @@ Net.ActionResult.OnClientEvent:Connect(function(result)
 			ShowAnnouncement(`Tutoriel terminé : +{result.Reward or 0} essence !`)
 		elseif result.Action == "BreedCreatures" then
 			ShowAnnouncement("Élevage réussi !")
+		elseif result.Action == "SecretHint" then
+			ShowAnnouncement(`Indice de faille ({result.Found}/{result.Total}) : {result.Hint}`)
+			Audio.Play("RareFanfare")
+		elseif result.Action == "SecretRitual" then
+			if result.AlreadyClaimed then
+				ShowAnnouncement("Le rituel secret a déjà été accompli.")
+			else
+				ShowAnnouncement(`Rituel accompli : +{result.Reward or 0} Essence et titre « {result.Title} » !`)
+				Audio.Play("RareFanfare")
+				Flash(0.6)
+			end
+		elseif result.Action == "VipChest" then
+			ShowAnnouncement(`Coffre VIP : +{result.Essence or 0} Essence, potion et {result.EggTier or "un oeuf"} !`)
+			Audio.Play("CoinReward")
+		elseif result.Action == "VipEgg" then
+			ShowAnnouncement(`Oeuf VIP obtenu : {result.Tier or "LegendaryEgg"} !`)
 		end
 	else
 		if result.Action == "QuestClaim" and state then

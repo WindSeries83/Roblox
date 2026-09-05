@@ -72,6 +72,7 @@ RemoteRegistry.Names = {
 	"LeaderboardSync",
 	"LeaderboardVisit",
 	"LeaderboardDetail",
+	"SecretRitual",
 }
 
 function RemoteRegistry.Validate(names: { string }): boolean

@@ -14,4 +14,8 @@ function Vip.GiftDue(lastGiftDate: string, today: string): boolean
 	return lastGiftDate ~= today
 end
 
+function Vip.CanAccess(expiresAt: number?, now: number?): boolean
+	return Vip.IsActive(expiresAt, now)
+end
+
 return Vip

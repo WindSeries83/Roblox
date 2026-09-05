@@ -23,6 +23,7 @@ local questService
 local skillService
 local analyticsService
 local dataSync
+local secretGate
 
 local container
 
@@ -271,6 +272,9 @@ local function WinRift(player: Player)
 			essenceService:Add(player, checkpointReward.Essence, `WorldReward_{combat.WorldId}_{combat.Stage}`)
 		end
 	end
+	if combat.Stage == Worlds.BOSS_STAGE then
+		secretGate:DiscoverBoss(player, combat.WorldId)
+	end
 	questService:OnRiftWon(player)
 	container:Get("SeasonService"):OnRiftWon(player)
 	dataSync:Send(player)
@@ -332,6 +336,11 @@ local function JoinRift(player: Player, _character: Model?, requestedWorldId: st
 		then requestedWorldId
 		else Worlds.All[math.min((profile.Data.Stars or 0) + 1, #Worlds.All)].Id
 	if not Worlds.CanEnter(profile.Data.WorldProgress, profile.Data.Stars or 0, worldId) then
+		Net.ActionResult:FireClient(player, {
+			Action = "RiftEnter",
+			Success = false,
+			Reason = "Cette région est encore verrouillée par ta progression.",
+		})
 		return
 	end
 	local stage = Worlds.NextStage(profile.Data.WorldProgress, worldId)
@@ -396,6 +405,7 @@ function RiftService:Init(cont)
 	skillService = cont:Get("SkillService")
 	analyticsService = cont:Get("AnalyticsService")
 	dataSync = cont:Get("DataSync")
+	secretGate = cont:Get("SecretGate")
 end
 
 function RiftService:GetStatePayload()

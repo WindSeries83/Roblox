@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Worlds = require(ReplicatedStorage.Shared.Worlds)
+local CreatureTemplates = require(ReplicatedStorage.Shared.CreatureTemplates)
 
 local WorldService = {}
 
@@ -65,8 +66,7 @@ local function BuildRegions()
 			anchor:SetAttribute("Stage", stage)
 			if stage == Worlds.BOSS_STAGE then
 				Label(anchor, world.Boss.SpeciesId)
-				local templates = ReplicatedStorage:FindFirstChild("CreatureTemplates")
-				local template = templates and templates:FindFirstChild(world.Boss.SpeciesId)
+				local template = CreatureTemplates.Get(world.Boss.SpeciesId)
 				if template then
 					local boss = template:Clone()
 					boss.Name = "BossAlpha"

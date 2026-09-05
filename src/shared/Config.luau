@@ -108,6 +108,12 @@ return {
 	SERVER_BOOST = { Bonus = 0.25, Duration = 900 },
 	VIP_LUCK_BONUS = 0.1,
 	VIP_DAILY_GIFT = 300,
+	VIP_EGG_PRICE = 12000,
+	VIP_EGG_TIER = "LegendaryEgg",
+	VIP_ZONE_POSITION = Vector3.new(-70, 3, 90),
+	SECRET_RITUAL_POSITION = Vector3.new(0, 3, 90),
+	SECRET_RITUAL_REWARD = 5000,
+	SECRET_TITLE = "Veilleur des quatre failles",
 	LUCK_HARD_CAP = 1,
 
 	-- Bonus meute (bible §4.C) : +10 % Essence par ami actif, cap ×3. Jamais achetable.

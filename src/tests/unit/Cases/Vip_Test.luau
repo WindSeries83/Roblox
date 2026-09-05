@@ -13,6 +13,8 @@ return function(t)
 
 	t.test("vip expires from server time and stacks from active expiry", function()
 		expect.truthy(Vip.IsActive(130, 100))
+		expect.truthy(Vip.CanAccess(130, 100))
+		expect.falsy(Vip.CanAccess(100, 100))
 		expect.falsy(Vip.IsActive(100, 100))
 		expect.equal(Vip.Extend(nil, 100, 30), 130)
 		expect.equal(Vip.Extend(120, 100, 30), 150)

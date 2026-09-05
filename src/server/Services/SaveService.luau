@@ -16,7 +16,7 @@ local SaveService = {}
 SaveService.Profiles = {}
 SaveService.ProfileLoaded = Instance.new("BindableEvent")
 
-local DATA_VERSION = 17
+local DATA_VERSION = 18
 
 local function NormalizeIncubators(data)
 	local valid = {}
@@ -154,6 +154,9 @@ local Store = ProfileStore.New("RiftBeastsData_v1", {
 		ReturnGifts = {},
 	},
 	VipGiftDate = "",
+	SecretDiscoveries = {},
+	SecretRewardClaimed = false,
+	PaidPurchases = {},
 	TutorialDone = false,
 	WorldProgress = {},
 	Rush = {},
@@ -378,6 +381,12 @@ local MIGRATIONS = {
 		end
 		data.Version = 17
 	end,
+	[17] = function(data)
+		data.SecretDiscoveries = if type(data.SecretDiscoveries) == "table" then data.SecretDiscoveries else {}
+		data.SecretRewardClaimed = data.SecretRewardClaimed == true
+		data.PaidPurchases = if type(data.PaidPurchases) == "table" then data.PaidPurchases else {}
+		data.Version = 18
+	end,
 }
 
 function SaveService.Migrate(data)
@@ -407,6 +416,9 @@ function SaveService.Migrate(data)
 	data.DuelSeason.Losses = if type(data.DuelSeason.Losses) == "number"
 		then math.max(0, math.floor(data.DuelSeason.Losses))
 		else 0
+	data.SecretDiscoveries = if type(data.SecretDiscoveries) == "table" then data.SecretDiscoveries else {}
+	data.SecretRewardClaimed = data.SecretRewardClaimed == true
+	data.PaidPurchases = if type(data.PaidPurchases) == "table" then data.PaidPurchases else {}
 	return data
 end
 

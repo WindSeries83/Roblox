@@ -106,6 +106,8 @@ function DataSync:Send(player: Player)
 		DuelDefense = profile.Data.DuelDefense,
 		DuelSeason = profile.Data.DuelSeason,
 		VipExpiresAt = profile.Data.VipExpiresAt,
+		SecretDiscoveries = profile.Data.SecretDiscoveries,
+		SecretRewardClaimed = profile.Data.SecretRewardClaimed == true,
 		ServerBoostUntil = boostService and boostService:Until() or 0,
 		Meute = packService and packService:Count(player) or 0,
 		RotatingEgg = rotatingSnapshot,

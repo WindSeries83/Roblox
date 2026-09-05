@@ -19,4 +19,6 @@ All client â†’ server payloads are untrusted. Handlers validate type, owner
 | `QuestClaim` | Câ†’S: `questId: string` | known quest, completion, not already claimed | one-time server reward or rejection |
 | `SkillBuy` | Câ†’S: `nodeId: string` | known node, prerequisites, points, not already maxed | spends points once or rejects |
 
+| `SecretRitual` | C -> S: no payload | profile, four server-side boss discoveries, one-second cooldown, one-time claim | grants the free title/reward once or rejects |
+
 No client-supplied price, drop, creature, reward or balance is trusted. Errors are silent rejection plus an economy log where relevant. Remote names not listed above follow the same authority rule and are documented by their owning service.

@@ -1,3 +1,5 @@
+--!strict
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local UiKit = require(script.Parent.Parent.UiKit)
@@ -19,6 +21,8 @@ local creatureList
 local detail
 local upgradeLabel
 local upgradeButton
+local secretStatus
+local secretButton
 
 -- Initiale courte du rang, affichée sur la bande de rareté des cards.
 local RANK_LETTER = {
@@ -158,11 +162,30 @@ function SanctuaryPanel.Create(parent)
 	UiKit.Padding(frame, 10)
 
 	UiKit.Title(frame, "Sanctuaires")
+	secretStatus = UiKit.Create("TextLabel", {
+		Name = "SecretStatus",
+		BackgroundTransparency = 1,
+		TextColor3 = Color3.fromRGB(245, 150, 230),
+		TextSize = 12,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Size = UDim2.new(0.58, 0, 0, 28),
+		Position = UDim2.fromOffset(0, 25),
+		TextWrapped = true,
+		Visible = false,
+		Parent = frame,
+	})
+	secretButton = UiKit.Button(frame, "Rituel", UDim2.new(0.35, 0, 0, 32), UDim2.new(0.65, 0, 0, 25))
+	secretButton.Name = "SecretRitualButton"
+	secretButton.Visible = false
+	secretButton.Activated:Connect(function()
+		Net.SecretRitual:FireServer()
+	end)
 
 	local header = UiKit.Create("Frame", {
 		Name = "Header",
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 0, 44),
+		Size = UDim2.new(1, 0, 0, 72),
+		Position = UDim2.fromOffset(0, 54),
 		Parent = frame,
 	})
 	upgradeLabel = UiKit.Create("TextLabel", {
@@ -182,7 +205,7 @@ function SanctuaryPanel.Create(parent)
 		Net.UpgradeSanctuary:FireServer()
 	end)
 
-	creatureList = UiKit.Scroller(frame, UDim2.fromScale(0, 0.14), UDim2.fromScale(0.5, 0.86))
+	creatureList = UiKit.Scroller(frame, UDim2.fromScale(0, 0.25), UDim2.fromScale(0.5, 0.75))
 	creatureList.Name = "CreatureList"
 	-- Grille de cards à la place de la liste verticale du Scroller.
 	for _, child in creatureList:GetChildren() do
@@ -200,8 +223,8 @@ function SanctuaryPanel.Create(parent)
 	detail = UiKit.Create("Frame", {
 		Name = "Detail",
 		BackgroundColor3 = UiKit.TINTS.PANEL,
-		Position = UDim2.fromScale(0.52, 0.14),
-		Size = UDim2.fromScale(0.48, 0.86),
+		Position = UDim2.fromScale(0.52, 0.25),
+		Size = UDim2.fromScale(0.48, 0.75),
 		Parent = frame,
 	})
 	UiKit.Corner(detail)
@@ -216,6 +239,22 @@ function SanctuaryPanel.Create(parent)
 end
 
 function SanctuaryPanel.Refresh(state)
+	local discoveries = state.SecretDiscoveries or {}
+	local found = 0
+	for _, worldId in { "TwilightGrove", "AshForge", "GalePeaks", "NyxAbyss" } do
+		if discoveries[worldId] == true then
+			found += 1
+		end
+	end
+	if secretStatus and secretButton then
+		secretStatus.Visible = found > 0
+		secretButton.Visible = found == 4 and state.SecretRewardClaimed ~= true
+		if state.SecretRewardClaimed == true then
+			secretStatus.Text = "Secret du sanctuaire : rituel accompli."
+		elseif found > 0 then
+			secretStatus.Text = `Une marque de faille resonne dans l'autel... {found}/4`
+		end
+	end
 	local bonusSlots = if state.Entitlements and state.Entitlements.MoreSlots
 		then Config.GAMEPASSES.MoreSlots.BonusSlots
 		else 0

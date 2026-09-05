@@ -24,11 +24,17 @@ local luckService
 local boostService
 local analyticsService
 local policyService
+local vipService
 
 local ReceiptsStore = SafeStore.Get("RiftBeastsReceipts_v1", nil)
 
 local function LogPurchase(source: string, data: { [string]: any })
 	Log:Economy("Purchase", source, data)
+end
+
+local function MarkPaidPurchase(profile: any, key: string)
+	profile.Data.PaidPurchases = profile.Data.PaidPurchases or {}
+	profile.Data.PaidPurchases[key] = true
 end
 
 function PurchaseService.GrantProduct(player: Player, product: any, productId: number, receiptKey: string?): boolean
@@ -37,15 +43,25 @@ function PurchaseService.GrantProduct(player: Player, product: any, productId: n
 		return true
 	end
 	if product.Kind == "LuckPotion" then
-		return luckService:GrantPotion(player, product.PotionKind, receiptKey)
+		local granted = luckService:GrantPotion(player, product.PotionKind, receiptKey)
+		if granted and profile then
+			MarkPaidPurchase(profile, `Product_{productId}`)
+		end
+		return granted
 	elseif product.Kind == "ServerBoost" then
-		return boostService:Activate(player, receiptKey)
+		local granted = boostService:Activate(player, receiptKey)
+		if granted and profile then
+			MarkPaidPurchase(profile, `Product_{productId}`)
+		end
+		return granted
 	elseif product.Kind == "Vip" then
 		if not profile then
 			return false
 		end
 		profile.Data.VipExpiresAt = Vip.Extend(profile.Data.VipExpiresAt, os.time(), product.Duration)
 		profile.Data.Entitlements.VIP = nil
+		MarkPaidPurchase(profile, `Product_{productId}`)
+		vipService:Refresh(player)
 		if receiptKey then
 			profile.Data.EconomyLedger = profile.Data.EconomyLedger or {}
 			profile.Data.EconomyLedger[receiptKey] = true
@@ -69,9 +85,17 @@ function PurchaseService.GrantProduct(player: Player, product: any, productId: n
 		return true
 	end
 	if not receiptKey then
-		return essenceService:Add(player, product.Amount, `DevProduct_{productId}`) > 0
+		local granted = essenceService:Add(player, product.Amount, `DevProduct_{productId}`) > 0
+		if granted and profile then
+			MarkPaidPurchase(profile, `Product_{productId}`)
+		end
+		return granted
 	end
-	return essenceService:AddOnce(player, product.Amount, `DevProduct_{productId}`, receiptKey) > 0
+	local granted = essenceService:AddOnce(player, product.Amount, `DevProduct_{productId}`, receiptKey) > 0
+	if granted and profile then
+		MarkPaidPurchase(profile, `Product_{productId}`)
+	end
+	return granted
 end
 
 function PurchaseService.ResolveProduct(productId: number)
@@ -172,6 +196,7 @@ function PurchaseService.GrantPass(player: Player, passKey: string, receiptKey: 
 			end
 		end
 	end
+	MarkPaidPurchase(profile, `Pass_{passKey}`)
 	profile.Data.LastPlayed = os.time()
 	dataSync:Send(player)
 	if firstGrant then
@@ -189,6 +214,7 @@ function PurchaseService:Init(container)
 	boostService = container:Get("BoostService")
 	analyticsService = container:Get("AnalyticsService")
 	policyService = container:Get("PolicyService")
+	vipService = container:Get("VipService")
 end
 
 function PurchaseService:Start()

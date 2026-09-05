@@ -83,10 +83,9 @@ function LeaderboardPanel.Create(parent: Instance): Frame
 
 	Net.LeaderboardDetail.OnClientEvent:Connect(ShowDetail)
 
-	Net.LeaderboardSync.OnClientEvent:Connect(function(payload)
-		UiKit.Clear(page)
-		UiKit.Title(page, "Classement (Essence totale)")
-		for _, entry in payload.Entries do
+	local function RenderEntries(title: string, entries: { any })
+		UiKit.Title(page, title)
+		for _, entry in entries do
 			local cell = UiKit.Cell(page)
 			UiKit.Create("TextLabel", {
 				BackgroundTransparency = 1,
@@ -104,6 +103,14 @@ function LeaderboardPanel.Create(parent: Instance): Frame
 				Net.LeaderboardVisit:FireServer(entry.UserId)
 			end)
 		end
+	end
+
+	Net.LeaderboardSync.OnClientEvent:Connect(function(payload)
+		UiKit.Clear(page)
+		RenderEntries("Classement général — Essence totale", payload.Entries or {})
+		UiKit.Title(page, "Classement léger", 14)
+		UiKit.Title(page, "F2P ou Starter seul; tout autre achat en sort.", 11)
+		RenderEntries("Temps et talent", payload.LightEntries or {})
 	end)
 
 	task.spawn(function()

@@ -1,8 +1,11 @@
+--!strict
+
 local MessagingService = game:GetService("MessagingService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Leaderboard = require(ReplicatedStorage.Shared.Leaderboard)
 local Net = require(ReplicatedStorage.Shared.Net)
 local SafeStore = require(script.Parent.SafeStore)
 
@@ -29,6 +32,7 @@ function LeaderboardService.BuildEntry(userId: number, name: string, profile: an
 		SanctuaryLevel = profile.Data.SanctuaryLevel,
 		Ranks = {},
 		Species = {},
+		LightEligible = Leaderboard.IsLightEligible(profile.Data),
 	}
 	for _, creature in profile.Data.Creatures do
 		entry.Ranks[creature.Rarity] = (entry.Ranks[creature.Rarity] or 0) + 1
@@ -63,15 +67,22 @@ local function PersistSnapshot(entry: any)
 	end)
 end
 
-local function TopPayload(): { any }
+local function TopPayload(lightOnly: boolean?): { any }
+	local candidates = {}
+	for _, entry in entries do
+		if not lightOnly or entry.LightEligible == true then
+			table.insert(candidates, entry)
+		end
+	end
 	local payload = {}
-	for i, entry in LeaderboardService.TopEntries(entries, Config.LEADERBOARD_TOP) do
+	for i, entry in LeaderboardService.TopEntries(candidates, Config.LEADERBOARD_TOP) do
 		payload[i] = {
 			UserId = entry.UserId,
 			Name = entry.Name,
 			Essence = math.floor(entry.Essence),
 			SanctuaryLevel = entry.SanctuaryLevel,
 			Rank = i,
+			LightEligible = entry.LightEligible == true,
 		}
 	end
 	return payload
@@ -92,7 +103,10 @@ local function RefreshLocal()
 	local top = TopPayload()
 	if not game:GetService("RunService"):IsStudio() then
 		pcall(function()
-			MessagingService:PublishAsync(MESSAGE_TOPIC, top)
+			MessagingService:PublishAsync(MESSAGE_TOPIC, {
+				General = top,
+				Light = TopPayload(true),
+			})
 		end)
 	end
 end
@@ -110,11 +124,27 @@ function LeaderboardService:Start()
 				if type(message) ~= "table" then
 					return
 				end
-				for _, row in message do
-					if type(row.UserId) == "number" and type(row.Essence) == "number" and entries[row.UserId] then
-						if row.Essence > entries[row.UserId].Essence then
-							entries[row.UserId].Essence = row.Essence
+				local rows = if type(message.General) == "table" then message.General else message
+				for _, row in rows do
+					if type(row.UserId) == "number" and type(row.Essence) == "number" then
+						local entry = entries[row.UserId]
+						if not entry then
+							entry = {
+								UserId = row.UserId,
+								Name = if type(row.Name) == "string" then row.Name else `Player {row.UserId}`,
+								Essence = row.Essence,
+								SanctuaryLevel = if type(row.SanctuaryLevel) == "number" then row.SanctuaryLevel else 1,
+								LightEligible = row.LightEligible == true,
+							}
+							entries[row.UserId] = entry
+						elseif row.Essence > entry.Essence then
+							entry.Essence = row.Essence
 						end
+						entry.Name = if type(row.Name) == "string" then row.Name else entry.Name
+						entry.SanctuaryLevel = if type(row.SanctuaryLevel) == "number"
+							then row.SanctuaryLevel
+							else entry.SanctuaryLevel
+						entry.LightEligible = row.LightEligible == true
 					end
 				end
 			end)
@@ -138,7 +168,10 @@ function LeaderboardService:Start()
 		end
 		cooldowns[player] = now
 		RefreshLocal()
-		Net.LeaderboardSync:FireClient(player, { Entries = TopPayload() })
+		Net.LeaderboardSync:FireClient(player, {
+			Entries = TopPayload(false),
+			LightEntries = TopPayload(true),
+		})
 	end)
 
 	Net.LeaderboardVisit.OnServerEvent:Connect(function(player: Player, userId: any)
@@ -152,15 +185,16 @@ function LeaderboardService:Start()
 		end
 
 		local entry = entries[userId]
-		if not entry then
+		if not entry or type(entry.Species) ~= "table" or type(entry.Ranks) ~= "table" then
 			local ok, snapshot = pcall(function()
 				return Store:GetAsync(`Snapshot_{userId}`)
 			end)
 			if ok and type(snapshot) == "table" then
 				entry = snapshot
+				entries[userId] = entry
 			end
 		end
-		if not entry then
+		if not entry or type(entry.Species) ~= "table" or type(entry.Ranks) ~= "table" then
 			return
 		end
 
