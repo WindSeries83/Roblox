@@ -8,7 +8,7 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 
 | Phase | Etat | Preuve actuelle | Prochain verrou |
 |---|---|---|---|
-| 0 - vertical slice | En cours | Headless 265/265, 8 skips live ; CI 33957810539 verte sur b2bb33c1 ; la session Studio courante n'est pas encore synchronisee avec le HEAD disque | reconnexion Rojo puis smoke Studio sur le HEAD courant ; timings 15-20/30-40 min ; focus/B/Echap manuel ; persistance publiee |
+| 0 - vertical slice | En cours | Headless 265/265, 8 skips live ; CI 33958117225 verte sur 7cac6293 ; la session Studio courante n'est pas encore synchronisee avec le HEAD disque | reconnexion Rojo puis smoke Studio sur le HEAD courant ; timings 15-20/30-40 min ; focus/B/Echap manuel ; persistance publiee |
 | 1 - soft launch | Partiel | offres bloquees ; boucles de retention et instrumentation locale branchees ; suite headless a 265/265, 8 skips live | cohorte/metriques reelles ; vrais SKU/prix ; prompts/receipts publies |
 | 2 - quatre mondes | Partiel | contrat quatre mondes distincts, cinq etapes, boss et Rush persistant/idempotent ; 30 especes data ; selection de region, secret serveur et fallback creature/boss branches sur la candidate | modeles/portraits/animations artistiques, runtime UI et Rush publie/reconnexion |
 | 3 - social/economie | Partiel | marche/ledger purs ; social session avec amis, invitations expirees, rejoindre/visiter et meute plafonnee ; duel transactionnel par ChallengeId localement valide ; VIP et classement leger branches | deux serveurs publies ; escrow duel et invitations en place publiee ; UI/appareils runtime |
@@ -21,9 +21,9 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 
 Plan accepte : [COMPLETE_RELEASE.md](COMPLETE_RELEASE.md). Les lots contenu, beta et publication restent a realiser ; Studio n'est pas le seul travail restant.
 
-- HEAD final de la candidate : `b2bb33c1d62921303fa9fa3d07a638150df2b823`.
+- Dernier HEAD applicatif de la candidate : `7cac629302209f32564566559a9b60508eb117a5`.
 - HEADLESS local : 265 passes, 0 echec, 8 skips live. Les skips concernent les modules qui exigent des services Studio/publication.
-- CI GitHub Actions : [run 33957810539](https://github.com/WindSeries83/Roblox/actions/runs/33957810539), succes sur le HEAD ci-dessus ; StyLua, Selene, tests headless, Wally, build Rojo et Check diff passent.
+- CI GitHub Actions : [run 33958117225](https://github.com/WindSeries83/Roblox/actions/runs/33958117225), succes sur le HEAD applicatif ci-dessus ; StyLua, Selene, tests headless, Wally, build Rojo et Check diff passent.
 - Implementation candidate : secret gratuit persiste et autorise par victoires de boss, zone/coffre/oeuf VIP avec expiration et rollback, classement leger inter-serveurs, selection des quatre mondes et fallback procedural des creatures/boss.
 - STUDIO : smoke de cette reprise non execute ; derniere copie Edit observee obsolete.
 - PUBLISHED/MULTI-SERVER : reception analytics, policy reelle, receipts, transactions et synchronisation distante non valides par ces tests purs.
