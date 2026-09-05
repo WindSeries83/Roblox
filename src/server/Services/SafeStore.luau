@@ -1,4 +1,7 @@
+--!strict
+
 local DataStoreService = game:GetService("DataStoreService")
+local RunService = game:GetService("RunService")
 
 local SafeStore = {}
 
@@ -6,15 +9,16 @@ local SafeStore = {}
 -- en session pour tester les flux — claim marché, index — sans DataStore réel).
 local memories: { [string]: { [any]: any } } = {}
 
--- Retourne le DataStore réel, ou un stub no-op si l'accès est indisponible
--- (Studio non publié). fallback est la valeur du stub pour GetAsync et le point
--- de départ de UpdateAsync.
+-- Retourne le DataStore réel hors Studio, ou un stub mémoire en Studio et si
+-- l'accès est indisponible. fallback est la valeur initiale du stub.
 function SafeStore.Get(name: string, fallback: any)
-	local ok, store = pcall(function()
-		return DataStoreService:GetDataStore(name)
-	end)
-	if ok then
-		return store
+	if not RunService:IsStudio() then
+		local ok, store = pcall(function()
+			return DataStoreService:GetDataStore(name)
+		end)
+		if ok then
+			return store
+		end
 	end
 	local stored = memories[name]
 	if not stored then
