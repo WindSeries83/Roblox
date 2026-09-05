@@ -74,6 +74,7 @@ RemoteRegistry.Names = {
 	"LeaderboardDetail",
 	"SecretRitual",
 	"SetTitle",
+	"RenameCreature",
 }
 
 function RemoteRegistry.Validate(names: { string }): boolean

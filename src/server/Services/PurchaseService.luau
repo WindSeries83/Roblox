@@ -26,6 +26,7 @@ local analyticsService
 local policyService
 local vipService
 local recognitionService
+local renameService
 
 local ReceiptsStore = SafeStore.Get("RiftBeastsReceipts_v1", nil)
 
@@ -73,6 +74,15 @@ function PurchaseService.GrantProduct(player: Player, product: any, productId: n
 			return false
 		end
 		local granted = recognitionService:RecordSupport(player, product.Tier, receiptKey)
+		if granted then
+			MarkPaidPurchase(profile, `Product_{productId}`)
+		end
+		return granted
+	elseif product.Kind == "RenameTicket" then
+		if not profile then
+			return false
+		end
+		local granted = renameService:GrantTicket(player)
 		if granted then
 			MarkPaidPurchase(profile, `Product_{productId}`)
 		end
@@ -226,6 +236,7 @@ function PurchaseService:Init(container)
 	policyService = container:Get("PolicyService")
 	vipService = container:Get("VipService")
 	recognitionService = container:Get("RecognitionService")
+	renameService = container:Get("RenameService")
 end
 
 function PurchaseService:Start()

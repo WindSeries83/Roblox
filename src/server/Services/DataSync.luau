@@ -108,6 +108,7 @@ function DataSync:Send(player: Player)
 		VipExpiresAt = profile.Data.VipExpiresAt,
 		Titles = profile.Data.Titles,
 		SelectedTitle = profile.Data.SelectedTitle,
+		RenameTickets = profile.Data.RenameTickets,
 		SecretDiscoveries = profile.Data.SecretDiscoveries,
 		SecretRewardClaimed = profile.Data.SecretRewardClaimed == true,
 		ServerBoostUntil = boostService and boostService:Until() or 0,

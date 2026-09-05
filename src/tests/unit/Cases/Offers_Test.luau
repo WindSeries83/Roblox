@@ -20,6 +20,7 @@ return function(t)
 		SupportSmall = true,
 		SupportMedium = true,
 		SupportLarge = true,
+		RenameTicket = true,
 	}
 
 	t.test("catalog covers the required offer journeys", function()
@@ -32,7 +33,7 @@ return function(t)
 			end
 			expect.equal(offer.Enabled, false)
 		end
-		expect.equal(count, 14)
+		expect.equal(count, 15)
 	end)
 
 	t.test("every developer product has a catalog offer", function()

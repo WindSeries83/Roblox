@@ -10,9 +10,10 @@ Ce plan reste incomplet tant que tous les lots ne disposent pas de leurs preuves
 - Le secret gratuit est branche sur les victoires de boss : quatre decouvertes persistees, indices emis par le serveur, autel et recompense unique.
 - Le VIP couvre l'expiration serveur, le respawn, la zone, le coffre quotidien, l'oeuf VIP et le suivi des achats.
 - Le classement distant accepte les resumees inter-serveurs et expose le classement leger « gratuit ou Starter seul ».
-- Le schema de donnees passe en v19 ; les templates proceduraux de secours rendent les creatures et boss visibles sans assets importes.
+- Le schema de donnees passe en v20 ; les templates proceduraux de secours rendent les creatures et boss visibles sans assets importes.
 - Les reglages locaux audio/effets reduits sont accessibles depuis l'interface, sans masquer les informations critiques.
 - Le mur public des Secrets et le mur des soutiens sont persistants, bornes et affiches dans la zone d'accueil ; les SKU de soutien restent desactives jusqu'a validation.
+- Le renommage des creatures est valide cote serveur, persiste avec un ticket consommable et garde son flux d'achat desactive jusqu'a configuration du SKU.
 
 Ces points decrivent l'implementation sur disque ; ils ne remplacent pas les preuves STUDIO, PUBLISHED/MULTI-SERVER et PLAYTEST HUMAIN ci-dessous.
 

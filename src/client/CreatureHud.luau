@@ -1,3 +1,4 @@
+local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -13,7 +14,8 @@ local UiKit = require(script.Parent:WaitForChild("UiKit"))
 
 local CreatureHud = {}
 
-local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
 local TINTS = UiKit.TINTS
 
@@ -25,6 +27,7 @@ local xpFill: Frame? = nil
 local equipButton: TextButton? = nil
 local companionButton: TextButton? = nil
 local evolveButton: TextButton? = nil
+local renameBox: TextBox? = nil
 local priceBox: TextBox? = nil
 
 local currentId: string? = nil
@@ -63,7 +66,7 @@ local function Render()
 
 	local species = Species[creature.SpeciesId]
 	local rarity = Rarities[creature.Rarity]
-	titleLabel.Text = `{species and species.Name or creature.SpeciesId} — {creature.Rarity}`
+	titleLabel.Text = `{creature.CustomName or (species and species.Name or creature.SpeciesId)} — {creature.Rarity}`
 	titleLabel.TextColor3 = if rarity then rarity.Color else TINTS.WHITE
 	stageLabel.Text = `Stade {creature.Stage} — Niveau {creature.Level} — Puissance {math.floor(creature.Power)}`
 
@@ -130,7 +133,7 @@ local function Build()
 	local panel = UiKit.Create("Frame", {
 		Name = "Panel",
 		BackgroundColor3 = TINTS.PANEL,
-		Size = UDim2.fromOffset(320, 300),
+		Size = UDim2.fromOffset(320, 360),
 		Position = UDim2.new(0.5, 0, 1, -16),
 		AnchorPoint = Vector2.new(0.5, 1),
 		ZIndex = 50,
@@ -172,6 +175,8 @@ local function Build()
 
 	equipButton = UiKit.Button(panel, "Équiper", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.37))
 	equipButton.ZIndex = 50
+	equipButton.Size = UDim2.fromScale(1, 0.11)
+	equipButton.Position = UDim2.fromScale(0, 0.33)
 	equipButton.Activated:Connect(function()
 		if not lastState or not FeatureUnlocks.Require(lastState, "Equipment") then
 			return
@@ -184,6 +189,8 @@ local function Build()
 
 	companionButton = UiKit.Button(panel, "Faire suivre", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.52))
 	companionButton.ZIndex = 50
+	companionButton.Size = UDim2.fromScale(1, 0.11)
+	companionButton.Position = UDim2.fromScale(0, 0.46)
 	companionButton.Activated:Connect(function()
 		local creature = CurrentCreature()
 		if creature then
@@ -195,6 +202,8 @@ local function Build()
 
 	evolveButton = UiKit.Button(panel, "Évoluer", UDim2.fromScale(1, 0.13), UDim2.fromScale(0, 0.67))
 	evolveButton.ZIndex = 50
+	evolveButton.Size = UDim2.fromScale(1, 0.11)
+	evolveButton.Position = UDim2.fromScale(0, 0.59)
 	evolveButton.Activated:Connect(function()
 		if not lastState or not FeatureUnlocks.Require(lastState, "Evolution") then
 			return
@@ -205,6 +214,31 @@ local function Build()
 			if canEvolve then
 				Net.EvolveCreature:FireServer(creature.Id)
 			end
+		end
+	end)
+
+	renameBox = UiKit.Create("TextBox", {
+		Name = "Rename",
+		BackgroundColor3 = TINTS.DARK,
+		TextColor3 = TINTS.WHITE,
+		PlaceholderColor3 = Color3.fromRGB(175, 175, 185),
+		Font = Enum.Font.GothamBold,
+		TextSize = 13,
+		Text = "",
+		PlaceholderText = "Nouveau nom",
+		ClearTextOnFocus = false,
+		Size = UDim2.fromScale(0.56, 0.1),
+		Position = UDim2.fromScale(0, 0.72),
+		ZIndex = 50,
+		Parent = panel,
+	})
+	UiKit.Corner(renameBox)
+
+	local renameButton = UiKit.Button(panel, "Renommer", UDim2.fromScale(0.4, 0.1), UDim2.fromScale(0.6, 0.72))
+	renameButton.ZIndex = 50
+	renameButton.Activated:Connect(function()
+		if currentId and renameBox then
+			Net.RenameCreature:FireServer(currentId, renameBox.Text)
 		end
 	end)
 
@@ -222,10 +256,14 @@ local function Build()
 		Parent = panel,
 	})
 	UiKit.Corner(priceBox)
+	priceBox.Size = UDim2.fromScale(0.45, 0.1)
+	priceBox.Position = UDim2.fromScale(0, 0.84)
 
 	local sellButton =
 		UiKit.Button(panel, "Vendre au marché", UDim2.fromScale(0.53, 0.13), UDim2.fromScale(0.47, 0.81))
 	sellButton.ZIndex = 50
+	sellButton.Size = UDim2.fromScale(0.53, 0.1)
+	sellButton.Position = UDim2.fromScale(0.47, 0.84)
 	sellButton.Activated:Connect(function()
 		local price = tonumber(priceBox.Text)
 		if currentId and price then
@@ -256,6 +294,7 @@ function CreatureHud.Open(creature, state)
 	if not screen or not screen.Parent then
 		Build()
 	end
+	renameBox.Text = creature.CustomName or ""
 	priceBox.Text = tostring(CreatureHud.SuggestedPrice(creature.Rarity))
 	screen.Enabled = true
 	Render()
@@ -265,6 +304,12 @@ Net.Sync.OnClientEvent:Connect(function(state)
 	lastState = state
 	if screen and screen.Enabled then
 		Render()
+	end
+end)
+
+Net.ActionResult.OnClientEvent:Connect(function(result)
+	if result and result.Action == "RenamePrompt" and type(result.Sku) == "number" and result.Sku > 0 then
+		MarketplaceService:PromptProductPurchase(player, result.Sku)
 	end
 end)
 

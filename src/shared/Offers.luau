@@ -176,6 +176,18 @@ Offers.All = {
 		PriceText = "À définir",
 		Enabled = false,
 	},
+	RenameTicket = {
+		Id = "RenameTicket",
+		Sku = 0,
+		ConfigKey = "RenameTicket",
+		Kind = "DeveloperProduct",
+		Audience = "All",
+		Trigger = "Shop",
+		Duration = 0,
+		ValueText = "Ticket de renommage — cosmétique pur",
+		PriceText = "À définir",
+		Enabled = false,
+	},
 }
 
 function Offers.Sku(offer: any): number

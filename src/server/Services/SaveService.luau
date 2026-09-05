@@ -16,7 +16,7 @@ local SaveService = {}
 SaveService.Profiles = {}
 SaveService.ProfileLoaded = Instance.new("BindableEvent")
 
-local DATA_VERSION = 19
+local DATA_VERSION = 20
 
 local function NormalizeIncubators(data)
 	local valid = {}
@@ -73,6 +73,21 @@ local function NormalizeRush(data)
 	}
 end
 
+local function NormalizeCreatureNames(data)
+	if type(data.Creatures) ~= "table" then
+		data.Creatures = {}
+		return
+	end
+	for _, creature in data.Creatures do
+		if type(creature) == "table" and type(creature.CustomName) == "string" then
+			local name = string.gsub(creature.CustomName, "^%s*(.-)%s*$", "%1")
+			creature.CustomName = if #name >= 1 and #name <= 24 and not string.find(name, "[%c]") then name else nil
+		elseif type(creature) == "table" then
+			creature.CustomName = nil
+		end
+	end
+end
+
 local Store = ProfileStore.New("RiftBeastsData_v1", {
 	Essence = 0,
 	Creatures = {},
@@ -121,6 +136,7 @@ local Store = ProfileStore.New("RiftBeastsData_v1", {
 	},
 	Titles = {},
 	SelectedTitle = nil,
+	RenameTickets = 0,
 	MarketHistory = {},
 	Entitlements = {
 		MoreSlots = false,
@@ -401,6 +417,13 @@ local MIGRATIONS = {
 		data.SelectedTitle = if type(selected) == "string" and table.find(titles, selected) then selected else nil
 		data.Version = 19
 	end,
+	[19] = function(data)
+		data.RenameTickets = if type(data.RenameTickets) == "number"
+			then math.max(0, math.floor(data.RenameTickets))
+			else 0
+		NormalizeCreatureNames(data)
+		data.Version = 20
+	end,
 }
 
 function SaveService.Migrate(data)
@@ -444,6 +467,8 @@ function SaveService.Migrate(data)
 	data.SelectedTitle = if type(data.SelectedTitle) == "string" and table.find(titles, data.SelectedTitle)
 		then data.SelectedTitle
 		else nil
+	data.RenameTickets = if type(data.RenameTickets) == "number" then math.max(0, math.floor(data.RenameTickets)) else 0
+	NormalizeCreatureNames(data)
 	return data
 end
 

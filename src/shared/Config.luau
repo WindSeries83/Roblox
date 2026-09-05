@@ -374,6 +374,7 @@ return {
 		SupportSmall = { Id = 0, Name = "Soutien bronze", Kind = "Support", Tier = "Bronze" },
 		SupportMedium = { Id = 0, Name = "Soutien argent", Kind = "Support", Tier = "Argent" },
 		SupportLarge = { Id = 0, Name = "Soutien or", Kind = "Support", Tier = "Or" },
+		RenameTicket = { Id = 0, Name = "Ticket de renommage", Kind = "RenameTicket" },
 	},
 
 	RETURN_GIFTS = { D2 = 500, D7 = 2000 },
