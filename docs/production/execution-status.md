@@ -8,8 +8,8 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 
 | Phase | Etat | Preuve actuelle | Prochain verrou |
 |---|---|---|---|
-| 0 - vertical slice | En cours | Headless 256/256, 8 skips live ; CI StyLua/Selene/Wally/Rojo verte ; la session Studio courante n'est pas encore synchronisee avec le HEAD disque | reconnexion Rojo puis smoke Studio sur le HEAD courant ; timings 15-20/30-40 min ; focus/B/Echap manuel ; persistance publiee |
-| 1 - soft launch | Partiel | offres bloquees ; boucles de retention et instrumentation locale branchees ; suite headless a 256/256, 8 skips live | cohorte/metriques reelles ; vrais SKU/prix ; prompts/receipts publies |
+| 0 - vertical slice | En cours | Headless 258/258, 8 skips live ; CI StyLua/Selene/Wally/Rojo verte ; la session Studio courante n'est pas encore synchronisee avec le HEAD disque | reconnexion Rojo puis smoke Studio sur le HEAD courant ; timings 15-20/30-40 min ; focus/B/Echap manuel ; persistance publiee |
+| 1 - soft launch | Partiel | offres bloquees ; boucles de retention et instrumentation locale branchees ; suite headless a 258/258, 8 skips live | cohorte/metriques reelles ; vrais SKU/prix ; prompts/receipts publies |
 | 2 - quatre mondes | Partiel | contrat quatre mondes distincts, cinq etapes, boss et Rush persistant/idempotent ; 30 especes data ; guards et benefices des cinq systemes de progression | modeles/portraits/animations Blender, runtime UI et Rush publie/reconnexion |
 | 3 - social/economie | Partiel | marche/ledger purs ; social session avec amis, invitations expirees, rejoindre/visiter et meute plafonnee ; duel transactionnel par ChallengeId localement valide | deux serveurs publies ; escrow duel et invitations en place publiee ; UI/appareils runtime |
 | 4 - lignees/index | Partiel | lignee compatible legacy et index de base testes | arbre/ comparaison/validite cyclique et objectifs avances complets |
@@ -18,7 +18,7 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 ## Dernieres preuves
 
 - `lune run tests/run_tests.luau` : 258 passes, 0 echec, 8 skips live (preuve du 5 septembre 2026).
-- CI GitHub Actions `33951513228` : succes sur `f7c7c84` ; Format check (StyLua), lint Selene, tests headless, Wally, build Rojo et Check diff passent.
+- CI GitHub Actions `33951553644` : succes sur `639e92f` ; Format check (StyLua), lint Selene, tests headless, Wally, build Rojo et Check diff passent.
 - Checks locaux : `selene src/ tests/` passe ; `wally install` passe ; `rojo build -o <fichier temporaire>` passe ; le `--check` StyLua Windows ne reflète pas la CI Linux à cause des fins de ligne CRLF du checkout.
 - Studio Edit courant non synchronisé : `Config` contient `SYNC_MARKER`, mais `SaveService` dans Studio ne contient pas encore `WaitForProfile`, présent dans la source disque du HEAD ; le serveur Rojo unique écoute sur `localhost:34872` et attend `Connect`.
 - Preuve Studio précédente invalidée pour la session courante : elle a démarré sur cette copie Play obsolète ; elle ne doit pas servir de preuve du HEAD jusqu'à reconnexion Rojo et nouveau Play.
@@ -28,7 +28,7 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 - Marche : rollback vendeur et acheteur, reouverture durable du claim et reprise apres reconnexion testes ; validations deux serveurs encore requises.
 - Vertical slice runtime : TwilightGrove etapes 1-5 puis boss checkpointes ; Renaissance corrigee pour exiger le monde indexe par `Rebirths`; resultat `Stars=1`, `Rebirths=1`, oeufs/incubateurs vides, creature/equipement conserves et point d'arbre accorde.
 - Appareils : iPhone paysage, iPad paysage, desktop et Xbox mesurent 0 bouton sous 44 px et 0 bouton non selectable ; rendu/focus visuel et B/Echap restent a confirmer manuellement car viewport MCP 1x1 et CoreGUI bloque l'injection.
-- Offres : flux unique `Offers.All -> snapshot visible -> ShopPanel -> prompt`; Starter, deux potions, Server Boost, VIP 30 jours, retour D2/D7 et piste saison couverts ; tous restent `Enabled=false`, `Sku=0`, prix a definir et `PURCHASES_ENABLED=false`.
+- Offres : flux unique `Offers.All -> snapshot visible -> ShopPanel -> prompt`; Starter, trois packs Essence, deux potions, Server Boost, VIP 30 jours, retour D2/D7 et piste saison couverts ; tous restent `Enabled=false`, `Sku=0`, prix a definir et `PURCHASES_ENABLED=false`.
 - Conformite paid-random : Season Premium est classe sensible car sa piste peut donner Essence et creature ; le serveur refuse une nouvelle attribution quand la policy est restrictive ou indisponible, et le snapshot retire l'offre achetable sans masquer la piste gratuite.
 - Retention : trois quetes quotidiennes data-driven avec reset/dedupe persistes ; streak cyclique 7 jours idempotent ; pity Rare+ a 20 ; ticker hebdomadaire avec queue/throttle, rollover et reprise apres echec d'ecriture ; retours D2/D7 a claim unique. Les événements de session, streak et retour sont maintenant contextualisés par joueur.
 - Oeuf rotatif : catalogue hebdomadaire data-driven, fenetres calculees sur l'heure serveur, snapshot avec prix/taux/pity/caps, achat via le flux d'oeuf/incubation existant et evenements proposition/achat/hatch ; aucun champ commercial active.
@@ -37,7 +37,7 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 - Bestiaire data : 30 especes exactement ; raretes 8/8/5/4/3/2, familles 11/10/9, roles AFK 10/10/10 et repartition sur quatre mondes. Balance-check sans outlier ; assets premium encore non livres.
 - Progression : Index, arbre, equipement, evolution et elevage ont des paliers explicites, raisons snapshot et guards serveur ; bonus Index neutralise avant revelation, equipement/evolution mesurables et elevage garde a Renaissance 3.
 - Social : presence MemoryStore, invitations MessagingService 60 s, validation d'amitie serveur, rate limits, rejoindre via TeleportService, plots lecture seule et bonus de meute plafonne ; panneau Amis raccorde et helpers d'expiration testes. Deux serveurs publies restent requis.
-- Duels transactionnels : `DuelTransaction` impose `Created -> ChallengerEscrowed -> Accepted -> Resolved -> WinnerApplied -> LoserApplied -> Settled`, avec branches `Declined/TimedOut -> RefundApplied -> Settled`. Escrow par profil `DuelLedger[ChallengeId]`, confirmation `SaveProfile`, snapshot/restore en cas d'echec, messages durables pour gagnant/perdant/remboursement hors ligne, scan `Active` borne a 256 et guards `FeatureUnlocks.Duels`. Etat saisonnier durable minimal (`DuelSeason` rating/wins/losses) expose dans le snapshot ; aucun faux classement public n'est declare. Tests purs courants : 257/257 ; le smoke Studio courant reste invalide tant que Rojo n'est pas reconnecté au HEAD final.
+- Duels transactionnels : `DuelTransaction` impose `Created -> ChallengerEscrowed -> Accepted -> Resolved -> WinnerApplied -> LoserApplied -> Settled`, avec branches `Declined/TimedOut -> RefundApplied -> Settled`. Escrow par profil `DuelLedger[ChallengeId]`, confirmation `SaveProfile`, snapshot/restore en cas d'echec, messages durables pour gagnant/perdant/remboursement hors ligne, scan `Active` borne a 256 et guards `FeatureUnlocks.Duels`. Etat saisonnier durable minimal (`DuelSeason` rating/wins/losses) expose dans le snapshot ; aucun faux classement public n'est declare. Tests purs courants : 258/258 ; le smoke Studio courant reste invalide tant que Rojo n'est pas reconnecté au HEAD final.
 
 ## Travail delegue
 
