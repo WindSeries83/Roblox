@@ -8,10 +8,10 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 
 | Phase | Etat | Preuve actuelle | Prochain verrou |
 |---|---|---|---|
-| 0 - vertical slice | En cours | Headless 259/259, 8 skips live ; CI StyLua/Selene/Wally/Rojo verte ; la session Studio courante n'est pas encore synchronisee avec le HEAD disque | reconnexion Rojo puis smoke Studio sur le HEAD courant ; timings 15-20/30-40 min ; focus/B/Echap manuel ; persistance publiee |
-| 1 - soft launch | Partiel | offres bloquees ; boucles de retention et instrumentation locale branchees ; suite headless a 259/259, 8 skips live | cohorte/metriques reelles ; vrais SKU/prix ; prompts/receipts publies |
-| 2 - quatre mondes | Partiel | contrat quatre mondes distincts, cinq etapes, boss et Rush persistant/idempotent ; 30 especes data ; guards et benefices des cinq systemes de progression | modeles/portraits/animations Blender, runtime UI et Rush publie/reconnexion |
-| 3 - social/economie | Partiel | marche/ledger purs ; social session avec amis, invitations expirees, rejoindre/visiter et meute plafonnee ; duel transactionnel par ChallengeId localement valide | deux serveurs publies ; escrow duel et invitations en place publiee ; UI/appareils runtime |
+| 0 - vertical slice | En cours | Headless 265/265, 8 skips live ; CI 33957810539 verte sur b2bb33c1 ; la session Studio courante n'est pas encore synchronisee avec le HEAD disque | reconnexion Rojo puis smoke Studio sur le HEAD courant ; timings 15-20/30-40 min ; focus/B/Echap manuel ; persistance publiee |
+| 1 - soft launch | Partiel | offres bloquees ; boucles de retention et instrumentation locale branchees ; suite headless a 265/265, 8 skips live | cohorte/metriques reelles ; vrais SKU/prix ; prompts/receipts publies |
+| 2 - quatre mondes | Partiel | contrat quatre mondes distincts, cinq etapes, boss et Rush persistant/idempotent ; 30 especes data ; selection de region, secret serveur et fallback creature/boss branches sur la candidate | modeles/portraits/animations artistiques, runtime UI et Rush publie/reconnexion |
+| 3 - social/economie | Partiel | marche/ledger purs ; social session avec amis, invitations expirees, rejoindre/visiter et meute plafonnee ; duel transactionnel par ChallengeId localement valide ; VIP et classement leger branches | deux serveurs publies ; escrow duel et invitations en place publiee ; UI/appareils runtime |
 | 4 - lignees/index | Partiel | lignee compatible legacy et index de base testes | arbre/ comparaison/validite cyclique et objectifs avances complets |
 | 5 - Saison 1 | Partiel | catalogue/date/version et claims purs | dates/recompenses humaines, piste complete et migration live |
 
@@ -21,17 +21,19 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 
 Plan accepte : [COMPLETE_RELEASE.md](COMPLETE_RELEASE.md). Les lots contenu, beta et publication restent a realiser ; Studio n'est pas le seul travail restant.
 
-- HEADLESS local : 262 passes, 0 echec, 8 skips live apres correctifs SKU et dimensions analytics. Le test SKU ajoute echouait avant correction.
-- CI : les runs ci-dessous precedent ces correctifs ; consulter le run du commit final pour la preuve CI actuelle.
+- HEAD final de la candidate : `b2bb33c1d62921303fa9fa3d07a638150df2b823`.
+- HEADLESS local : 265 passes, 0 echec, 8 skips live. Les skips concernent les modules qui exigent des services Studio/publication.
+- CI GitHub Actions : [run 33957810539](https://github.com/WindSeries83/Roblox/actions/runs/33957810539), succes sur le HEAD ci-dessus ; StyLua, Selene, tests headless, Wally, build Rojo et Check diff passent.
+- Implementation candidate : secret gratuit persiste et autorise par victoires de boss, zone/coffre/oeuf VIP avec expiration et rollback, classement leger inter-serveurs, selection des quatre mondes et fallback procedural des creatures/boss.
 - STUDIO : smoke de cette reprise non execute ; derniere copie Edit observee obsolete.
-- PUBLISHED/MULTI-SERVER : reception analytics et transactions reelles non validees par ces tests purs.
+- PUBLISHED/MULTI-SERVER : reception analytics, policy reelle, receipts, transactions et synchronisation distante non valides par ces tests purs.
 - PLAYTEST HUMAIN : parcours Monde 1 et beta complete toujours requis.
 
 ### Preuves precedentes (ne valident pas les correctifs de la reprise)
 
 - `lune run tests/run_tests.luau` : 259 passes, 0 echec, 8 skips live (preuve du 5 septembre 2026).
-- CI GitHub Actions `33951821124` : succes sur `cbf8b48` ; Format check (StyLua), lint Selene, tests headless, Wally, build Rojo et Check diff passent.
-- Checks locaux : `selene src/ tests/` passe ; `wally install` passe ; `rojo build -o <fichier temporaire>` passe ; le `--check` StyLua Windows ne reflète pas la CI Linux à cause des fins de ligne CRLF du checkout.
+- CI precedent : `33951821124` sur `cbf8b48` ; conserve comme historique, remplace par le run de la candidate ci-dessus pour l'etat courant.
+- Checks locaux : `selene src/ tests/` passe ; `wally install` passe ; `rojo build -o <fichier temporaire>` passe ; la CI Linux confirme le `--check` StyLua sur la candidate malgré les fins de ligne CRLF du checkout Windows.
 - Studio Edit courant non synchronisé : `Config` contient `SYNC_MARKER`, mais `SaveService` dans Studio ne contient pas encore `WaitForProfile`, présent dans la source disque du HEAD ; le serveur Rojo unique écoute sur `localhost:34872` et attend `Connect`.
 - Preuve Studio précédente invalidée pour la session courante : elle a démarré sur cette copie Play obsolète ; elle ne doit pas servir de preuve du HEAD jusqu'à reconnexion Rojo et nouveau Play.
 - Migration/reconnexion : les profils v13 purgent aussi les incubateurs invalides ; test Studio cible `Migration_Test=12` et `Incubation_Test=9` passe.
@@ -49,7 +51,7 @@ Plan accepte : [COMPLETE_RELEASE.md](COMPLETE_RELEASE.md). Les lots contenu, bet
 - Bestiaire data : 30 especes exactement ; raretes 8/8/5/4/3/2, familles 11/10/9, roles AFK 10/10/10 et repartition sur quatre mondes. Balance-check sans outlier ; assets premium encore non livres.
 - Progression : Index, arbre, equipement, evolution et elevage ont des paliers explicites, raisons snapshot et guards serveur ; bonus Index neutralise avant revelation, equipement/evolution mesurables et elevage garde a Renaissance 3.
 - Social : presence MemoryStore, invitations MessagingService 60 s, validation d'amitie serveur, rate limits, rejoindre via TeleportService, plots lecture seule et bonus de meute plafonne ; panneau Amis raccorde et helpers d'expiration testes. Deux serveurs publies restent requis.
-- Duels transactionnels : `DuelTransaction` impose `Created -> ChallengerEscrowed -> Accepted -> Resolved -> WinnerApplied -> LoserApplied -> Settled`, avec branches `Declined/TimedOut -> RefundApplied -> Settled`. Escrow par profil `DuelLedger[ChallengeId]`, confirmation `SaveProfile`, snapshot/restore en cas d'echec, messages durables pour gagnant/perdant/remboursement hors ligne, scan `Active` borne a 256 et guards `FeatureUnlocks.Duels`. Etat saisonnier durable minimal (`DuelSeason` rating/wins/losses) expose dans le snapshot ; aucun faux classement public n'est declare. Tests purs courants : 259/259 ; le smoke Studio courant reste invalide tant que Rojo n'est pas reconnecté au HEAD final.
+- Duels transactionnels : `DuelTransaction` impose `Created -> ChallengerEscrowed -> Accepted -> Resolved -> WinnerApplied -> LoserApplied -> Settled`, avec branches `Declined/TimedOut -> RefundApplied -> Settled`. Escrow par profil `DuelLedger[ChallengeId]`, confirmation `SaveProfile`, snapshot/restore en cas d'echec, messages durables pour gagnant/perdant/remboursement hors ligne, scan `Active` borne a 256 et guards `FeatureUnlocks.Duels`. Etat saisonnier durable minimal (`DuelSeason` rating/wins/losses) expose dans le snapshot ; aucun faux classement public n'est declare. Tests purs courants : 265/265 ; le smoke Studio courant reste invalide tant que Rojo n'est pas reconnecté au HEAD final.
 
 ## Travail delegue
 

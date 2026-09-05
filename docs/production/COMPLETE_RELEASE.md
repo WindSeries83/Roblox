@@ -4,6 +4,16 @@ Reference de depart : ffa300bbd6dccd45ab82bb2415b7853626b1c300.
 Decision utilisateur : quatre mondes, 30 creatures, progression, social et boutique ; beta fermee de 20-30 joueurs avant ouverture publique.
 Ce plan reste incomplet tant que tous les lots ne disposent pas de leurs preuves.
 
+## Implementation livree dans la candidate courante
+
+- Le parcours des quatre mondes expose la selection de region cote client et conserve les guards serveur, les boss et les checkpoints.
+- Le secret gratuit est branche sur les victoires de boss : quatre decouvertes persistees, indices emis par le serveur, autel et recompense unique.
+- Le VIP couvre l'expiration serveur, le respawn, la zone, le coffre quotidien, l'oeuf VIP et le suivi des achats.
+- Le classement distant accepte les resumees inter-serveurs et expose le classement leger « gratuit ou Starter seul ».
+- Le schema de donnees passe en v18 ; les templates proceduraux de secours rendent les creatures et boss visibles sans assets importes.
+
+Ces points decrivent l'implementation sur disque ; ils ne remplacent pas les preuves STUDIO, PUBLISHED/MULTI-SERVER et PLAYTEST HUMAIN ci-dessous.
+
 ## 1. Socle et Monde 1
 
 - [x] Rejeter les SKU payants nuls, negatifs, non entiers et non finis ; distinguer cadeaux gratuits et prompts payants.
