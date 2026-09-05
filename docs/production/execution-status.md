@@ -8,7 +8,7 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 
 | Phase | Etat | Preuve actuelle | Prochain verrou |
 |---|---|---|---|
-| 0 - vertical slice | En cours | Headless 267/267, 8 skips live ; CI 33960827216 verte sur b3ed17a ; la session Studio courante n'est pas encore synchronisee avec le HEAD disque | reconnexion Rojo puis smoke Studio sur le HEAD courant ; timings 15-20/30-40 min ; focus/B/Echap manuel ; persistance publiee |
+| 0 - vertical slice | En cours | Headless 267/267, 8 skips live ; CI 33960883033 verte sur 87a38b5 ; smoke Studio frais passe sur la source synchronisee (72/72 remotes, boucle oeuf, Rift, UI) | timings 15-20/30-40 min ; focus/B/Echap manuel ; persistance publiee |
 | 1 - soft launch | Partiel | offres bloquees ; boucles de retention et instrumentation locale branchees ; suite headless a 267/267, 8 skips live | cohorte/metriques reelles ; vrais SKU/prix ; prompts/receipts publies |
 | 2 - quatre mondes | Partiel | contrat quatre mondes distincts, cinq etapes, boss et Rush persistant/idempotent ; 30 especes data ; selection de region, secret serveur et fallback creature/boss branches sur la candidate | modeles/portraits/animations artistiques, runtime UI et Rush publie/reconnexion |
 | 3 - social/economie | Partiel | marche/ledger purs ; social session avec amis, invitations expirees, rejoindre/visiter et meute plafonnee ; duel transactionnel par ChallengeId localement valide ; VIP et classement leger branches | deux serveurs publies ; escrow duel et invitations en place publiee ; UI/appareils runtime |
@@ -23,9 +23,9 @@ Plan accepte : [COMPLETE_RELEASE.md](COMPLETE_RELEASE.md). Les lots contenu, bet
 
 - Dernier HEAD applicatif de la candidate : `b3ed17a` (code) ; les commits documentaires suivants ne modifient pas le runtime.
 - HEADLESS local : 267 passes, 0 echec, 8 skips live. Les skips concernent les modules qui exigent des services Studio/publication.
-- CI GitHub Actions : [run 33960827216](https://github.com/WindSeries83/Roblox/actions/runs/33960827216), succes sur le HEAD applicatif ci-dessus ; StyLua, Selene, tests headless, Wally, build Rojo et Check diff passent.
+- CI GitHub Actions : [run 33960883033](https://github.com/WindSeries83/Roblox/actions/runs/33960883033), succes sur le HEAD courant `87a38b5` ; StyLua, Selene, tests headless, Wally, build Rojo et Check diff passent.
 - Implementation candidate : secret gratuit persiste et autorise par victoires de boss, zone/coffre/oeuf VIP avec expiration et rollback, classement leger inter-serveurs, selection des quatre mondes, fallback procedural des creatures/boss, murs publics de reconnaissance, titres equipables, renommage de creature avec ticket et reglages audio/effets locaux.
-- STUDIO : smoke de cette reprise non execute ; derniere copie Edit observee obsolete.
+- STUDIO : smoke frais execute apres synchronisation Rojo. Boot serveur/client sans erreur applicative ; `RemoteRegistry` = 72/72 `RemoteEvent`, aucun manquant, extra ou mauvaise classe. `Net.Sync.Policy` contient `Loaded=true`, `ArePaidRandomItemsRestricted=false`, `IsPaidItemTradingAllowed=true` (mock Studio permissif, pas un compte restreint reel). Achat/placement/incubation/hatch verifies avec reception de `HatchResult` ; taux visibles pour `CommonEgg` (rarete 75/20/5, mutations 88/10/1.7/0.2/0.07/0.02/0.01). Rift ouvert par helper dev temporaire, entree `TwilightGrove` et attaque verifiees (`GuardianHP` 57 -> 43). Gameplay, Oeufs et Boutique montes avec TopBar/ActionBar. Le ServerBoost n'est pas active : achats desactives, SKU 0 ; le code ne l'applique qu'au taux d'Essence, pas au contexte de probabilite. Les seuls messages attendus sont l'indisponibilite Roblox API/MemoryStore en place Studio non publiee.
 - PUBLISHED/MULTI-SERVER : reception analytics, policy reelle, receipts, transactions et synchronisation distante non valides par ces tests purs.
 - PLAYTEST HUMAIN : parcours Monde 1 et beta complete toujours requis.
 
@@ -34,8 +34,8 @@ Plan accepte : [COMPLETE_RELEASE.md](COMPLETE_RELEASE.md). Les lots contenu, bet
 - `lune run tests/run_tests.luau` : 259 passes, 0 echec, 8 skips live (preuve du 5 septembre 2026).
 - CI precedent : `33951821124` sur `cbf8b48` ; conserve comme historique, remplace par le run de la candidate ci-dessus pour l'etat courant.
 - Checks locaux : `selene src/ tests/` passe ; `wally install` passe ; `rojo build -o <fichier temporaire>` passe ; la CI Linux confirme le `--check` StyLua sur la candidate malgré les fins de ligne CRLF du checkout Windows.
-- Studio Edit courant non synchronisé : `Config` contient `SYNC_MARKER`, mais `SaveService` dans Studio ne contient pas encore `WaitForProfile`, présent dans la source disque du HEAD ; le serveur Rojo unique écoute sur `localhost:34872` et attend `Connect`.
-- Preuve Studio précédente invalidée pour la session courante : elle a démarré sur cette copie Play obsolète ; elle ne doit pas servir de preuve du HEAD jusqu'à reconnexion Rojo et nouveau Play.
+- Studio Edit courant synchronisé : `SaveService` contient `WaitForProfile`, `RenameService` et `RemoteRegistry` reflètent le HEAD applicatif ; le serveur Rojo unique écoute sur `localhost:34872`. Le remote legacy `HatchEgg`, absent du registre source, a été retiré de l'instance Studio avant le Play frais.
+- Preuve Studio courante : le Play frais ci-dessus est valide pour le runtime du HEAD ; elle ne couvre pas la policy d'un vrai compte restreint, les achats/receipts publiés ni le multi-serveur.
 - Migration/reconnexion : les profils v13 purgent aussi les incubateurs invalides ; test Studio cible `Migration_Test=12` et `Incubation_Test=9` passe.
 - EconomySim : matrice AFK/attentif/payeur modere sur 1/7/14/30 jours ; panier payeur strictement simulation-only et plafonne ; metriques non modelisees signalees au lieu d'etre inventees.
 - Receipts : un echec de sauvegarde restaure tout le profil et le replay accorde une seule fois ; test pur et test Studio cible passes.
@@ -51,7 +51,7 @@ Plan accepte : [COMPLETE_RELEASE.md](COMPLETE_RELEASE.md). Les lots contenu, bet
 - Bestiaire data : 30 especes exactement ; raretes 8/8/5/4/3/2, familles 11/10/9, roles AFK 10/10/10 et repartition sur quatre mondes. Balance-check sans outlier ; assets premium encore non livres.
 - Progression : Index, arbre, equipement, evolution et elevage ont des paliers explicites, raisons snapshot et guards serveur ; bonus Index neutralise avant revelation, equipement/evolution mesurables et elevage garde a Renaissance 3.
 - Social : presence MemoryStore, invitations MessagingService 60 s, validation d'amitie serveur, rate limits, rejoindre via TeleportService, plots lecture seule et bonus de meute plafonne ; panneau Amis raccorde et helpers d'expiration testes. Deux serveurs publies restent requis.
-- Duels transactionnels : `DuelTransaction` impose `Created -> ChallengerEscrowed -> Accepted -> Resolved -> WinnerApplied -> LoserApplied -> Settled`, avec branches `Declined/TimedOut -> RefundApplied -> Settled`. Escrow par profil `DuelLedger[ChallengeId]`, confirmation `SaveProfile`, snapshot/restore en cas d'echec, messages durables pour gagnant/perdant/remboursement hors ligne, scan `Active` borne a 256 et guards `FeatureUnlocks.Duels`. Etat saisonnier durable minimal (`DuelSeason` rating/wins/losses) expose dans le snapshot ; aucun faux classement public n'est declare. Tests purs courants : 267/267 ; le smoke Studio courant reste invalide tant que Rojo n'est pas reconnecté au HEAD final.
+- Duels transactionnels : `DuelTransaction` impose `Created -> ChallengerEscrowed -> Accepted -> Resolved -> WinnerApplied -> LoserApplied -> Settled`, avec branches `Declined/TimedOut -> RefundApplied -> Settled`. Escrow par profil `DuelLedger[ChallengeId]`, confirmation `SaveProfile`, snapshot/restore en cas d'echec, messages durables pour gagnant/perdant/remboursement hors ligne, scan `Active` borne a 256 et guards `FeatureUnlocks.Duels`. Etat saisonnier durable minimal (`DuelSeason` rating/wins/losses) expose dans le snapshot ; aucun faux classement public n'est declare. Tests purs courants : 267/267 ; le smoke Studio courant est valide pour le runtime local.
 
 ## Travail delegue
 
@@ -77,4 +77,4 @@ Plan accepte : [COMPLETE_RELEASE.md](COMPLETE_RELEASE.md). Les lots contenu, bet
 - activation commerciale ;
 - methode d'obtention des Secrets ;
 - publication et acces a deux serveurs pour les validations live.
-- connexion manuelle du plugin Rojo au serveur `localhost:34872`, puis redemarrage de Play.
+- validation manuelle du rendu/focus clavier et publication avec persistance reelle.
