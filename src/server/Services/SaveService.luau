@@ -16,7 +16,7 @@ local SaveService = {}
 SaveService.Profiles = {}
 SaveService.ProfileLoaded = Instance.new("BindableEvent")
 
-local DATA_VERSION = 18
+local DATA_VERSION = 19
 
 local function NormalizeIncubators(data)
 	local valid = {}
@@ -120,6 +120,7 @@ local Store = ProfileStore.New("RiftBeastsData_v1", {
 		ClaimedPremium = {},
 	},
 	Titles = {},
+	SelectedTitle = nil,
 	MarketHistory = {},
 	Entitlements = {
 		MoreSlots = false,
@@ -387,6 +388,19 @@ local MIGRATIONS = {
 		data.PaidPurchases = if type(data.PaidPurchases) == "table" then data.PaidPurchases else {}
 		data.Version = 18
 	end,
+	[18] = function(data)
+		data.Titles = if type(data.Titles) == "table" then data.Titles else {}
+		local selected = data.SelectedTitle
+		local titles = {}
+		for _, title in data.Titles do
+			if type(title) == "string" and title ~= "" and #title <= 40 and not table.find(titles, title) then
+				table.insert(titles, title)
+			end
+		end
+		data.Titles = titles
+		data.SelectedTitle = if type(selected) == "string" and table.find(titles, selected) then selected else nil
+		data.Version = 19
+	end,
 }
 
 function SaveService.Migrate(data)
@@ -419,6 +433,17 @@ function SaveService.Migrate(data)
 	data.SecretDiscoveries = if type(data.SecretDiscoveries) == "table" then data.SecretDiscoveries else {}
 	data.SecretRewardClaimed = data.SecretRewardClaimed == true
 	data.PaidPurchases = if type(data.PaidPurchases) == "table" then data.PaidPurchases else {}
+	data.Titles = if type(data.Titles) == "table" then data.Titles else {}
+	local titles = {}
+	for _, title in data.Titles do
+		if type(title) == "string" and title ~= "" and #title <= 40 and not table.find(titles, title) then
+			table.insert(titles, title)
+		end
+	end
+	data.Titles = titles
+	data.SelectedTitle = if type(data.SelectedTitle) == "string" and table.find(titles, data.SelectedTitle)
+		then data.SelectedTitle
+		else nil
 	return data
 end
 

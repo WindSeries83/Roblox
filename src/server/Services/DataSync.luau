@@ -106,6 +106,8 @@ function DataSync:Send(player: Player)
 		DuelDefense = profile.Data.DuelDefense,
 		DuelSeason = profile.Data.DuelSeason,
 		VipExpiresAt = profile.Data.VipExpiresAt,
+		Titles = profile.Data.Titles,
+		SelectedTitle = profile.Data.SelectedTitle,
 		SecretDiscoveries = profile.Data.SecretDiscoveries,
 		SecretRewardClaimed = profile.Data.SecretRewardClaimed == true,
 		ServerBoostUntil = boostService and boostService:Until() or 0,

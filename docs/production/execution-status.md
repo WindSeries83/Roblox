@@ -24,7 +24,7 @@ Plan accepte : [COMPLETE_RELEASE.md](COMPLETE_RELEASE.md). Les lots contenu, bet
 - Dernier HEAD applicatif de la candidate : `67715575229889d490ec4a30f712bc93ff26cd51`.
 - HEADLESS local : 267 passes, 0 echec, 8 skips live. Les skips concernent les modules qui exigent des services Studio/publication.
 - CI GitHub Actions : [run 33959150382](https://github.com/WindSeries83/Roblox/actions/runs/33959150382), succes sur le HEAD applicatif ci-dessus ; StyLua, Selene, tests headless, Wally, build Rojo et Check diff passent.
-- Implementation candidate : secret gratuit persiste et autorise par victoires de boss, zone/coffre/oeuf VIP avec expiration et rollback, classement leger inter-serveurs, selection des quatre mondes, fallback procedural des creatures/boss, murs publics de reconnaissance et reglages audio/effets locaux.
+- Implementation candidate : secret gratuit persiste et autorise par victoires de boss, zone/coffre/oeuf VIP avec expiration et rollback, classement leger inter-serveurs, selection des quatre mondes, fallback procedural des creatures/boss, murs publics de reconnaissance, titres equipables et reglages audio/effets locaux.
 - STUDIO : smoke de cette reprise non execute ; derniere copie Edit observee obsolete.
 - PUBLISHED/MULTI-SERVER : reception analytics, policy reelle, receipts, transactions et synchronisation distante non valides par ces tests purs.
 - PLAYTEST HUMAIN : parcours Monde 1 et beta complete toujours requis.

@@ -1,9 +1,11 @@
 --!strict
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Net = require(ReplicatedStorage.Shared.Net)
 local PublicWall = require(ReplicatedStorage.Shared.PublicWall)
 local SafeStore = require(script.Parent.SafeStore)
 
@@ -12,6 +14,10 @@ local RecognitionService = {}
 local secretStore = SafeStore.Get(Config.SECRET_WALL_STORE, {})
 local supportStore = SafeStore.Get(Config.SUPPORT_WALL_STORE, {})
 local walls: { [string]: { Body: TextLabel, Title: TextLabel } } = {}
+local saveService
+local dataSync
+local container
+local tracked: { [Player]: boolean } = {}
 
 local function Read(store: any): { any }
 	local ok, entries = pcall(function()
@@ -127,6 +133,83 @@ local function BuildWalls()
 	)
 end
 
+local function ClearTitle(player: Player)
+	local character = player.Character
+	local head = character and character:FindFirstChild("Head")
+	local existing = head and head:FindFirstChild("PlayerTitle")
+	if existing then
+		existing:Destroy()
+	end
+end
+
+function RecognitionService:ApplyTitle(player: Player)
+	ClearTitle(player)
+	local profile = saveService:GetProfile(player)
+	local title = profile and profile.Data.SelectedTitle
+	if type(title) ~= "string" or title == "" then
+		player:SetAttribute("SelectedTitle", nil)
+		return
+	end
+	local character = player.Character
+	local head = character and character:FindFirstChild("Head")
+	if not head then
+		return
+	end
+
+	local badge = Instance.new("BillboardGui")
+	badge.Name = "PlayerTitle"
+	badge.Adornee = head
+	badge.Size = UDim2.fromOffset(180, 26)
+	badge.StudsOffsetWorldSpace = Vector3.new(0, 3, 0)
+	badge.AlwaysOnTop = true
+	badge.Parent = head
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 13
+	label.Text = title
+	label.TextColor3 = Color3.fromRGB(255, 220, 120)
+	label.TextStrokeTransparency = 0.45
+	label.Parent = badge
+	player:SetAttribute("SelectedTitle", title)
+end
+
+function RecognitionService:SetTitle(player: Player, requested: any): boolean
+	local profile = saveService:GetProfile(player)
+	if not profile then
+		return false
+	end
+	if requested ~= nil and type(requested) ~= "string" then
+		Net.ActionResult:FireClient(player, { Action = "SetTitle", Success = false, Reason = "Titre indisponible" })
+		return false
+	end
+	local title: string? = if type(requested) == "string" then requested else nil
+	if
+		title and (#title > 40 or type(profile.Data.Titles) ~= "table" or not table.find(profile.Data.Titles, title))
+	then
+		Net.ActionResult:FireClient(player, { Action = "SetTitle", Success = false, Reason = "Titre indisponible" })
+		return false
+	end
+	local previous = profile.Data.SelectedTitle
+	profile.Data.SelectedTitle = title
+	local saved = saveService:SaveProfile(player, function(data)
+		return data.SelectedTitle == title
+	end)
+	if not saved then
+		profile.Data.SelectedTitle = previous
+		Net.ActionResult:FireClient(
+			player,
+			{ Action = "SetTitle", Success = false, Reason = "Sauvegarde indisponible" }
+		)
+		return false
+	end
+	self:ApplyTitle(player)
+	dataSync:Send(player)
+	Net.ActionResult:FireClient(player, { Action = "SetTitle", Success = true, Title = title })
+	return true
+end
+
 local function StoreEntry(store: any, entry: { [string]: any }): boolean
 	local ok, updated = pcall(function()
 		return store:UpdateAsync("Entries", function(old)
@@ -165,9 +248,41 @@ function RecognitionService:RecordSupport(player: Player, tier: string, receiptK
 	return saved
 end
 
+function RecognitionService:Init(cont)
+	container = cont
+end
+
 function RecognitionService:Start()
+	saveService = container:Get("SaveService")
+	dataSync = container:Get("DataSync")
 	BuildWalls()
 	Refresh()
+	local function Track(player: Player)
+		if tracked[player] then
+			return
+		end
+		tracked[player] = true
+		player.CharacterAdded:Connect(function()
+			task.defer(function()
+				self:ApplyTitle(player)
+			end)
+		end)
+		self:ApplyTitle(player)
+	end
+	Players.PlayerAdded:Connect(Track)
+	Players.PlayerRemoving:Connect(function(player: Player)
+		tracked[player] = nil
+	end)
+	saveService.ProfileLoaded.Event:Connect(function(player: Player)
+		Track(player)
+		self:ApplyTitle(player)
+	end)
+	for _, player in Players:GetPlayers() do
+		Track(player)
+	end
+	Net.SetTitle.OnServerEvent:Connect(function(player: Player, title: any)
+		self:SetTitle(player, title)
+	end)
 	task.spawn(function()
 		while true do
 			task.wait(60)

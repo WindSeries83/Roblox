@@ -476,7 +476,7 @@ end)
 local settingsPanel = UiKit.Create("Frame", {
 	Name = "SettingsPanel",
 	BackgroundColor3 = TINTS.PANEL,
-	Size = UDim2.fromOffset(if compact then 300 else 340, 230),
+	Size = UDim2.fromOffset(if compact then 300 else 340, 284),
 	Position = UDim2.fromScale(0.5, 0.5),
 	AnchorPoint = Vector2.new(0.5, 0.5),
 	Visible = false,
@@ -507,11 +507,17 @@ settingsMusic.ZIndex = 41
 local settingsEffects =
 	UiKit.Button(settingsPanel, "Effets réduits : désactivés", UDim2.new(1, 0, 0, 44), UDim2.fromOffset(0, 162))
 settingsEffects.ZIndex = 41
+local ownedTitles: { string } = {}
+local selectedTitle: string? = nil
+local settingsTitleButton =
+	UiKit.Button(settingsPanel, "Titre : aucun", UDim2.new(1, 0, 0, 44), UDim2.fromOffset(0, 212))
+settingsTitleButton.ZIndex = 41
 
 local function RefreshSettings()
 	settingsSfx.Text = `Sons : {if Audio.IsSfxEnabled() then "activés" else "désactivés"}`
 	settingsMusic.Text = `Musique : {if Audio.IsMusicEnabled() then "activée" else "désactivée"}`
 	settingsEffects.Text = `Effets réduits : {if Audio.AreEffectsReduced() then "activés" else "désactivés"}`
+	settingsTitleButton.Text = if selectedTitle then `Titre : {selectedTitle}` else "Titre : aucun"
 end
 
 settingsSfx.Activated:Connect(function()
@@ -524,6 +530,15 @@ settingsMusic.Activated:Connect(function()
 end)
 settingsEffects.Activated:Connect(function()
 	Audio.SetReducedEffects(not Audio.AreEffectsReduced())
+	RefreshSettings()
+end)
+settingsTitleButton.Activated:Connect(function()
+	if #ownedTitles == 0 then
+		return
+	end
+	local currentIndex = if selectedTitle then table.find(ownedTitles, selectedTitle) or 0 else 0
+	selectedTitle = if currentIndex >= #ownedTitles then nil else ownedTitles[currentIndex + 1]
+	Net.SetTitle:FireServer(selectedTitle)
 	RefreshSettings()
 end)
 
@@ -1003,6 +1018,16 @@ end
 
 local function RefreshAll(newState)
 	state = newState
+	ownedTitles = {}
+	if type(state.Titles) == "table" then
+		for _, title in state.Titles do
+			if type(title) == "string" then
+				table.insert(ownedTitles, title)
+			end
+		end
+	end
+	selectedTitle = if type(state.SelectedTitle) == "string" then state.SelectedTitle else nil
+	RefreshSettings()
 	actionBar.Visible = true
 	local unlocks = state.FeatureUnlocks or {}
 	parcoursButton.Visible = unlocks.Expeditions == true
@@ -1243,6 +1268,8 @@ Net.ActionResult.OnClientEvent:Connect(function(result)
 			Audio.Play("CoinReward")
 		elseif result.Action == "VipEgg" then
 			ShowAnnouncement(`Oeuf VIP obtenu : {result.Tier or "LegendaryEgg"} !`)
+		elseif result.Action == "SetTitle" then
+			ShowAnnouncement(if result.Title then `Titre équipé : {result.Title}` else "Titre retiré.")
 		end
 	else
 		if result.Action == "QuestClaim" and state then
@@ -1292,7 +1319,7 @@ local function ApplyLayout()
 	end)
 	compact = if ok then width < 700 else false
 	topBar.Size = UDim2.fromOffset(if compact then 240 else 320, if compact then 76 else 84)
-	settingsPanel.Size = UDim2.fromOffset(if compact then 300 else 340, 230)
+	settingsPanel.Size = UDim2.fromOffset(if compact then 300 else 340, 284)
 	menuTargetSize = UDim2.fromScale(if compact then 0.96 else 0.72, if compact then 0.96 else 0.72)
 	if not menuOpen then
 		content.Size = menuTargetSize
