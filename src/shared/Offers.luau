@@ -146,15 +146,18 @@ function Offers.Sku(offer: any): number
 	if type(offer) ~= "table" then
 		return 0
 	end
-	if type(offer.Sku) == "number" and offer.Sku > 0 then
+	if offer.Kind == "Free" then
+		return 0
+	end
+	if offer.Sku ~= nil and offer.Sku ~= 0 then
+		if type(offer.Sku) ~= "number" then
+			return 0
+		end
 		return offer.Sku
 	end
-	local developerProduct = Config.DEV_PRODUCTS[offer.ConfigKey]
-	if developerProduct and type(developerProduct.Id) == "number" then
-		return developerProduct.Id
-	end
-	local gamePass = Config.GAMEPASSES[offer.ConfigKey]
-	return if gamePass and type(gamePass.Id) == "number" then gamePass.Id else 0
+	local catalog = if offer.Kind == "GamePass" then Config.GAMEPASSES else Config.DEV_PRODUCTS
+	local definition = catalog[offer.ConfigKey]
+	return if definition and type(definition.Id) == "number" then definition.Id else 0
 end
 
 function Offers.IsAvailable(offer: any): boolean
@@ -164,7 +167,7 @@ function Offers.IsAvailable(offer: any): boolean
 		and type(offer.Id) == "string"
 		and offer.Id ~= ""
 		and offer.Id ~= "0"
-		and sku == math.floor(sku)
+		and (offer.Kind == "Free" or (sku > 0 and sku < math.huge and sku == math.floor(sku)))
 		and type(offer.Audience) == "string"
 		and offer.Audience ~= ""
 		and type(offer.Trigger) == "string"

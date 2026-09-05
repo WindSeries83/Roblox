@@ -17,6 +17,18 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 
 ## Dernieres preuves
 
+### Reprise du plan complet
+
+Plan accepte : [COMPLETE_RELEASE.md](COMPLETE_RELEASE.md). Les lots contenu, beta et publication restent a realiser ; Studio n'est pas le seul travail restant.
+
+- HEADLESS local : 262 passes, 0 echec, 8 skips live apres correctifs SKU et dimensions analytics. Le test SKU ajoute echouait avant correction.
+- CI : les runs ci-dessous precedent ces correctifs ; consulter le run du commit final pour la preuve CI actuelle.
+- STUDIO : smoke de cette reprise non execute ; derniere copie Edit observee obsolete.
+- PUBLISHED/MULTI-SERVER : reception analytics et transactions reelles non validees par ces tests purs.
+- PLAYTEST HUMAIN : parcours Monde 1 et beta complete toujours requis.
+
+### Preuves precedentes (ne valident pas les correctifs de la reprise)
+
 - `lune run tests/run_tests.luau` : 259 passes, 0 echec, 8 skips live (preuve du 5 septembre 2026).
 - CI GitHub Actions `33951821124` : succes sur `cbf8b48` ; Format check (StyLua), lint Selene, tests headless, Wally, build Rojo et Check diff passent.
 - Checks locaux : `selene src/ tests/` passe ; `wally install` passe ; `rojo build -o <fichier temporaire>` passe ; le `--check` StyLua Windows ne reflète pas la CI Linux à cause des fins de ligne CRLF du checkout.

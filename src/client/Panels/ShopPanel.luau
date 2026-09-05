@@ -32,7 +32,7 @@ local function Prompt(offer)
 	end
 	if offer.Kind == "GamePass" then
 		MarketplaceService:PromptGamePassPurchase(player, offer.Sku)
-	else
+	elseif offer.Kind == "DeveloperProduct" then
 		MarketplaceService:PromptProductPurchase(player, offer.Sku)
 	end
 end
@@ -123,7 +123,7 @@ local function RenderOffers(catalog)
 	table.clear(offerRows)
 	local keys = {}
 	for key, offer in catalog or {} do
-		if Offers.IsAvailable(offer) then
+		if offer.Kind ~= "Free" and Offers.IsAvailable(offer) then
 			table.insert(keys, key)
 		end
 	end

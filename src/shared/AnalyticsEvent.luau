@@ -41,4 +41,16 @@ function AnalyticsEvent.Validate(event: any): boolean
 		and type(event.Properties) == "table"
 end
 
+-- Stable breakdowns only: never put session, player or transaction IDs in custom fields.
+function AnalyticsEvent.Dimensions(properties: Properties): { [number]: string }
+	local fields = {}
+	for index, key in { "Rarity", "Mutation", "Source" } do
+		local value = properties[key]
+		if type(value) == "string" and value ~= "" then
+			fields[index] = value
+		end
+	end
+	return fields
+end
+
 return AnalyticsEvent

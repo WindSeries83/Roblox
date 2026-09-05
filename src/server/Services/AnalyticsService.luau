@@ -2,6 +2,7 @@
 
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Funnel = require(ReplicatedStorage.Shared.Funnel)
 local AnalyticsEvent = require(ReplicatedStorage.Shared.AnalyticsEvent)
@@ -35,10 +36,20 @@ function AnalyticsService:Event(name: string, params: { [string]: any }, player:
 	if not event then
 		return
 	end
-	-- L'API analytics est indisponible en Studio : jamais bloquant.
-	pcall(function()
-		analytics:LogCustomEvent(Enum.AnalyticsCustomFieldKeys.CustomField01, name, 1)
-	end)
+	-- Server-only events retain their local envelope; Roblox custom events require a player.
+	if player and not RunService:IsStudio() then
+		local dimensions = AnalyticsEvent.Dimensions(params)
+		local fields = {}
+		for index, value in dimensions do
+			fields[Enum.AnalyticsCustomFieldKeys[`CustomField0{index}`].Name] = value
+		end
+		local ok, err = pcall(function()
+			analytics:LogCustomEvent(player, name, 1, fields)
+		end)
+		if not ok then
+			warn(`[Analytics] Failed to submit {name}: {tostring(err)}`)
+		end
+	end
 	log:Economy("Analytics", name, {
 		Version = event.Version,
 		Timestamp = event.Timestamp,

@@ -96,6 +96,30 @@ return function(t)
 		expect.truthy(Offers.IsVisible(offer, { Stats = { TotalHatched = 1 } }, { Shop = true }, 100))
 	end)
 
+	t.test("enabled paid offers reject invalid SKUs", function()
+		local offer = table.clone(Offers.All.EssencePackSmall)
+		offer.Enabled = true
+		offer.PriceText = "100 Robux"
+		for _, sku in { 0, -1, 1.5, math.huge, -math.huge, 0 / 0 } do
+			offer.Sku = sku
+			expect.falsy(Offers.IsAvailable(offer))
+		end
+		offer.Sku = 123
+		expect.truthy(Offers.IsAvailable(offer))
+	end)
+
+	t.test("free gifts need no commercial SKU and products do not resolve as passes", function()
+		local gift = table.clone(Offers.All.ReturnD2)
+		gift.Enabled = true
+		expect.truthy(Offers.IsAvailable(gift))
+		expect.equal(Offers.Sku(gift), 0)
+		local previous = Config.DEV_PRODUCTS.EssencePackSmall.Id
+		Config.DEV_PRODUCTS.EssencePackSmall.Id = 123
+		local resolved = Offers.Sku({ Kind = "GamePass", ConfigKey = "EssencePackSmall" })
+		Config.DEV_PRODUCTS.EssencePackSmall.Id = previous
+		expect.equal(resolved, 0)
+	end)
+
 	t.test("unvalidated catalog never reaches a visible snapshot", function()
 		local visible = Offers.VisibleFor({ Stats = { TotalHatched = 10 }, Season = {} }, { Shop = true }, 100)
 		for _ in visible do
