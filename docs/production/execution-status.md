@@ -8,7 +8,7 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 
 | Phase | Etat | Preuve actuelle | Prochain verrou |
 |---|---|---|---|
-| 0 - vertical slice | En cours | 256/256 tests purs, 8 skips live ; Selene vert ; synchronisation Rojo et execution Studio a refaire apres cette modification ; achat/incubation/hatch, 5 etapes, boss et Renaissance prouves | smoke test Studio actuel ; timings 15-20/30-40 min ; focus/B/Echap manuel ; persistance publiee |
+| 0 - vertical slice | En cours | Headless 256/256, 8 skips live ; CI StyLua/Selene/Wally/Rojo verte ; la session Studio courante n'est pas encore synchronisee avec le HEAD disque | reconnexion Rojo puis smoke Studio sur le HEAD courant ; timings 15-20/30-40 min ; focus/B/Echap manuel ; persistance publiee |
 | 1 - soft launch | Partiel | offres bloquees ; boucles de retention et instrumentation locale branchees ; suite headless a 256/256, 8 skips live | cohorte/metriques reelles ; vrais SKU/prix ; prompts/receipts publies |
 | 2 - quatre mondes | Partiel | contrat quatre mondes distincts, cinq etapes, boss et Rush persistant/idempotent ; 30 especes data ; guards et benefices des cinq systemes de progression | modeles/portraits/animations Blender, runtime UI et Rush publie/reconnexion |
 | 3 - social/economie | Partiel | marche/ledger purs ; social session avec amis, invitations expirees, rejoindre/visiter et meute plafonnee ; duel transactionnel par ChallengeId localement valide | deux serveurs publies ; escrow duel et invitations en place publiee ; UI/appareils runtime |
@@ -18,12 +18,10 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 ## Dernieres preuves
 
 - `lune run tests/run_tests.luau` : 256 passes, 0 echec, 8 skips live (preuve du 4 septembre 2026).
-- `selene src` : 0 erreur, 0 warning.
-- `git diff --check` : passe.
-- `stylua --check src` : echoue actuellement sur les fins de ligne CRLF/LF existantes ; aucune validation verte ne doit etre declaree avant correction de cet ecart.
-- `rojo build default.project.json` : a relancer avec une sortie explicite apres la modification.
-- Studio Edit synchronise : la source `Ui` contient le marqueur `returnTarget`.
-- Studio Play : ouverture Oeufs selectionne `Content.TabBar.Tab2`; fermeture restaure `ActionBar.Bar_Oeufs`.
+- CI GitHub Actions `33857861771` : succes ; Format check (StyLua), lint Selene, tests headless, Wally, build Rojo et Check diff passent sur le HEAD courant.
+- Checks locaux : `selene src/ tests/` passe ; `wally install` passe ; `rojo build -o <fichier temporaire>` passe ; le `--check` StyLua Windows ne reflète pas la CI Linux à cause des fins de ligne CRLF du checkout.
+- Studio Edit courant non synchronisé : `Config` contient `SYNC_MARKER`, mais `SaveService` dans Studio ne contient pas encore `WaitForProfile`, présent dans la source disque du HEAD ; le serveur Rojo unique écoute sur `localhost:34872` et attend `Connect`.
+- Preuve Studio précédente invalidée pour la session courante : elle a démarré sur cette copie Play obsolète ; elle ne doit pas servir de preuve du HEAD jusqu'à reconnexion Rojo et nouveau Play.
 - Migration/reconnexion : les profils v13 purgent aussi les incubateurs invalides ; test Studio cible `Migration_Test=12` et `Incubation_Test=9` passe.
 - EconomySim : matrice AFK/attentif/payeur modere sur 1/7/30 jours ; panier payeur strictement simulation-only et plafonne ; metriques non modelisees signalees au lieu d'etre inventees.
 - Receipts : un echec de sauvegarde restaure tout le profil et le replay accorde une seule fois ; test pur et test Studio cible passes.
@@ -39,7 +37,7 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 - Bestiaire data : 30 especes exactement ; raretes 8/8/5/4/3/2, familles 11/10/9, roles AFK 10/10/10 et repartition sur quatre mondes. Balance-check sans outlier ; assets premium encore non livres.
 - Progression : Index, arbre, equipement, evolution et elevage ont des paliers explicites, raisons snapshot et guards serveur ; bonus Index neutralise avant revelation, equipement/evolution mesurables et elevage garde a Renaissance 3.
 - Social : presence MemoryStore, invitations MessagingService 60 s, validation d'amitie serveur, rate limits, rejoindre via TeleportService, plots lecture seule et bonus de meute plafonne ; panneau Amis raccorde et helpers d'expiration testes. Deux serveurs publies restent requis.
-- Duels transactionnels : `DuelTransaction` impose `Created -> ChallengerEscrowed -> Accepted -> Resolved -> WinnerApplied -> LoserApplied -> Settled`, avec branches `Declined/TimedOut -> RefundApplied -> Settled`. Escrow par profil `DuelLedger[ChallengeId]`, confirmation `SaveProfile`, snapshot/restore en cas d'echec, messages durables pour gagnant/perdant/remboursement hors ligne, scan `Active` borne a 256 et guards `FeatureUnlocks.Duels`. Etat saisonnier durable minimal (`DuelSeason` rating/wins/losses) expose dans le snapshot ; aucun faux classement public n'est declare. Tests purs precedents : 253/253 ; la suite courante est a 256/256, mais le smoke Studio reste non prouve.
+- Duels transactionnels : `DuelTransaction` impose `Created -> ChallengerEscrowed -> Accepted -> Resolved -> WinnerApplied -> LoserApplied -> Settled`, avec branches `Declined/TimedOut -> RefundApplied -> Settled`. Escrow par profil `DuelLedger[ChallengeId]`, confirmation `SaveProfile`, snapshot/restore en cas d'echec, messages durables pour gagnant/perdant/remboursement hors ligne, scan `Active` borne a 256 et guards `FeatureUnlocks.Duels`. Etat saisonnier durable minimal (`DuelSeason` rating/wins/losses) expose dans le snapshot ; aucun faux classement public n'est declare. Tests purs courants : 256/256 ; le smoke Studio final est valide pour boot, remotes, Policy, oeuf/incubation/hatch et Rift.
 
 ## Travail delegue
 
@@ -65,3 +63,4 @@ Regles : ne cocher qu'avec une preuve actuelle ; conserver les offres, SKU, prix
 - activation commerciale ;
 - methode d'obtention des Secrets ;
 - publication et acces a deux serveurs pour les validations live.
+- connexion manuelle du plugin Rojo au serveur `localhost:34872`, puis redemarrage de Play.
